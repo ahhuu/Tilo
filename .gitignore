@@ -32,3 +32,13 @@ playwright-report/
 blob-report/
 playwright/.cache/
 *.tsbuildinfo
+
+# Android build artifacts & local properties
+.gradle/
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/captures/
+*.apk
+*.aab

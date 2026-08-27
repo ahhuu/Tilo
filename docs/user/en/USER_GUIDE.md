@@ -101,6 +101,11 @@ Today is your **daily execution workbench**, featuring three swappable views: **
 ### 4.6 Layout Customization & Reset
 - Click **Customize Layout** to toggle widget visibility and reorder modules; includes **Reset to Default**.
 
+### 4.7 Smart Day Auto-Packing
+- Click **Auto-Pack** on the Today timeline to automatically detect all free gaps across your workday.
+- **Customizable Preferences**: Adjust workday schedule bounds (08:00–22:00), buffer gap between blocks (0m/5m/10m/15m), default durations, and priority filters.
+- **Instant Preview & Undo**: Review candidate scheduled blocks, fit into timeline with one click, and safely revert via toast notification.
+
 ---
 
 ## 5. Calendar View
@@ -131,38 +136,51 @@ Calendar is the **time-horizon planning and review center**.
 
 ---
 
-## 6. Inbox & Instant Capture
+## 6. Inbox & Dual-Channel Capture
 
-### 6.1 Instant Capture
-- Press `C` anywhere to open the global quick capture modal. Type text and hit `Enter` to store.
-- Automatically recognizes pasted URLs and marks them as web links.
+Tilo enforces strict **Dual-Channel Input Separation** to prevent unprocessed thoughts from cluttering your structured task pool:
 
-### 6.2 Process Inbox Continuous Mode
+### 6.1 Instant Raw Inbox Capture
+- Press <kbd>Shift + Space</kbd> anywhere or click **Instant Capture** on the header.
+- Zero-friction raw thought and note dumping straight into the Inbox for subsequent triage.
+
+### 6.2 Quick Task Creator HUD
+- Press <kbd>C</kbd> anywhere or click **+ Quick Task** on the header to open the NLP-powered HUD.
+- Natural language syntax support: `Tomorrow 15:00 Architecture Review 45m #dev !high` with real-time parsed tokens.
+
+### 6.3 Smart Clipboard Paste
+- Copy text anywhere externally (browser, chat, emails), switch to Tilo outside active inputs, and hit <kbd>Ctrl + V</kbd>.
+- The system automatically extracts clipboard text, opens the Quick Task HUD, and prepares it for one-click creation.
+
+### 6.4 Process Inbox Continuous Mode
 - Click **Process Inbox (P)** or press `P` on the Inbox page to enter full-screen continuous triage mode.
 - **Single-Key Triage Matrix**:
   - `1`: Schedule for **Today** and convert to Task
   - `2`: Schedule for **This Week** and convert to Task
   - `3`: Move to **Someday**
   - `T`: Open Convert to Task modal
-  - `N`: Convert to Note
+  - `N`: Convert to Note (Markdown)
   - `I`: Mark as Idea
   - `A`: Archive
   - `X`: Delete to Trash
   - `J` / `K`: Previous / Next item
   - `Esc`: Exit mode
 
-### 6.3 Someday Resurfacing
+### 6.5 Someday Resurfacing
 - Items in Someday automatically surface during **Weekly Review Step 2** for scheduled triage.
 
 ---
 
-## 7. Goal Management
+## 7. Goal Management & Roadmap Gantt
 
 - **Tracking Modes**:
   1. **Task Completion**: Progress auto-aggregates from completed tasks in linked projects.
   2. **Metric Goal**: Set target numbers (e.g. "Read 20 papers") and log numeric entries.
   3. **Ongoing**: Continuous areas of focus without a terminal percentage.
 - **Weekly Focus**: Pin goals to the active week's strategic focus banner.
+- **Roadmap Gantt View**:
+  - Switch between **Card Grid**, **Dense List**, and **Roadmap Gantt** view modes on the Goals page.
+  - Visual hierarchy aggregating Goals → Projects → Milestones with progress bars and milestone indicators.
 
 ---
 
@@ -183,12 +201,17 @@ Calendar is the **time-horizon planning and review center**.
 
 ---
 
-## 10. Focus Sessions & Timer
+## 10. Focus Sessions, Zen Mode & Ambient Audio
 
 - **Timer Controls**: Start, Pause, Resume, Finish.
+- **Focus Zen Full-Screen Mode**:
+  - Distraction-free full-screen environment with elegant countdown animations.
+- **Web Audio Ambient Generator**:
+  - Built-in procedurally generated noise audio: **Gentle Rain**, **Cozy Fireplace**, **Deep Ocean**, and **Coffee Ambient**.
+  - Smooth volume control and **automatic mute on pause/completion**.
 - **Duration Formula**:
   $$\text{Active Time} = \text{Elapsed Time} - \text{Paused Time}$$
-- **Background Sessions**: Long-running background processes (e.g. running test suites or builds) can be designated as background sessions without inflating headline active focus time.
+- **Background Sessions**: Long-running background processes can be designated as background sessions without inflating active focus time.
 
 ---
 
@@ -208,23 +231,23 @@ Complete end-of-day wrap-up in three simple steps:
 
 ---
 
-## 13. Analytics Engine
+## 13. Analytics & Chronotype Energy Matrix
 
-Analytics provides 12 objective metrics computed strictly according to Master Plan specifications:
+Analytics provides multi-dimensional objective metrics and charts with modular layout customization:
 
-| Metric Name | Computation & Logic | Interpretation |
+| Metric / Chart | Computation & Logic | Interpretation |
 | :--- | :--- | :--- |
 | **Completion Rate** | $\frac{\text{Scheduled tasks completed in period}}{\text{Total valid tasks scheduled for period}}$ | True delivery rate (excluding subtask inflation). |
 | **Time Accuracy** | Plan/Actual pairs: $1 - \frac{\|Actual - Planned\|}{\max(Actual, Planned)}$, weighted by planned duration | Measures how closely session durations match planned blocks. |
 | **Schedule Accuracy**| $\frac{\text{Sessions started within } \pm 15 \text{ min of planned start}}{\text{Total paired sessions}}$ | Measures punctuality and schedule adherence. |
-| **Completion Accuracy**| Identical to scheduled task completion rate | Delivery reliability. |
-| **Overall Planning Accuracy**| $\frac{\text{Time Acc} + \text{Schedule Acc} + \text{Completion Acc}}{3}$ | Composite mean score with formula tooltip. |
+| **Annual Focus Heatmap**| 52-week x 7-day focus intensity matrix & streak counter | Tracks full-year focus habit consistency. |
+| **24h Chronotype Matrix**| Hourly distribution of active focus sessions | Identifies individual peak productivity energy windows. |
 | **Unplanned Work**| Duration and percentage of active sessions executed without a pre-planned block | Quantifies ad-hoc interruptions and unscheduled work. |
-| **Start Delay Analysis**| Breakdown of session start latency (on-time / <15m / 15-30m / >30m) | Diagnoses execution friction and procrastination. |
 | **Estimate Accuracy**| Ratio $\frac{Actual - Estimate}{Estimate}$, bucketed into Accurate ($\pm 15\%$), Underestimated (>15%), Overestimated (<-15%) | Calibrates effort estimation accuracy. |
-| **Capacity Analysis**| Daily planned vs actual hours vs capacity limit | Tracks over-scheduling tendencies. |
 | **Time Allocation**| Slices active time by Project, Primary Goal, Priority, or Tag | Visualizes strategic effort distribution. |
 | **Rescheduling Analysis**| Aggregates reschedule activity events and reasons without blame | Identifies systemic planning bottlenecks. |
+
+> Click **Customize** to toggle individual card visibility with persistent local storage.
 
 ---
 
@@ -248,7 +271,7 @@ The 6-step structured weekly review:
 - **Appearance**: Light / Dark / System theme; Language (English / 简体中文); Density (Comfortable / Compact).
 - **Motion**: Reduced / Subtle / Balanced / Expressive (honors system `prefers-reduced-motion`).
 - **Workflow**: Customize status names, colors, and semantic mappings (Open / Active / Waiting / Completed / Cancelled).
-- **Data Management**: Export JSON backup, validate and restore backups, or reset demo data.
+- **Data Management**: Export JSON backup, validate and restore backups, export Markdown / CSV analysis reports.
 
 ---
 
@@ -259,23 +282,41 @@ The 6-step structured weekly review:
 
 ---
 
-## 17. Command Menu & Global Capture
+## 17. Command Menu & Navigation Shortcuts
 
 - **`Ctrl+K` / `Cmd+K`**: Global command menu for searching tasks, switching routes, and running quick actions.
-- **`C`**: Instant Capture modal to log fleeting thoughts without leaving your current task.
+- **`C`**: Quick Task HUD for rapid structured creation with natural language parsing.
+- **`Shift+Space`**: Instant Raw Inbox Capture modal.
+- **`Ctrl+V`**: Smart clipboard paste anywhere on page.
 
 ---
 
-## 18. Recommended Daily Workflow
+## 18. Multi-Platform Client Support
+
+### 18.1 PWA Desktop Standalone Client
+- Open Tilo in Chrome / Edge and click **Install App** in the header.
+- Run in a standalone window with custom desktop and taskbar icons and full offline capability.
+
+### 18.2 Android Native Package (APK)
+- Capacitor native Gradle build pipeline:
+  ```bash
+  npm run cap:sync
+  cd android && ./gradlew.bat assembleDebug
+  ```
+- Lightweight 4.5 MB `.apk` file for direct installation on Android devices.
+
+---
+
+## 19. Recommended Daily Workflow
 
 ### Morning (3–5 min)
 1. Open Today view and check Weekly Focus.
 2. Pick 1–3 core tasks as Focus #1–#3.
-3. Drag tasks onto Timeline and verify against Daily Capacity.
+3. Click **Auto-Pack** to fill your day's schedule cleanly.
 
 ### During the Day
-1. Start Session on your top Focus task.
-2. Press `C` to dump interruptions and incoming tasks into Inbox.
+1. Start Session on your top Focus task with optional ambient noise.
+2. Press `Shift+Space` to dump fleeting thoughts into Inbox without interrupting flow.
 3. Click Finish upon completing sessions.
 
 ### Evening (1–2 min)
@@ -284,8 +325,9 @@ The 6-step structured weekly review:
 
 ---
 
-## 19. Three Depths of Usage
+## 20. Three Depths of Usage
 
 - **Lightweight**: Use Today task list, Focus #1, and Daily Close for basic task execution.
 - **Standard (Recommended)**: Structure work into Goals → Projects → Tasks, schedule timeline blocks, and run Weekly Review.
-- **Deep**: Utilize Daily Capacity budgeting, Plan vs Actual variance analysis, custom workflow statuses, and multi-dimensional analytics.
+- **Deep**: Utilize Daily Capacity budgeting, Plan vs Actual variance analysis, Roadmap Gantt, Chronotype Matrix, and Multi-platform desktop/Android apps.
+

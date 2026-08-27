@@ -7,6 +7,7 @@ import {
   calculateDailyCapacity,
   snapTimestamp,
 } from '@/core/timeline/timelineEngine';
+import { calculateGhostEndTime } from '@/services/elasticPushService';
 import { InlineCreatePopover } from './InlineCreatePopover';
 import type {
   TimelineFilter,
@@ -632,6 +633,31 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                     <div className="w-8 h-1 bg-indigo-500 rounded-full" />
                   </div>
                 )}
+
+                {/* Ghost Timebox Prediction Extension (Historical Variance) */}
+                {isPlan && originalBlock && (() => {
+                  const ghostEndAt = calculateGhostEndTime(originalBlock, linkedTask);
+                  if (!ghostEndAt || ghostEndAt <= effectiveEndAt) return null;
+                  const ghostHeightPercent = Math.max(
+                    1,
+                    ((ghostEndAt - effectiveEndAt) / totalRangeMs) * 100
+                  );
+                  return (
+                    <div
+                      className="absolute left-0 right-0 border-x border-b border-dashed border-indigo-400/50 dark:border-indigo-500/40 bg-indigo-500/10 dark:bg-indigo-950/20 rounded-b-xl pointer-events-none z-0 px-2 py-0.5 flex items-center justify-between text-[9px] text-indigo-600 dark:text-indigo-400 font-mono"
+                      style={{
+                        top: '100%',
+                        height: `${ghostHeightPercent * 15}px`,
+                        minHeight: '16px',
+                      }}
+                      title={language === 'zh-CN' ? '基于历史类似任务耗时习惯预测的实际可能结束时间' : 'Predicted completion based on historical variance'}
+                    >
+                      <span className="truncate">
+                        {language === 'zh-CN' ? `预测延至 ${timeService.formatTime(ghostEndAt)}` : `Ghost ${timeService.formatTime(ghostEndAt)}`}
+                      </span>
+                    </div>
+                  );
+                })()}
               </div>
             );
           })}

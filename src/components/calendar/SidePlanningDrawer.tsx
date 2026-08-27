@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/Badge';
 import { rescheduleTask } from '@/services/taskCommands';
 import { timeService } from '@/core/time/timeService';
 import { useI18n } from '@/core/i18n';
+import { AutoPackModal } from '@/components/timeline/AutoPackModal';
 import {
   PanelRightClose,
   Calendar,
@@ -13,6 +14,7 @@ import {
   Search,
   GripVertical,
   PieChart,
+  Sparkles,
 } from 'lucide-react';
 import type { Task, Project } from '@/core/types/domain';
 
@@ -36,6 +38,7 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
   const { language } = useI18n();
   const [search, setSearch] = useState('');
   const [tab, setTab] = useState<'unscheduled' | 'all'>('unscheduled');
+  const [showAutoPackModal, setShowAutoPackModal] = useState(false);
 
   const todayStr = timeService.getLogicalDate();
 
@@ -72,6 +75,14 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => setShowAutoPackModal(true)}
+            className="p-1 rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 cursor-pointer"
+            title={language === 'zh-CN' ? '一键智能排盒' : 'Auto-Pack Day'}
+          >
+            <Sparkles className="w-4 h-4" />
+          </button>
           {onOpenAllocationDrawer && (
             <button
               type="button"
@@ -92,6 +103,13 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Auto-Pack Modal */}
+      <AutoPackModal
+        isOpen={showAutoPackModal}
+        onClose={() => setShowAutoPackModal(false)}
+        dateKey={todayStr}
+      />
 
       {/* Tabs: Unscheduled | All Tasks */}
       <div className="p-3 border-b border-slate-100 dark:border-slate-800 space-y-2">

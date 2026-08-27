@@ -9,8 +9,8 @@ English Documentation | [简体中文文档](README_CN.md)
 
 ## Release Status
 
-**Current Release**: `Tilo v1.0.0`  
-**Status**: `Production Ready` (Full Audit PASS, Release Candidate Validated)
+**Current Release**: `Tilo v1.1.0`  
+**Status**: `Production Ready` (Desktop Web, PWA Standalone & Android APK Validated)
 
 ---
 

@@ -5,7 +5,7 @@
 
 ## Current phase
 
-**Phase 20 — Repository Root Documentation Cleanup & Modular Archival (COMPLETE & VERIFIED)**
+**Phase 22 — Smart Day Auto-Packing, Annual Focus Heatmap, Natural Language Capture HUD & Roadmap Gantt (COMPLETE & VERIFIED)**
 
 ## Overall status
 
@@ -30,33 +30,38 @@
 - [x] Phase 18 — Global Motion Engine & Interactive Sandbox Playground
 - [x] Phase 19 — Planned Block Focus Mode & Activity Type Dropdown Presets
 - [x] Phase 20 — Repository Root Documentation Cleanup & Modular Archival
+- [x] Phase 21 — Web Audio Zen Focus, Markdown/CSV Multi-Format Reports & Elastic Push Ghost Timeboxes
+- [x] Phase 22 — Smart Day Auto-Packing, Annual Focus Heatmap, Natural Language Capture HUD & Roadmap Gantt
+- [x] Phase 23 — Dual-Channel Capture Differentiation & Inbox Triage Flow Polish
+- [x] Phase 24 — PWA Desktop Standalone App & Smart Clipboard Paste Integration
+- [x] Phase 25 — Android Native App & Local Gradle Build Pipeline
 
 ---
 
 ## 1. Files changed
 
-- `AGENTS.md` — **[UPDATED]** Updated reading order path to `docs/audit/ACCEPTANCE_CHECKLIST.md`.
-- `docs/audit/` — **[ORGANIZED]** Archived `AUDIT_REPORT.md`, `AUDIT_SUMMARY.md`, `ACCEPTANCE_CHECKLIST.md`.
-- `docs/releases/` — **[ORGANIZED]** Archived `PACKAGE_MANIFEST.md`, `PACKAGE_VALIDATION.txt`, `Tilo_V1_用户文档与_v1.0.0_正式发行提示词.md`.
-- `docs/agents/` — **[ORGANIZED]** Archived `CODEX_START_PROMPT.md`, `README_AGENT_START.md`.
-- `docs/roadmap/` — **[ORGANIZED]** Archived `POST_V1_BACKLOG.md`.
+- `capacitor.config.ts` — **[NEW]** Capacitor mobile configuration binding app ID `com.tilo.app`, app name `Tilo`, and HTTPS scheme for IndexedDB safety.
+- `android/` — **[NEW]** Complete Android Gradle native project (including `build.gradle`, `gradlew`, `gradlew.bat`, `app/` module and AndroidManifest).
+- `package.json` — **[UPDATED]** Added `@capacitor/core`, `@capacitor/android`, `@capacitor/cli` dependencies and scripts (`cap:sync`, `android:open`).
 
 ## 2. Features completed
 
-1. **Repository Root Modular Cleanup**:
-   - Cleaned root directory from 14 scattered markdown/text files down to 4 canonical standard files (`README.md`, `README_CN.md`, `AGENTS.md`, `DEVELOPMENT_STATUS.md`, `CHANGELOG.md`).
-   - Categorized all audit, release packages, prompt templates, and backlogs neatly into `docs/` subdirectories.
+1. **Android Native Project & Local Gradle Pipeline (Android 原生 Gradle 工程与多端构建支持)**:
+   - 完整生成与配置了 `android/` 原生工程，包含全套 Gradle 构建脚本与静态资源同步管道；
+   - 现有 React + Vite + Dexie (IndexedDB) + Web Audio 全部 100% 开箱即用运行于 Android 原生 WebView 容器；
+   - 支持通过本地 `./gradlew assembleDebug` 一键编译 Android APK 安装包，或使用 `npm run android:open` 直接在 Android Studio 中调试。
 
 ## 3. TypeScript / ESLint / tests / build
 
 - **TypeScript** (`npm run typecheck`): Passed (0 errors)
-- **ESLint** (`npm run lint`): Passed (0 warnings, 0 errors)
-- **Unit tests** (`npm run test`): Passed (32 test files, 89 unit tests passed)
-- **Build** (`npm run build`): Passed (clean production build in `dist/`)
+- **ESLint** (`npm run lint`): Passed (0 errors, 0 warnings)
+- **Tests** (`npm run test`): Passed (40 test suites, 112 tests passing)
+- **Production Build** (`npm run build`): Passed (0 errors)
+- **Android APK Build** (`./gradlew.bat assembleDebug`): Passed (Generated `android/app/build/outputs/apk/debug/app-debug.apk`, 4.5 MB)
 
 ## 4. Known issues
 
-- **No blocking issues.**
+- None.
 
 ## 5. Next task
 

@@ -10,9 +10,12 @@ Tilo 支持全键盘操作与流畅导航。以下为当前 V1 版本支持的�
 
 | Windows / Linux | macOS | 功能作用 | 生效范围 (Scope) |
 | :--- | :--- | :--- | :--- |
+| <kbd>C</kbd> | <kbd>C</kbd> | 呼出**任务速记 HUD**（支持自然语言解析 `!high`、`#项目`、`30m`、`明天 14:00`） | 全局（输入框聚焦时除外） |
+| <kbd>Shift</kbd> + <kbd>Space</kbd> | <kbd>Shift</kbd> + <kbd>Space</kbd> | 呼出**闪念快速收集弹窗**（零阻力倾倒未经分类的碎片想法至收集箱） | 全局 |
+| <kbd>Ctrl</kbd> + <kbd>V</kbd> | <kbd>Cmd</kbd> + <kbd>V</kbd> | **智能剪贴板一键转录**（自动捕获外部复制文本并填入任务速记 HUD） | 全局（输入框聚焦时除外） |
 | <kbd>Ctrl</kbd> + <kbd>K</kbd> | <kbd>Cmd</kbd> + <kbd>K</kbd> | 打开全局命令菜单 (Command Menu)，支持搜索路由与任务 | 全局任何页面 |
+| <kbd>Ctrl</kbd> + <kbd>Z</kbd> | <kbd>Cmd</kbd> + <kbd>Z</kbd> | 全局撤销 (Undo) 最近一次操作 | 全局（输入框聚焦时除外） |
 | <kbd>[</kbd> | <kbd>[</kbd> | 折叠或展开左侧主导航栏 (Toggle Sidebar) | 全局（输入框聚焦时除外） |
-| <kbd>C</kbd> | <kbd>C</kbd> | 呼出即时捕获模态框 (Instant Capture) | 全局（输入框聚焦时除外） |
 | <kbd>Esc</kbd> | <kbd>Esc</kbd> | 关闭当前弹窗、检视器 (Inspector) 或取消聚焦 | 全局 |
 | <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | 顺序移动焦点 / 反向移动焦点 | 全局 |
 

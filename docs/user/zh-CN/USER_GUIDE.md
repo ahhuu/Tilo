@@ -101,6 +101,11 @@ Today 是日常**执行的核心操作台**，包含三大视图布局：**分�
 ### 4.6 布局自定义与重置
 - 点击右上角 **自定义布局** 可调整各模块的显示/隐藏与上下顺序；提供 **重置为默认 (Reset to Default)** 按钮。
 
+### 4.7 智能排盒 (Smart Day Auto-Packing)
+- 点击时间线顶部的 **智能排盒 (Auto-Pack)** 按钮，系统自动发现全天工作时段内的所有空闲时间缝隙。
+- **高自由度偏好定制**：支持自由调整工作时段（08:00~22:00）、盒间缓冲间隙（0m/5m/10m/15m）、无预估默认时长与优先级范围过滤。
+- **一键预览与撤销**：生成直观排期方案，确认后一键排入今日时间盒，并支持通过 Toast 一键安全撤销。
+
 ---
 
 ## 5. 日历视图 (Calendar)
@@ -131,38 +136,51 @@ Calendar 是**时间维度的宏观规划与审查中枢**。
 
 ---
 
-## 6. 收件箱与即时捕获 (Inbox & Capture)
+## 6. 收件箱与双通道极速录入 (Inbox & Dual-Channel Capture)
 
-### 6.1 即时捕获 (Instant Capture)
-- 全局按下快捷键 `C` 呼出轻量捕获框，输入内容按 `Enter` 快速沉淀至收件箱。
-- 自动识别并提取粘贴的 URL 链接。
+Tilo 实行严格的 **双通道心流分离** 设计，彻底避免未定性的碎片想法污染任务池：
 
-### 6.2 连续整理模式 (Process Inbox Continuous Mode)
+### 6.1 闪念快速收集 (Instant Raw Inbox Capture)
+- 全局按快捷键 <kbd>Shift + Space</kbd> 或点击顶部「闪念收集」，呼出极简倾倒文本框。
+- 零阻力记录未经分类的碎片想法、会议随记或外部链接，按 <kbd>Enter</kbd> 直接沉淀进收件箱待分流。
+
+### 6.2 任务速记 HUD (Quick Task Creator HUD)
+- 全局按快捷键 <kbd>C</kbd> 或点击顶部「+ 任务速记」，呼出自然语言解析 HUD。
+- 支持直接输入：`明天 15:00 重构接口 45m #研发 !high`，底部实时预览解析芯片，按 <kbd>Enter</kbd> 直接创建为结构化任务并可排入时间线。
+
+### 6.3 智能剪贴板一键转录 (Smart Clipboard Paste)
+- 在微信、飞书、浏览器等任意外部应用复制文本后，切回 Tilo 任意非输入区域直接按 <kbd>Ctrl + V</kbd>。
+- 系统自动提取剪贴板文本并调起任务速记 HUD，高亮语法解析，按 <kbd>Enter</kbd> 即可一键转录。
+
+### 6.4 连续整理模式 (Process Inbox Continuous Mode)
 - 在 Inbox 页面点击 **连续整理 (P)** 或按键盘 `P` 键，进入全屏单项聚焦整理流。
 - **单键极速分流矩阵**：
   - `1`：安排至 **今天 (Today)** 并转为任务
   - `2`：安排至 **本周 (This Week)** 并转为任务
   - `3`：移入 **择日 (Someday)**
-  - `T`：打开转任务高级弹窗
-  - `N`：转为独立笔记 (Note)
+  - `T`：打开转任务高级弹窗（设定项目与工时）
+  - `N`：转为独立 Markdown 笔记 (Note)
   - `I`：标记为想法 (Idea)
   - `A`：直接归档 (Archive)
   - `X`：删除至废纸篓 (Delete)
   - `J` / `K`：上一个 / 下一个项目
   - `Esc`：退出整理模式
 
-### 6.3 择日回流 (Someday Resurfacing)
+### 6.5 择日回流 (Someday Resurfacing)
 - 放入 Someday 的内容不会被遗忘，将在每周复盘 (Weekly Review) Step 2 中自动浮现，供用户重新激活或归档。
 
 ---
 
-## 7. 目标管理 (Goals)
+## 7. 目标管理与甘特路线图 (Goals & Roadmap Gantt)
 
 - **跟踪模式 (Tracking Mode)**：
   1. **任务完成度 (Task Completion)**：自动汇总关联项目中所有任务的完成比例。
   2. **量化指标 (Metric Goal)**：设置目标数值（如“阅读 20 篇论文”），录入当前进展。
   3. **持续进行 (Ongoing)**：无固定终点的持续维护类目标。
 - **战略聚焦**：支持将 Goal 设为 **本周焦点 (Weekly Focus)**。
+- **甘特路线图视图 (Roadmap Gantt View)**：
+  - 目标页面支持在 **卡片网格**、**紧凑列表** 与 **甘特路线图** 之间自由切换。
+  - 以树形层级展开战略目标 → 关联项目 → 关键里程碑，横向展示时间轴周期进度条与里程碑达成状态。
 
 ---
 
@@ -183,9 +201,14 @@ Calendar 是**时间维度的宏观规划与审查中枢**。
 
 ---
 
-## 10. 专注会话与计时器 (Sessions & Timer)
+## 10. 专注会话、沉浸全屏与禅意白噪音 (Focus Sessions, Zen & Audio)
 
 - **计时控制**：开始、暂停、恢复、完成。
+- **全屏沉浸专注 (Focus Zen Mode)**：
+  - 点击开始专注可开启全屏沉浸模式，屏蔽一切干扰元素，提供优雅时间流逝动画。
+- **Web Audio 禅意白噪音引擎**：
+  - 内置基于纯 Web Audio 合成的 4 种无损白噪音氛围：**细雨倾盆 (Gentle Rain)**、**壁炉篝火 (Cozy Fireplace)**、**深海静谧 (Deep Ocean)**、**咖啡馆白噪 (Coffee Ambient)**。
+  - 支持调节音量，且在暂停计时或会话结束时**自动平滑静音**。
 - **时长统计准则**：
   $$\text{有效专注时长 (Active Time)} = \text{总流逝时长 (Elapsed Time)} - \text{暂停时长 (Paused Time)}$$
 - **后台会话 (Background Session)**：非直接交互的长时运行任务（如跑模型）可标记为后台会话，不污染前台核心专注时长。
@@ -210,23 +233,21 @@ Calendar 是**时间维度的宏观规划与审查中枢**。
 
 ## 13. 统计与数据分析 (Analytics)
 
-Analytics 提供 12 大客观指标，严格遵循 Master Plan 数值定义：
+Analytics 提供多维客观指标与可视化图表，支持自定义显隐：
 
-| 指标名称 | 计算公式与逻辑 | 业务含义与解读 |
+| 指标 / 图表 | 计算逻辑与呈现 | 业务含义与解读 |
 | :--- | :--- | :--- |
 | **完成率 (Completion Rate)** | $\frac{\text{周期内排期并完成的任务数}}{\text{周期内排期的有效任务总数}}$ | 衡量排期任务的实际交付比例（排除子任务膨胀）。 |
 | **时间准确度 (Time Accuracy)** | 计划/实际配对：$1 - \frac{\|Actual - Planned\|}{\max(Actual, Planned)}$，按计划时长加权平均 | 衡量专注时长与计划时长的一致程度。 |
 | **排期准确度 (Schedule Accuracy)**| $\frac{\text{在计划开始时间 } \pm 15 \text{ 分钟内启动的会话数}}{\text{关联计划块的会话总数}}$ | 衡量按时启动执行的守时率。 |
-| **完成准确度 (Completion Accuracy)**| 同排期任务完成率 | 衡量交付兑现度。 |
-| **综合计划准确度 (Overall Accuracy)**| $\frac{\text{Time Acc} + \text{Schedule Acc} + \text{Completion Acc}}{3}$ | 计划能力的综合参考均值。 |
+| **年度专注热力图 (Focus Heatmap)**| 52 周 x 7 天年度全景打卡方阵与连续打卡天数 | 追踪一整年的专注习惯连续性与沉淀足迹。 |
+| **24h 精力生物钟 (Chronotype Matrix)**| 24 小时各时段专注频次柱状分布 | 智能识别个人的黄金高效专注窗口。 |
 | **临时插入工作 (Unplanned Work)**| 周期内无对应 Planned Block 的 Active Session 时长及占比 | 衡量突发事件或无排期工作对专注的占用。 |
-| **延迟启动分析 (Start Delay)** | 关联会话与计划开始时间的差值分布（准时 / <15m / 15-30m / >30m） | 诊断拖延与启动阻力分布。 |
 | **预估准确度 (Estimate Accuracy)**| 误差比率 $\frac{Actual - Estimate}{Estimate}$，分为精准 ($\pm 15\%$)、低估 (>15%)、高估 (<-15%) | 辅助校准任务耗时预估直觉。 |
-| **容量分析 (Capacity Analysis)** | 每日计划与实际耗时对比容量上限，统计超额天数 | 评估超负荷规划倾向。 |
 | **多维时间分配 (Time Allocation)** | 按项目 (Project)、主目标 (Goal)、优先级 (Priority)、标签 (Tag) 分布 | 查看时间精力在各维度的真实投入分布。 |
 | **改期原因统计 (Rescheduling)** | 汇总改期 ActivityEvents 中的客观原因与最高频改期任务 | 找出导致计划推迟的系统性阻塞因素。 |
 
-> 所有统计图表支持自定义显隐与重置为默认布局。
+> 点击右上角「自定义」可自由开启或关闭指定图表卡片，布局偏好自动持久化至本地。
 
 ---
 
@@ -250,7 +271,7 @@ Analytics 提供 12 大客观指标，严格遵循 Master Plan 数值定义：
 - **外观 (Appearance)**：浅色 (Light) / 深色 (Dark) / 跟随系统 (System)；界面语言（中文 / English）；紧凑度（舒适 Comfortable / 紧凑 Compact）。
 - **动效 (Motion)**：减弱 (Reduced) / 微弱 (Subtle) / 平衡 (Balanced) / 丰富 (Expressive)。完整响应操作系统的 `prefers-reduced-motion` 设置。
 - **工作流 (Workflow)**：自定义任务与项目的工作流状态名称、颜色及语义映射（Open / Active / Waiting / Completed / Cancelled）。
-- **数据管理 (Data)**：导出全量 JSON 备份、校验并恢复备份、重置演示数据。
+- **数据管理 (Data)**：导出全量 JSON 备份、校验并恢复备份、导出 Markdown / CSV 格式化分析报告。
 
 ---
 
@@ -261,23 +282,41 @@ Analytics 提供 12 大客观指标，严格遵循 Master Plan 数值定义：
 
 ---
 
-## 17. 命令菜单与即时捕获 (Command Menu & Capture)
+## 17. 命令菜单与快捷交互 (Command Menu & Navigation)
 
 - **`Ctrl+K` / `Cmd+K` (命令菜单)**：全局搜索任务、快速跳转路由、触发常用操作。
-- **`C` (即时捕获)**：极速呼出待办记录框，实现“捕获不中断当前工作”。
+- **`C` (任务速记 HUD)**：呼出支持自然语言解析的任务速建器。
+- **`Shift+Space` (闪念收集)**：零阻力倾倒碎片灵感至收集箱。
+- **`Ctrl+V` (剪贴板智能转录)**：页面空白处直接转录剪贴板文本。
 
 ---
 
-## 18. 推荐日常工作流
+## 18. 多端运行与客户端支持 (Multi-Platform Client)
+
+### 18.1 PWA 独立桌面客户端
+- 在 Chrome / Edge 浏览器打开 Tilo 时，点击顶部导航栏的 **「安装客户端」** 按钮。
+- 安装后将生成桌面与开始菜单图标，在无浏览器地址栏的独立沉浸窗口中秒开运行，支持纯断网离线使用。
+
+### 18.2 Android 原生客户端 (APK)
+- 项目内置完整的 Capacitor Android 原生 Gradle 工程：
+  ```bash
+  npm run cap:sync
+  cd android && ./gradlew.bat assembleDebug
+  ```
+- 编译生成的 `app-debug.apk` 体积仅约 4.5 MB，支持直接安装至 Android 手机，100% 离线使用。
+
+---
+
+## 19. 推荐日常工作流
 
 ### 早晨 (3–5 分钟)
 1. 打开 Today 视图，查看顶部 Weekly Focus。
 2. 选择 1–3 项核心任务设为 Focus。
-3. 将待安排任务拖入 Timeline，结合 Daily Capacity 确认无过度超排。
+3. 点击 **智能排盒 (Auto-Pack)** 一键填充今日时间线，结合 Daily Capacity 确认无过度超排。
 
 ### 日间执行
-1. 点击 Focus 任务上的 Start Session 开启计时。
-2. 临时突发事件与灵感按 `C` 键捕获至收件箱，不打断当下专注。
+1. 点击 Focus 任务上的 Start Session 开启计时，按需开启 Web Audio 白噪音。
+2. 临时突发事件与灵感按 `Shift+Space` 捕获至收件箱，不打断当下专注。
 3. 会话结束点击 Finish 结算。
 
 ### 晚间收尾 (1–2 分钟)
@@ -286,8 +325,9 @@ Analytics 提供 12 大客观指标，严格遵循 Master Plan 数值定义：
 
 ---
 
-## 19. 三种使用深度建议
+## 20. 三种使用深度建议
 
 - **轻量级 (Lightweight)**：仅使用 Today 任务列表、Focus #1 和 Daily Close 记录日常待办。
 - **标准级 (Standard - 推荐)**：使用 Goals → Projects → Tasks 层级，配合 Calendar 拖拽时间块与 Weekly Review 每周复盘。
-- **深度级 (Deep)**：启用 Daily Capacity 预算、Plan vs Actual 偏差分析、自定义工作流状态与 Analytics 统计图表。
+- **深度级 (Deep)**：启用 Daily Capacity 预算、Plan vs Actual 偏差分析、甘特路线图、精力生物钟分析与多端客户端运行。
+

@@ -28,8 +28,8 @@ export const InstantCaptureModal: React.FC = () => {
       await captureInboxItem({ rawText: trimmed });
       addToast({
         message: language === 'zh-CN'
-          ? `已快速收集至收集箱: "${trimmed.slice(0, 24)}${trimmed.length > 24 ? '...' : ''}"`
-          : `Captured to Inbox: "${trimmed.slice(0, 24)}${trimmed.length > 24 ? '...' : ''}"`,
+          ? `已放入收集箱（待分流整理）: "${trimmed.slice(0, 20)}${trimmed.length > 20 ? '...' : ''}"`
+          : `Saved to Inbox (Ready for triage): "${trimmed.slice(0, 20)}${trimmed.length > 20 ? '...' : ''}"`,
         type: 'success',
       });
       setContent('');
@@ -80,7 +80,7 @@ export const InstantCaptureModal: React.FC = () => {
             value={content}
             onChange={(e) => setContent(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={language === 'zh-CN' ? '快速记录灵感、想法或待办至收集箱...' : 'Capture an idea, note, or quick task to Inbox...'}
+            placeholder={language === 'zh-CN' ? '零阻力记录闪念、碎片想法或临时事项（保存后进入收集箱待后续统一分流整理）...' : 'Dump a raw idea, snippet, or thought (saved to Inbox for later triage)...'}
             className="w-full bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 resize-none focus:outline-hidden"
           />
 

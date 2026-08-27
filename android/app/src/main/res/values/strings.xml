@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Tilo</string>
+    <string name="title_activity_main">Tilo</string>
+    <string name="package_name">com.tilo.app</string>
+    <string name="custom_url_scheme">com.tilo.app</string>
+</resources>

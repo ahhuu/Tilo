@@ -5,7 +5,9 @@ export type AnalyticsWidgetId =
   | 'dailyChart'
   | 'timeAllocation'
   | 'estimateAccuracy'
-  | 'rescheduling';
+  | 'rescheduling'
+  | 'focusHeatmap'
+  | 'chronotypeMatrix';
 
 export interface AnalyticsLayoutConfig {
   visibleWidgets: Record<AnalyticsWidgetId, boolean>;
@@ -20,5 +22,7 @@ export const DEFAULT_ANALYTICS_LAYOUT_CONFIG: AnalyticsLayoutConfig = {
     timeAllocation: true,
     estimateAccuracy: true,
     rescheduling: true,
+    focusHeatmap: true,
+    chronotypeMatrix: true,
   },
 };

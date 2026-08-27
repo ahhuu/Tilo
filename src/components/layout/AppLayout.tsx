@@ -5,11 +5,15 @@ import { Header } from './Header';
 import { InspectorShell } from '@/components/global/InspectorShell';
 import { CommandMenu } from '@/components/global/CommandMenu';
 import { InstantCaptureModal } from '@/components/global/InstantCaptureModal';
+import { QuickCaptureHUD } from '@/components/global/QuickCaptureHUD';
 import { FloatingTimer } from '@/components/global/FloatingTimer';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { GlobalKeyboardShortcuts } from '@/components/global/GlobalKeyboardShortcuts';
+import { useUIStore } from '@/stores/uiStore';
 
 export const AppLayout: React.FC = () => {
+  const { quickTaskHUDOpen, closeQuickTaskHUD } = useUIStore();
+
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       <GlobalKeyboardShortcuts />
@@ -36,6 +40,10 @@ export const AppLayout: React.FC = () => {
       {/* Global Overlays and Modals */}
       <CommandMenu />
       <InstantCaptureModal />
+      <QuickCaptureHUD
+        isOpen={quickTaskHUDOpen}
+        onClose={closeQuickTaskHUD}
+      />
       <FloatingTimer />
       <ToastContainer />
     </div>

@@ -15,6 +15,8 @@ import { PlanningAccuracySection } from '@/components/analytics/PlanningAccuracy
 import { UnplannedAndCapacitySection } from '@/components/analytics/UnplannedAndCapacitySection';
 import { EstimateAccuracySection } from '@/components/analytics/EstimateAccuracySection';
 import { ReschedulingSection } from '@/components/analytics/ReschedulingSection';
+import { FocusHeatmapCard } from '@/components/analytics/FocusHeatmapCard';
+import { ChronotypeMatrixCard } from '@/components/analytics/ChronotypeMatrixCard';
 import { AnalyticsCustomizerModal } from '@/components/analytics/AnalyticsCustomizerModal';
 import {
   type AnalyticsLayoutConfig,
@@ -244,6 +246,12 @@ export const AnalyticsPage: React.FC = () => {
       {visible.rescheduling && (
         <ReschedulingSection rescheduling={analytics.rescheduling} />
       )}
+
+      {/* 8. Annual Focus Heatmap Matrix */}
+      {visible.focusHeatmap && <FocusHeatmapCard />}
+
+      {/* 9. 24-Hour Chronotype & Energy Distribution */}
+      {visible.chronotypeMatrix && <ChronotypeMatrixCard />}
 
       {/* Customizer Modal */}
       <AnalyticsCustomizerModal

@@ -12,6 +12,7 @@ import { timeService } from '@/core/time/timeService';
 import { CreateGoalModal } from '@/components/goals/CreateGoalModal';
 import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import { GoalCard } from '@/components/goals/GoalCard';
+import { RoadmapGanttView } from '@/components/roadmap/RoadmapGanttView';
 import {
   Target,
   Plus,
@@ -20,6 +21,7 @@ import {
   List,
   Pin,
   SlidersHorizontal,
+  Milestone,
 } from 'lucide-react';
 import type { Goal, GoalProgressMode, GoalStatus } from '@/core/types/domain';
 
@@ -27,7 +29,7 @@ export const GoalsPage: React.FC = () => {
   const { t, language } = useI18n();
   const navigate = useNavigate();
   const [tab, setTab] = useState<GoalStatus>('active');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<'grid' | 'list' | 'roadmap'>('grid');
   const [showCreateGoalModal, setShowCreateGoalModal] = useState(false);
   const [showCreateProjectModal, setShowCreateProjectModal] = useState(false);
 
@@ -148,7 +150,7 @@ export const GoalsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5 flex-wrap">
-          {/* View Mode Switcher: Grid | List */}
+          {/* View Mode Switcher: Grid | List | Roadmap */}
           <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 text-xs font-medium">
             <button
               type="button"
@@ -173,6 +175,18 @@ export const GoalsPage: React.FC = () => {
               title={language === 'zh-CN' ? '列表视图' : 'List View'}
             >
               <List className="w-3.5 h-3.5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('roadmap')}
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                viewMode === 'roadmap'
+                  ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-2xs font-semibold'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400'
+              }`}
+              title={language === 'zh-CN' ? '甘特路线图' : 'Roadmap Gantt'}
+            >
+              <Milestone className="w-3.5 h-3.5" />
             </button>
           </div>
 
@@ -248,26 +262,29 @@ export const GoalsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Strategic Goals Section */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
-          <span>{language === 'zh-CN' ? '战略目标 (Goals)' : 'Strategic Goals'}</span>
-          <span className="text-[11px] font-normal text-slate-400">
-            {filteredGoals.length} {language === 'zh-CN' ? '个目标' : 'goals'}
-          </span>
-        </div>
-
-        {filteredGoals.length === 0 ? (
-          <div className="py-16 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
-            <Target className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
-            <p className="font-semibold text-slate-600 dark:text-slate-300">
-              {language === 'zh-CN' ? '当前状态下暂无目标' : 'No goals with this status'}
-            </p>
-            <p>
-              {language === 'zh-CN' ? '点击右上角「新建目标」定义您的核心战略成果。' : 'Define your high-level outcomes to start tracking execution.'}
-            </p>
+      {/* Strategic Goals Section / Roadmap */}
+      {viewMode === 'roadmap' ? (
+        <RoadmapGanttView />
+      ) : (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider px-1">
+            <span>{language === 'zh-CN' ? '战略目标 (Goals)' : 'Strategic Goals'}</span>
+            <span className="text-[11px] font-normal text-slate-400">
+              {filteredGoals.length} {language === 'zh-CN' ? '个目标' : 'goals'}
+            </span>
           </div>
-        ) : viewMode === 'grid' ? (
+
+          {filteredGoals.length === 0 ? (
+            <div className="py-16 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl space-y-2">
+              <Target className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
+              <p className="font-semibold text-slate-600 dark:text-slate-300">
+                {language === 'zh-CN' ? '当前状态下暂无目标' : 'No goals with this status'}
+              </p>
+              <p>
+                {language === 'zh-CN' ? '点击右上角「新建目标」定义您的核心战略成果。' : 'Define your high-level outcomes to start tracking execution.'}
+              </p>
+            </div>
+          ) : viewMode === 'grid' ? (
           /* Grid View for Goals */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {filteredGoals.map((goal) => {
@@ -369,6 +386,7 @@ export const GoalsPage: React.FC = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* Projects Overview Section */}
       <div className="space-y-3 pt-4 border-t border-slate-200/80 dark:border-slate-800">

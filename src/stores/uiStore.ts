@@ -47,6 +47,8 @@ interface UIState {
   // Global surfaces
   commandMenuOpen: boolean;
   instantCaptureOpen: boolean;
+  quickTaskHUDOpen: boolean;
+  quickTaskInitialValue?: string;
   inspectorOpen: boolean;
   inspectorTarget: InspectorTarget | null;
 
@@ -79,6 +81,10 @@ interface UIState {
   openInstantCapture: () => void;
   closeInstantCapture: () => void;
   toggleInstantCapture: () => void;
+
+  openQuickTaskHUD: (initialValue?: string) => void;
+  closeQuickTaskHUD: () => void;
+  toggleQuickTaskHUD: (initialValue?: string) => void;
 
   openInspector: (target: InspectorTarget) => void;
   closeInspector: () => void;
@@ -258,6 +264,7 @@ export const useUIStore = create<UIState>((set, get) => {
 
     commandMenuOpen: false,
     instantCaptureOpen: false,
+    quickTaskHUDOpen: false,
     inspectorOpen: false,
     inspectorTarget: null,
 
@@ -356,6 +363,14 @@ export const useUIStore = create<UIState>((set, get) => {
     openInstantCapture: () => set({ instantCaptureOpen: true }),
     closeInstantCapture: () => set({ instantCaptureOpen: false }),
     toggleInstantCapture: () => set((state) => ({ instantCaptureOpen: !state.instantCaptureOpen })),
+
+    openQuickTaskHUD: (initialValue) => set({ quickTaskHUDOpen: true, quickTaskInitialValue: initialValue }),
+    closeQuickTaskHUD: () => set({ quickTaskHUDOpen: false, quickTaskInitialValue: undefined }),
+    toggleQuickTaskHUD: (initialValue) =>
+      set((state) => ({
+        quickTaskHUDOpen: !state.quickTaskHUDOpen,
+        quickTaskInitialValue: !state.quickTaskHUDOpen ? initialValue : undefined,
+      })),
 
     openInspector: (target) => set({ inspectorOpen: true, inspectorTarget: target }),
     closeInspector: () => set({ inspectorOpen: false, inspectorTarget: null }),

@@ -39,6 +39,8 @@ describe('Settings Components', () => {
 
     render(<ShortcutsSection />);
     expect(screen.getByText(/键盘快捷键速查|Keyboard Shortcuts/)).toBeInTheDocument();
-    expect(screen.getByText(/打开快捷命令面板|Open Command Palette/)).toBeInTheDocument();
+    expect(screen.getByText(/打开快捷命令|Open Command Palette/)).toBeInTheDocument();
+    expect(screen.getByText(/新建任务 HUD|Quick Task HUD/)).toBeInTheDocument();
+    expect(screen.getByText(/闪念快速收集|Instant Raw Inbox Capture/)).toBeInTheDocument();
   });
 });

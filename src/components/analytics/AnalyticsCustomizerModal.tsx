@@ -61,6 +61,16 @@ export const AnalyticsCustomizerModal: React.FC<AnalyticsCustomizerModalProps> =
       title: language === 'zh-CN' ? '任务重排原因与追踪' : 'Rescheduling Reasons & Frequency',
       desc: language === 'zh-CN' ? '客观重排原因分布及调整最频繁的任务' : 'Factual reason breakdown and most-rescheduled tasks',
     },
+    {
+      id: 'focusHeatmap',
+      title: language === 'zh-CN' ? '年度专注热力矩阵' : 'Annual Focus Heatmap Matrix',
+      desc: language === 'zh-CN' ? '365天全景打卡热力图、连续专注天数与习惯连续性追踪' : '365-day focus consistency, annual matrix, and streaks tracking',
+    },
+    {
+      id: 'chronotypeMatrix',
+      title: language === 'zh-CN' ? '24小时精力生物钟分析' : '24-Hour Chronotype Energy Matrix',
+      desc: language === 'zh-CN' ? '按小时统计专注频率分布，智能识别个人黄金高效时段' : 'Hourly focus frequency distribution discovering peak productivity windows',
+    },
   ];
 
   const handleToggleWidget = (id: AnalyticsWidgetId) => {

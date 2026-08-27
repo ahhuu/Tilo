@@ -17,6 +17,7 @@ import {
   History,
   ArrowRight,
   ExternalLink,
+  FileText,
 } from 'lucide-react';
 import type { ReviewRevision, Review } from '@/core/types/domain';
 import type { ReviewReflectionTemplatePayload } from '@/services/templateCommands';
@@ -167,13 +168,32 @@ export const ReviewPage: React.FC = () => {
           </div>
 
           <div className="pt-2 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
-            <span className="text-[11px] text-slate-400 font-mono">
-              {isWeeklyCompleted
-                ? (language === 'zh-CN' ? `已封存版本 Rev #${weeklyReview.currentRevision}` : `Sealed Rev #${weeklyReview.currentRevision}`)
-                : weeklyReview?.status === 'skipped'
-                ? (language === 'zh-CN' ? '本周复盘已跳过' : 'Review was skipped')
-                : (language === 'zh-CN' ? '本周尚未复盘' : 'Pending review')}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-slate-400 font-mono">
+                {isWeeklyCompleted
+                  ? (language === 'zh-CN' ? `已封存版本 Rev #${weeklyReview.currentRevision}` : `Sealed Rev #${weeklyReview.currentRevision}`)
+                  : weeklyReview?.status === 'skipped'
+                  ? (language === 'zh-CN' ? '本周复盘已跳过' : 'Review was skipped')
+                  : (language === 'zh-CN' ? '本周尚未复盘' : 'Pending review')}
+              </span>
+              <button
+                type="button"
+                onClick={async () => {
+                  const { generateWeeklyReviewMarkdown, downloadFile } = await import('@/services/reportExportService');
+                  const md = await generateWeeklyReviewMarkdown(weeklyReview?.id);
+                  downloadFile(`tilo-week-${weekKey}-report.md`, md, 'text/markdown');
+                  addToast({
+                    message: language === 'zh-CN' ? '已成功导出周报 Markdown！' : 'Weekly Markdown exported!',
+                    type: 'success',
+                  });
+                }}
+                className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer flex items-center gap-1"
+                title={language === 'zh-CN' ? '导出本周 Markdown 周报' : 'Export weekly markdown'}
+              >
+                <FileText className="w-3 h-3" />
+                <span>{language === 'zh-CN' ? '导出周报' : 'Export .md'}</span>
+              </button>
+            </div>
             <Button
               size="sm"
               variant={isWeeklyCompleted ? 'outline' : 'primary'}

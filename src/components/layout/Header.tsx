@@ -7,6 +7,8 @@ import { Kbd } from '@/components/ui/Kbd';
 import {
   Search,
   Plus,
+  Inbox,
+  Download,
   Sun,
   Moon,
   Laptop,
@@ -15,13 +17,27 @@ import {
   Minimize2,
   Maximize2,
 } from 'lucide-react';
+import { pwaService } from '@/services/pwaService';
 
 export const Header: React.FC = () => {
   const location = useLocation();
   const { t, language, setLanguage } = useI18n();
+  const [canInstallPWA, setCanInstallPWA] = React.useState(false);
+
+  React.useEffect(() => {
+    return pwaService.subscribe((installable) => {
+      setCanInstallPWA(installable);
+    });
+  }, []);
+
+  const handleInstallClick = async () => {
+    await pwaService.promptInstall();
+  };
+
   const {
     openCommandMenu,
     openInstantCapture,
+    openQuickTaskHUD,
     theme,
     setTheme,
     density,
@@ -88,16 +104,41 @@ export const Header: React.FC = () => {
 
       {/* Right Controls */}
       <div className="flex items-center gap-1.5">
-        {/* Instant Capture button */}
+        {/* Instant Raw Inbox Capture */}
+        <button
+          type="button"
+          onClick={openInstantCapture}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-800 shadow-2xs"
+          title={language === 'zh-CN' ? '闪念快速收集 (Shift + Space)' : 'Instant Raw Inbox Capture (Shift + Space)'}
+        >
+          <Inbox className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+          <span>{language === 'zh-CN' ? '闪念收集' : 'Capture'}</span>
+        </button>
+
+        {/* Natural Language New Task Button */}
         <Button
           size="sm"
           variant="primary"
-          onClick={openInstantCapture}
+          onClick={() => openQuickTaskHUD()}
           className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
+          title={language === 'zh-CN' ? '任务速记 HUD (按 C 键唤出)' : 'Quick Task Capture (Press C)'}
         >
           <Plus className="w-3.5 h-3.5" />
-          <span>{t('capture.title')}</span>
+          <span>{language === 'zh-CN' ? '任务速记' : 'Quick Task'}</span>
         </Button>
+
+        {/* PWA Install Desktop App Button */}
+        {canInstallPWA && (
+          <button
+            type="button"
+            onClick={handleInstallClick}
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer shadow-2xs animate-in fade-in"
+            title={language === 'zh-CN' ? '安装 Tilo 为桌面独立客户端应用' : 'Install Tilo as Standalone Desktop App'}
+          >
+            <Download className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span className="hidden sm:inline">{language === 'zh-CN' ? '安装客户端' : 'Install App'}</span>
+          </button>
+        )}
 
         <div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
 

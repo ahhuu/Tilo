@@ -10,9 +10,12 @@ Tilo provides comprehensive keyboard navigation for high-velocity personal workf
 
 | Windows / Linux | macOS | Action | Scope |
 | :--- | :--- | :--- | :--- |
+| <kbd>C</kbd> | <kbd>C</kbd> | Open **Quick Task HUD** (NLP syntax: `!high`, `#project`, `30m`, `14:00`) | Global (outside text inputs) |
+| <kbd>Shift</kbd> + <kbd>Space</kbd> | <kbd>Shift</kbd> + <kbd>Space</kbd> | Open **Instant Raw Inbox Capture** modal (Zero-friction raw dumping) | Global |
+| <kbd>Ctrl</kbd> + <kbd>V</kbd> | <kbd>Cmd</kbd> + <kbd>V</kbd> | **Smart Clipboard Paste** (Auto-load copied text into Quick Task HUD) | Global (outside text inputs) |
 | <kbd>Ctrl</kbd> + <kbd>K</kbd> | <kbd>Cmd</kbd> + <kbd>K</kbd> | Open Command Menu (Search routes & tasks) | Global anywhere |
+| <kbd>Ctrl</kbd> + <kbd>Z</kbd> | <kbd>Cmd</kbd> + <kbd>Z</kbd> | Global Undo Last Action | Global (outside text inputs) |
 | <kbd>[</kbd> | <kbd>[</kbd> | Toggle Sidebar collapse / expand | Global (outside text inputs) |
-| <kbd>C</kbd> | <kbd>C</kbd> | Open Instant Capture modal | Global (outside text inputs) |
 | <kbd>Esc</kbd> | <kbd>Esc</kbd> | Close active modal, Inspector drawer, or dismiss focus | Global |
 | <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | <kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd> | Cycle keyboard focus forward / backward | Global |
 

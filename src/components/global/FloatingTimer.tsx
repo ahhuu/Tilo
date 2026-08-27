@@ -3,13 +3,21 @@ import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
 import { finishSession, pauseSession, resumeSession } from '@/services/sessionCommands';
 import { completeTask } from '@/services/taskCommands';
-import { Play, Pause, CheckCircle2, MoreHorizontal, Clock } from 'lucide-react';
+import { FocusZenModal } from '@/components/sessions/FocusZenModal';
+import { ambientAudioService } from '@/core/audio/ambientAudioService';
+import { Play, Pause, CheckCircle2, MoreHorizontal, Clock, Maximize2 } from 'lucide-react';
 
 export const FloatingTimer: React.FC = () => {
   const { language } = useI18n();
   const { runningSession, togglePauseSession, setRunningSession, tickSession, addToast } = useUIStore();
   const [showMenu, setShowMenu] = useState(false);
+  const [showZenModal, setShowZenModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Sync ambient audio pause/mute with session pause status
+  useEffect(() => {
+    ambientAudioService.setTimerPaused(Boolean(runningSession?.isPaused));
+  }, [runningSession?.isPaused]);
 
   useEffect(() => {
     if (!runningSession || runningSession.isPaused) return;
@@ -118,10 +126,10 @@ export const FloatingTimer: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-5 right-6 z-40 flex items-center gap-3 px-4 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-900 dark:text-slate-100 rounded-2xl shadow-xl border border-slate-200/90 dark:border-slate-800 animate-in slide-in-from-bottom-5 duration-200 select-none">
-      {/* Circular animated pulse or ring */}
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 animate-in slide-in-from-bottom-5 duration-200 select-none">
+      {/* Circular icon container */}
       <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 shrink-0">
-        <Clock className={`w-4 h-4 text-indigo-600 dark:text-indigo-400 ${!runningSession.isPaused ? 'animate-pulse' : ''}`} />
+        <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
       </div>
 
       {/* Timer & Task Title */}
@@ -131,8 +139,10 @@ export const FloatingTimer: React.FC = () => {
             {formatTimer(runningSession.elapsedSeconds)}
           </span>
           <span
-            className={`inline-block w-1.5 h-1.5 rounded-full ${
-              runningSession.isPaused ? 'bg-amber-500' : 'bg-emerald-500 animate-ping'
+            className={`inline-block w-2 h-2 rounded-full transition-colors ${
+              runningSession.isPaused
+                ? 'bg-amber-500'
+                : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]'
             }`}
           />
         </div>
@@ -170,6 +180,16 @@ export const FloatingTimer: React.FC = () => {
           <span>{language === 'zh-CN' ? '一键完成' : 'Finish session'}</span>
         </button>
 
+        {/* Maximize to Zen Focus Mode */}
+        <button
+          type="button"
+          onClick={() => setShowZenModal(true)}
+          className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          title={language === 'zh-CN' ? '全屏沉浸专注 (番茄钟 & 白噪音)' : 'Full-screen Zen Mode (Pomodoro & Ambient Audio)'}
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
+
         {/* More Actions Menu */}
         <div className="relative" ref={menuRef}>
           <button
@@ -200,6 +220,12 @@ export const FloatingTimer: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* Full-Screen Zen Focus Modal */}
+      <FocusZenModal
+        isOpen={showZenModal}
+        onClose={() => setShowZenModal(false)}
+      />
     </div>
   );
 };

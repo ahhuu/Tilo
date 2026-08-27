@@ -66,4 +66,18 @@ describe('uiStore & Theme/Density/Motion Engine', () => {
     expect(undone).toBe(true);
     expect(useUIStore.getState().toasts.some((t) => t.id === id)).toBe(false);
   });
+
+  it('manages dual channel instant capture and quick task HUD modal states', () => {
+    const { openInstantCapture, closeInstantCapture, openQuickTaskHUD, closeQuickTaskHUD } = useUIStore.getState();
+
+    openInstantCapture();
+    expect(useUIStore.getState().instantCaptureOpen).toBe(true);
+    closeInstantCapture();
+    expect(useUIStore.getState().instantCaptureOpen).toBe(false);
+
+    openQuickTaskHUD();
+    expect(useUIStore.getState().quickTaskHUDOpen).toBe(true);
+    closeQuickTaskHUD();
+    expect(useUIStore.getState().quickTaskHUDOpen).toBe(false);
+  });
 });

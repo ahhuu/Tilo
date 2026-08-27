@@ -12,6 +12,9 @@ import {
   Trash2,
   AlertTriangle,
   Sparkles,
+  FileText,
+  FileSpreadsheet,
+  Table2,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -213,6 +216,127 @@ export const DataBackupSection: React.FC = () => {
               {isImporting
                 ? (language === 'zh-CN' ? '正在校验并还原...' : 'Validating & Restoring...')
                 : (language === 'zh-CN' ? '上传并恢复' : 'Upload & Restore')}
+            </Button>
+          </div>
+        </div>
+      </Card>
+
+      {/* Multi-Dimensional Reports Export */}
+      <Card className="p-5 space-y-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+        <div>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {language === 'zh-CN' ? '多维结构化报表导出 (Markdown & CSV)' : 'Multi-Dimensional Report Exports'}
+          </h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {language === 'zh-CN'
+              ? '将执行沉淀一键转化为结构化 Markdown 周报，或导出标准 CSV 工时台账，方便汇报或导入 Excel 进行二次分析。'
+              : 'Export structured Markdown weekly stories, or raw CSV timesheets for external analysis in Excel.'}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+          {/* 1. Markdown Weekly Report */}
+          <div className="p-4 rounded-xl border border-indigo-100 dark:border-indigo-950 bg-indigo-50/30 dark:bg-indigo-950/20 flex flex-col justify-between space-y-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+                  {language === 'zh-CN' ? 'Markdown 周报导出' : 'Markdown Weekly Story'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                {language === 'zh-CN'
+                  ? '生成包含目标进展、完成任务归类与反思沉淀的标准 Markdown。'
+                  : 'Structured weekly review digest with goals, accomplishments, and learnings.'}
+              </p>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const { generateWeeklyReviewMarkdown, downloadFile } = await import('@/services/reportExportService');
+                const md = await generateWeeklyReviewMarkdown();
+                downloadFile(`tilo-weekly-report-${format(new Date(), 'yyyy-MM-dd')}.md`, md, 'text/markdown');
+                addToast({
+                  message: language === 'zh-CN' ? 'Markdown 周报已成功导出！' : 'Markdown weekly report exported!',
+                  type: 'success',
+                });
+              }}
+              className="w-full text-xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 mr-1" />
+              <span>{language === 'zh-CN' ? '下载 Markdown 周报' : 'Download .md'}</span>
+            </Button>
+          </div>
+
+          {/* 2. CSV Sessions Timesheet */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between space-y-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <FileSpreadsheet className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+                  {language === 'zh-CN' ? '工时明细 CSV 导出' : 'Sessions Timesheet CSV'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                {language === 'zh-CN'
+                  ? '按日期、起止时间、耗时、任务与项目归属导出全部专注会话。'
+                  : 'Detailed focus session records with timestamps and project tracking.'}
+              </p>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const { generateSessionsTimesheetCSV, downloadFile } = await import('@/services/reportExportService');
+                const csv = await generateSessionsTimesheetCSV();
+                downloadFile(`tilo-sessions-timesheet-${format(new Date(), 'yyyy-MM-dd')}.csv`, csv, 'text/csv;charset=utf-8');
+                addToast({
+                  message: language === 'zh-CN' ? '工时明细 CSV 已成功导出！' : 'Timesheet CSV exported!',
+                  type: 'success',
+                });
+              }}
+              className="w-full text-xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 mr-1" />
+              <span>{language === 'zh-CN' ? '下载工时 CSV' : 'Download .csv'}</span>
+            </Button>
+          </div>
+
+          {/* 3. CSV Tasks Audit Register */}
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/30 flex flex-col justify-between space-y-3">
+            <div className="space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Table2 className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
+                <span className="text-xs font-semibold text-slate-900 dark:text-slate-100 block">
+                  {language === 'zh-CN' ? '任务台账明细 CSV' : 'Tasks Register CSV'}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                {language === 'zh-CN'
+                  ? '包含任务状态、优先级、预估 vs 实际耗时、截止日期的完整台账。'
+                  : 'Full task inventory with priority, estimates, and variance.'}
+              </p>
+            </div>
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const { generateTasksAuditCSV, downloadFile } = await import('@/services/reportExportService');
+                const csv = await generateTasksAuditCSV();
+                downloadFile(`tilo-tasks-register-${format(new Date(), 'yyyy-MM-dd')}.csv`, csv, 'text/csv;charset=utf-8');
+                addToast({
+                  message: language === 'zh-CN' ? '任务台账 CSV 已成功导出！' : 'Tasks register CSV exported!',
+                  type: 'success',
+                });
+              }}
+              className="w-full text-xs cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5 mr-1" />
+              <span>{language === 'zh-CN' ? '下载任务 CSV' : 'Download .csv'}</span>
             </Button>
           </div>
         </div>
