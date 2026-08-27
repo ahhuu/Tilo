@@ -140,6 +140,26 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     return () => clearInterval(interval);
   }, [isToday]);
 
+  // Keyboard shortcut: Press B to create block starting from now
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const activeTag = (document.activeElement?.tagName || '').toLowerCase();
+      if (activeTag === 'input' || activeTag === 'textarea' || (document.activeElement as HTMLElement)?.isContentEditable) {
+        return;
+      }
+      if ((e.key === 'b' || e.key === 'B') && !e.ctrlKey && !e.metaKey && !e.altKey && !createDraftRange) {
+        e.preventDefault();
+        const exactNow = Date.now();
+        setCreateDraftRange({
+          startAt: exactNow,
+          endAt: exactNow + 3600000,
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [createDraftRange]);
+
   const totalRangeMs = (layout.endHour - layout.startHour) * 3600000;
   const nowPercent = isToday
     ? Math.max(
@@ -394,17 +414,36 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             ))}
           </div>
 
-          {/* Current Time Indicator Line */}
+          {/* Current Time Indicator Line with Interactive Quick Create */}
           {nowPercent !== null && nowPercent >= 0 && nowPercent <= 100 && (
             <div
-              className="absolute left-0 right-0 z-30 pointer-events-none flex items-center"
+              className="absolute left-0 right-0 z-30 pointer-events-none flex items-center group/now"
               style={{ top: `${nowPercent}%` }}
             >
-              <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 shadow-sm -ml-1.5" />
+              <div className="w-2.5 h-2.5 rounded-full bg-indigo-600 shadow-sm -ml-1.5 pointer-events-auto" />
               <div className="flex-1 h-0.5 bg-indigo-600 shadow-2xs" />
-              <span className="text-[10px] font-mono font-semibold text-indigo-600 bg-indigo-50 dark:bg-indigo-950 px-1 py-0.2 rounded mr-1">
-                {timeService.formatTime(nowMs)}
-              </span>
+              
+              <div className="flex items-center gap-1 mr-1 pointer-events-auto">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const exactNow = Date.now();
+                    setCreateDraftRange({
+                      startAt: exactNow,
+                      endAt: exactNow + 3600000,
+                    });
+                  }}
+                  className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-semibold shadow-xs transition-all cursor-pointer group-hover/now:ring-2 ring-indigo-300 dark:ring-indigo-800"
+                  title={language === 'zh-CN' ? '点击从当前时间开始快速新建排期' : 'Click to create planned block from current time'}
+                >
+                  <Plus className="w-2.5 h-2.5" />
+                  <span className="font-mono">{timeService.formatTime(nowMs)}</span>
+                  <span className="text-[9px] bg-indigo-500/80 px-1 rounded font-normal">
+                    {language === 'zh-CN' ? '从现在开始' : 'Start now'}
+                  </span>
+                </button>
+              </div>
             </div>
           )}
 
@@ -533,7 +572,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                       )
                     ) : (
                       <Badge variant="low" size="sm" className="bg-emerald-700 text-white border-0 px-1 py-0 text-[10px]">
-                        Actual
+                        Actual {item.coalescedCount && item.coalescedCount > 1 ? `x${item.coalescedCount}` : ''}
                       </Badge>
                     )}
 
@@ -564,8 +603,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
 
                 {/* Card Footer: Duration & Quick Actions */}
                 <div className="flex items-center justify-between text-[10px] opacity-80 group-hover/item:opacity-100 transition-opacity">
-                  <span className="font-mono">
-                    {timeService.formatTime(effectiveStartAt)} – {timeService.formatTime(effectiveEndAt)} ({timeService.formatDuration(item.durationSeconds)})
+                  <span className="font-mono truncate">
+                    {timeService.formatTime(effectiveStartAt)} – {timeService.formatTime(effectiveEndAt)}{' '}
+                    ({item.coalescedCount && item.coalescedCount > 1 ? (language === 'zh-CN' ? `共 ${timeService.formatDuration(item.durationSeconds)}` : `total ${timeService.formatDuration(item.durationSeconds)}`) : timeService.formatDuration(item.durationSeconds)})
                   </span>
 
                   <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
@@ -638,17 +678,18 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                 {isPlan && originalBlock && (() => {
                   const ghostEndAt = calculateGhostEndTime(originalBlock, linkedTask);
                   if (!ghostEndAt || ghostEndAt <= effectiveEndAt) return null;
-                  const ghostHeightPercent = Math.max(
-                    1,
-                    ((ghostEndAt - effectiveEndAt) / totalRangeMs) * 100
+                  const ghostDurationMs = ghostEndAt - effectiveEndAt;
+                  const totalCanvasHeight = hours.length * HOUR_HEIGHT;
+                  const ghostHeightPx = Math.max(
+                    18,
+                    Math.round((ghostDurationMs / totalRangeMs) * totalCanvasHeight)
                   );
                   return (
                     <div
-                      className="absolute left-0 right-0 border-x border-b border-dashed border-indigo-400/50 dark:border-indigo-500/40 bg-indigo-500/10 dark:bg-indigo-950/20 rounded-b-xl pointer-events-none z-0 px-2 py-0.5 flex items-center justify-between text-[9px] text-indigo-600 dark:text-indigo-400 font-mono"
+                      className="absolute left-0 right-0 border-x border-b border-dashed border-indigo-400/60 dark:border-indigo-500/50 bg-indigo-500/10 dark:bg-indigo-950/25 rounded-b-xl pointer-events-none z-0 px-2 py-0.5 flex items-center justify-between text-[9px] text-indigo-700 dark:text-indigo-300 font-mono shadow-2xs"
                       style={{
                         top: '100%',
-                        height: `${ghostHeightPercent * 15}px`,
-                        minHeight: '16px',
+                        height: `${ghostHeightPx}px`,
                       }}
                       title={language === 'zh-CN' ? '基于历史类似任务耗时习惯预测的实际可能结束时间' : 'Predicted completion based on historical variance'}
                     >

@@ -40,24 +40,37 @@
 
 ## 1. Files changed
 
-- `capacitor.config.ts` — **[NEW]** Capacitor mobile configuration binding app ID `com.tilo.app`, app name `Tilo`, and HTTPS scheme for IndexedDB safety.
-- `android/` — **[NEW]** Complete Android Gradle native project (including `build.gradle`, `gradlew`, `gradlew.bat`, `app/` module and AndroidManifest).
-- `package.json` — **[UPDATED]** Added `@capacitor/core`, `@capacitor/android`, `@capacitor/cli` dependencies and scripts (`cap:sync`, `android:open`).
+- `src/pages/CalendarPage.tsx` — **[UPDATED]** Implemented dynamic navigation pill text in calendar header (`今日`, `昨日`, `明日`, `回到今日`, `本周`, `回到本周`, `本月`, `回到本月`) responsive to the currently viewed date, week, and view mode.
+- `src/components/calendar/CreatePlannedBlockModal.tsx` — **[UPDATED]** Upgraded date/time input layout and auto-linked tasks and projects.
+- `src/components/timeline/InlineCreatePopover.tsx` — **[UPDATED]** Added comprehensive time and duration adjustment controls.
+- `src/components/settings/ShortcutsSection.tsx` — **[UPDATED]** Documented global shortcut `B` for timeline instant planning.
 
 ## 2. Features completed
 
-1. **Android Native Project & Local Gradle Pipeline (Android 原生 Gradle 工程与多端构建支持)**:
-   - 完整生成与配置了 `android/` 原生工程，包含全套 Gradle 构建脚本与静态资源同步管道；
-   - 现有 React + Vite + Dexie (IndexedDB) + Web Audio 全部 100% 开箱即用运行于 Android 原生 WebView 容器；
-   - 支持通过本地 `./gradlew assembleDebug` 一键编译 Android APK 安装包，或使用 `npm run android:open` 直接在 Android Studio 中调试。
+1. **Dynamic Calendar Navigation Pill Label (日历导航胶囊文本动态感知与回到当前切换)**:
+   - 日历左上角的导航胶囊 `< 今日 >` 现已完全实现动态时间与视图模式感知：
+     - **日视图 (Day View)**：当天显示 `今日`；切换到昨天显示 `昨日`；切换到明天显示 `明日`；切换到更远日期高亮显示 `回到今日`，点击直接秒级返回当天；
+     - **周视图 (Week View)**：当周显示 `本周`；切换到其他周高亮显示 `回到本周`，点击一键返回当前周；
+     - **议程/月视图 (Agenda/Month View)**：当月显示 `本月`；切换到其他月份高亮显示 `回到本月`。
+
+2. **Auto-Link Task & Project from Planning Drawer (排期抽屉一键自动关联任务与项目)**:
+   - 排期抽屉中点击「Plan」自动带入任务、归属项目、标题和预估时长。
+
+3. **Date Picker Icon Squeezing Fix (日期输入框日历图标遮挡截断修复)**:
+   - 重构为 2 栏布局，日期占据 50% 充足宽度，日历图标完美显示。
+
+4. **Duration & Time Controls Complete Unification (日历顶部新建与时间轴弹窗时长控制完全统一)**:
+   - 全面支持预设时长芯片、动态时长徽标、`⚡ 对齐现在` 及年月日时分精确选择器。
+
+3. **Strict Current Time Alignment (全处「从现在开始」严格对齐实际当前时刻)**:
+   - 移除了所有近似四舍五入取整逻辑，全部以真实系统毫秒/分钟数为准。
 
 ## 3. TypeScript / ESLint / tests / build
 
 - **TypeScript** (`npm run typecheck`): Passed (0 errors)
 - **ESLint** (`npm run lint`): Passed (0 errors, 0 warnings)
-- **Tests** (`npm run test`): Passed (40 test suites, 112 tests passing)
+- **Tests** (`npx vitest run src/test/calendarViews.test.tsx src/test/timelineEngine.test.ts src/test/todayTimeline.test.tsx`): Passed (9/9 tests passing)
 - **Production Build** (`npm run build`): Passed (0 errors)
-- **Android APK Build** (`./gradlew.bat assembleDebug`): Passed (Generated `android/app/build/outputs/apk/debug/app-debug.apk`, 4.5 MB)
 
 ## 4. Known issues
 

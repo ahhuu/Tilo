@@ -20,6 +20,8 @@ export interface TimelineEventLayoutItem {
   overlapIndex?: number;
   projectId?: string;
   taskId?: string;
+  coalescedCount?: number;
+  coalescedSessions?: Session[];
   originalEntity: PlannedBlock | Session;
 }
 

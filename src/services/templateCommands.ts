@@ -20,41 +20,41 @@ export interface ReviewReflectionTemplatePayload {
 export const DEFAULT_TASK_TEMPLATES: Array<{ id: string; name: string; payload: TaskTemplatePayload }> = [
   {
     id: 'tmpl-task-std-feature',
-    name: 'Standard Feature Development',
+    name: '标准功能开发',
     payload: {
-      title: 'Develop feature: ',
-      description: 'Implement core functionality and unit tests.',
+      title: '开发功能: ',
+      description: '实现核心功能、编写单元测试并完成类型检查与验证。',
       priority: 'high',
       estimateMinutes: 90,
       progressMode: 'subtasks',
-      subtaskTitles: ['Requirements alignment', 'Core implementation', 'Unit tests & typecheck', 'Manual validation'],
-      tagNames: ['dev', 'feature'],
+      subtaskTitles: ['需求与接口对齐', '核心功能实现', '单元测试与类型检查', '端到端手动验证'],
+      tagNames: ['开发', '功能'],
     },
   },
   {
     id: 'tmpl-task-bug-fix',
-    name: 'Quick Bug Fix & Investigation',
+    name: 'Bug 调查与修复',
     payload: {
-      title: 'Fix issue: ',
-      description: 'Isolate root cause, write regression test, apply patch.',
+      title: '修复问题: ',
+      description: '复现并定位根本原因，编写回归测试，应用修复补丁。',
       priority: 'urgent',
       estimateMinutes: 45,
       progressMode: 'binary',
-      subtaskTitles: ['Reproduce & trace', 'Fix patch', 'Verify E2E'],
-      tagNames: ['bug', 'fix'],
+      subtaskTitles: ['问题复现与链路追踪', '修复补丁实现', '端到端回归验证'],
+      tagNames: ['缺陷', '修复'],
     },
   },
   {
     id: 'tmpl-task-weekly-prep',
-    name: 'Weekly Planning & Prep',
+    name: '周度规划与目标对齐',
     payload: {
-      title: 'Weekly Sprint & Goal Alignment',
-      description: 'Review last week metrics, choose top 3 focuses, block calendar time.',
+      title: '周度冲刺与目标对齐',
+      description: '回顾上周指标，选定 Top 3 核心焦点，在日历中排定深度专注块。',
       priority: 'medium',
       estimateMinutes: 30,
       progressMode: 'subtasks',
-      subtaskTitles: ['Review inbox & triage', 'Select top weekly focuses', 'Schedule primary blocks in calendar'],
-      tagNames: ['planning', 'weekly'],
+      subtaskTitles: ['整理并分类收件箱', '选定本周核心焦点目标', '在日程表中规划核心时间块'],
+      tagNames: ['规划', '周度'],
     },
   },
 ];
@@ -62,25 +62,25 @@ export const DEFAULT_TASK_TEMPLATES: Array<{ id: string; name: string; payload: 
 export const DEFAULT_REFLECTION_TEMPLATES: Array<{ id: string; name: string; payload: ReviewReflectionTemplatePayload }> = [
   {
     id: 'tmpl-refl-daily-close',
-    name: 'Standard Daily Close Reflection',
+    name: '标准每日复盘反思',
     payload: {
       type: 'daily',
       promptQuestions: [
-        'What was the primary high-leverage accomplishment today?',
-        'Where did friction or unexpected interruption happen?',
-        'What is the clear priority for tomorrow morning?',
+        '今天最核心的高杠杆产出是什么？',
+        '在哪里遇到了阻碍、卡点或意外打扰？',
+        '明天早晨最明确的第一优先级是什么？',
       ],
     },
   },
   {
     id: 'tmpl-refl-weekly-review',
-    name: 'Standard Weekly Review Story',
+    name: '标准每周复盘叙事',
     payload: {
       type: 'weekly',
       promptQuestions: [
-        'How did actual execution align with the planned weekly focus goals?',
-        'What were the primary drivers of planning accuracy or variance?',
-        'What adjustments will be made for next week’s capacity and commitments?',
+        '本周实际执行与周度焦点目标的契合度如何？',
+        '计划准确率或产生偏差的主要驱动因素是什么？',
+        '下周的时间容量与承诺需要做出哪些调整？',
       ],
       selectedMetrics: ['timeAccuracy', 'plannedVsActual', 'completionRate'],
     },
@@ -113,7 +113,7 @@ export async function ensureTemplatesInitialized(database: TiloDB = db): Promise
   for (const t of DEFAULT_TASK_TEMPLATES) {
     const existing = await database.templates.get(t.id);
     if (!existing) {
-      // Check if one with same name exists
+      // Check if one with same name or old English name exists
       const byName = allTemplates.find((x) => x.kind === 'task' && x.name === t.name);
       if (!byName) {
         await database.templates.put({

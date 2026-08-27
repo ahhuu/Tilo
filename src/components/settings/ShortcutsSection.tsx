@@ -22,6 +22,11 @@ export const ShortcutsSection: React.FC = () => {
           tag: language === 'zh-CN' ? '闪念通道' : 'Inbox Channel',
         },
         {
+          keys: ['B'],
+          desc: language === 'zh-CN' ? '时间轴快速新建排期块 (严格从当前真实时刻开始)' : 'Quick Block Plan on Timeline (Strictly start time block from now)',
+          tag: language === 'zh-CN' ? '时间轴' : 'Timeline',
+        },
+        {
           keys: ['Ctrl', 'V'],
           desc: language === 'zh-CN' ? '全局智能识别剪贴板文本并载入任务速记' : 'Smart paste text from clipboard into Quick Task HUD',
         },

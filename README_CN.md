@@ -9,7 +9,7 @@
 
 ## 发行状态 (Release Status)
 
-**当前正式版本**: `Tilo v1.1.0`  
+**当前正式版本**: `Tilo v1.1.1`  
 **状态**: `Production Ready`（桌面 Web 端、PWA 独立客户端与 Android APK 移动端全量验证通过）
 
 ---

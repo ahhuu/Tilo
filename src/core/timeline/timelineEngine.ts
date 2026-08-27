@@ -47,19 +47,32 @@ export function calculateTimelineLayout(options: CalculateLayoutOptions): Timeli
     includeBackgroundInMain = false,
   } = options;
 
-  // Auto-expand hours if blocks fall outside default range
-  let startHour = options.startHour ?? 7;
-  let endHour = options.endHour ?? 21;
+  const dayStartMs = startOfDayMs;
+  const dayEndMs = startOfDayMs + 86400000;
+
+  // Filter items to only those belonging to or intersecting this specific day
+  const dayPlannedBlocks = plannedBlocks.filter(
+    (b) => !b.deletedAt && b.startAt < dayEndMs && b.endAt > dayStartMs
+  );
+  const daySessions = sessions.filter((s) => {
+    if (s.deletedAt) return false;
+    const sessionEndAt = s.endedAt || s.startedAt + Math.max(60000, (s.activeDurationSeconds || 0) * 1000);
+    return s.startedAt < dayEndMs && sessionEndAt > dayStartMs;
+  });
+
+  // Auto-expand hours if day blocks fall outside default range (default 6:00 to 23:00)
+  let startHour = options.startHour ?? 6;
+  let endHour = options.endHour ?? 23;
 
   const allTimestamps: number[] = [];
   if (filter !== 'actual') {
-    plannedBlocks.forEach((b) => {
+    dayPlannedBlocks.forEach((b) => {
       allTimestamps.push(b.startAt, b.endAt);
     });
   }
   if (filter !== 'plan') {
-    sessions.forEach((s) => {
-      allTimestamps.push(s.startedAt, s.endedAt || s.startedAt + s.activeDurationSeconds * 1000);
+    daySessions.forEach((s) => {
+      allTimestamps.push(s.startedAt, s.endedAt || s.startedAt + (s.activeDurationSeconds || 0) * 1000);
     });
   }
 
@@ -69,8 +82,8 @@ export function calculateTimelineLayout(options: CalculateLayoutOptions): Timeli
     const minHour = new Date(minTimestamp).getHours();
     const maxHour = new Date(maxTimestamp).getHours() + 1;
 
-    if (minHour < startHour) startHour = Math.max(0, minHour - 1);
-    if (maxHour > endHour) endHour = Math.min(24, maxHour + 1);
+    if (minHour < startHour) startHour = Math.max(0, minHour);
+    if (maxHour > endHour) endHour = Math.min(24, maxHour);
   }
 
   const rangeStartMs = startOfDayMs + startHour * 3600000;
@@ -85,14 +98,13 @@ export function calculateTimelineLayout(options: CalculateLayoutOptions): Timeli
 
   // 1. Process Planned Blocks
   if (filter === 'all' || filter === 'plan') {
-    plannedBlocks.forEach((block) => {
-      if (block.deletedAt) return;
+    dayPlannedBlocks.forEach((block) => {
       const durationSeconds = Math.max(60, Math.round((block.endAt - block.startAt) / 1000));
       totalPlannedSeconds += durationSeconds;
 
       // Position relative to timeline range
       const clampedStart = Math.max(rangeStartMs, block.startAt);
-      const clampedEnd = Math.min(rangeEndMs, Math.max(block.startAt + 60000, block.endAt));
+      const clampedEnd = Math.min(rangeEndMs, Math.max(clampedStart + 60000, block.endAt));
       const topPercent = Math.max(0, ((clampedStart - rangeStartMs) / totalRangeMs) * 100);
       const heightPercent = Math.max(2.5, ((clampedEnd - clampedStart) / totalRangeMs) * 100);
 
@@ -116,62 +128,141 @@ export function calculateTimelineLayout(options: CalculateLayoutOptions): Timeli
     });
   }
 
-  // 2. Process Actual Sessions
+  // 2. Process Actual Sessions (with Smart Session Coalescing for same-task micro-sessions)
   if (filter === 'all' || filter === 'actual') {
-    sessions.forEach((session) => {
+    // Sort chronologically
+    const sortedSessions = [...daySessions].sort((a, b) => a.startedAt - b.startedAt);
+
+    // Group adjacent or overlapping sessions for the same task/title within 15 mins
+    const sessionGroups: Session[][] = [];
+    sortedSessions.forEach((session) => {
       const isBackground = session.kind === 'background';
-      const durationSeconds = session.activeDurationSeconds;
-      if (!isBackground) {
-        totalActualSeconds += durationSeconds;
+      if (isBackground && !includeBackgroundInMain) {
+        // Background sessions are handled separately
+        return;
       }
 
-      const sessionEndAt =
-        session.endedAt || session.startedAt + Math.max(60000, durationSeconds * 1000);
-      const clampedStart = Math.max(rangeStartMs, session.startedAt);
-      const clampedEnd = Math.min(rangeEndMs, Math.max(session.startedAt + 60000, sessionEndAt));
+      if (sessionGroups.length === 0) {
+        sessionGroups.push([session]);
+        return;
+      }
+
+      const lastGroup = sessionGroups[sessionGroups.length - 1];
+      const lastSession = lastGroup[lastGroup.length - 1];
+
+      const isSameTask =
+        (session.taskId && lastSession.taskId && session.taskId === lastSession.taskId) ||
+        (!session.taskId && !lastSession.taskId && session.title === lastSession.title && session.projectId === lastSession.projectId);
+
+      const lastEndMs =
+        lastSession.endedAt ||
+        lastSession.startedAt + Math.max(60000, (lastSession.activeDurationSeconds || 0) * 1000);
+
+      // Coalesce if same task/title and within 15 minutes of each other
+      const isCloseInTime = session.startedAt <= lastEndMs + 15 * 60 * 1000;
+
+      if (isSameTask && isCloseInTime) {
+        lastGroup.push(session);
+      } else {
+        sessionGroups.push([session]);
+      }
+    });
+
+    // Also collect standalone background sessions
+    if (!includeBackgroundInMain) {
+      sortedSessions
+        .filter((s) => s.kind === 'background')
+        .forEach((session) => {
+          const durationSeconds = session.activeDurationSeconds;
+          const sessionEndAt =
+            session.endedAt || session.startedAt + Math.max(60000, durationSeconds * 1000);
+          const clampedStart = Math.max(rangeStartMs, session.startedAt);
+          const clampedEnd = Math.min(rangeEndMs, Math.max(clampedStart + 60000, sessionEndAt));
+          const topPercent = Math.max(0, ((clampedStart - rangeStartMs) / totalRangeMs) * 100);
+          const heightPercent = Math.max(2.5, ((clampedEnd - clampedStart) / totalRangeMs) * 100);
+
+          rawBgItems.push({
+            id: session.id,
+            itemType: 'session',
+            sessionKind: session.kind,
+            title: session.title || 'Background Session',
+            startAt: session.startedAt,
+            endAt: sessionEndAt,
+            durationSeconds,
+            topPercent,
+            heightPercent,
+            leftOffsetPercent: 0,
+            widthPercent: 100,
+            isOverlapping: false,
+            projectId: session.projectId,
+            taskId: session.taskId,
+            originalEntity: session,
+          });
+        });
+    }
+
+    // Convert groups into layout items
+    sessionGroups.forEach((group) => {
+      const primary = group[0];
+      const totalGroupActiveSeconds = group.reduce((acc, s) => acc + (s.activeDurationSeconds || 0), 0);
+      totalActualSeconds += totalGroupActiveSeconds;
+
+      const groupStartAt = Math.min(...group.map((s) => s.startedAt));
+      const groupEndAt = Math.max(
+        ...group.map((s) => s.endedAt || s.startedAt + Math.max(60000, (s.activeDurationSeconds || 0) * 1000))
+      );
+
+      const clampedStart = Math.max(rangeStartMs, groupStartAt);
+      const clampedEnd = Math.min(rangeEndMs, Math.max(clampedStart + 60000, groupEndAt));
       const topPercent = Math.max(0, ((clampedStart - rangeStartMs) / totalRangeMs) * 100);
       const heightPercent = Math.max(2.5, ((clampedEnd - clampedStart) / totalRangeMs) * 100);
 
+      const isCoalesced = group.length > 1;
+
       const layoutItem: TimelineEventLayoutItem = {
-        id: session.id,
+        id: isCoalesced ? `coalesced-${primary.id}-${group.length}` : primary.id,
         itemType: 'session',
-        sessionKind: session.kind,
-        title: session.title || (isBackground ? 'Background Session' : 'Active Session'),
-        startAt: session.startedAt,
-        endAt: sessionEndAt,
-        durationSeconds,
+        sessionKind: primary.kind,
+        title: primary.title || (primary.kind === 'background' ? 'Background Session' : 'Active Session'),
+        startAt: groupStartAt,
+        endAt: groupEndAt,
+        durationSeconds: totalGroupActiveSeconds,
         topPercent,
         heightPercent,
         leftOffsetPercent: 0,
         widthPercent: 100,
         isOverlapping: false,
-        projectId: session.projectId,
-        taskId: session.taskId,
-        originalEntity: session,
+        coalescedCount: group.length,
+        coalescedSessions: group,
+        projectId: primary.projectId,
+        taskId: primary.taskId,
+        originalEntity: primary,
       };
 
-      if (isBackground && !includeBackgroundInMain) {
-        rawBgItems.push(layoutItem);
-      } else {
-        rawMainItems.push(layoutItem);
-      }
+      rawMainItems.push(layoutItem);
     });
   }
 
-  // Sort items chronologically
+  // Sort items chronologically by start time, then end time
   rawMainItems.sort((a, b) => a.startAt - b.startAt || a.endAt - b.endAt);
 
-  // 3. Resolve Overlaps and Horizontal Column Stacking
+  // 3. Resolve Overlaps and Column Partitioning (Greedy Interval Scheduling with visual minimum collision buffer)
   let hasOverlaps = false;
   const clusters: TimelineEventLayoutItem[][] = [];
 
   rawMainItems.forEach((item) => {
     let placedInCluster = false;
+    const itemVisualStart = item.startAt;
+    const itemVisualEnd = Math.max(item.endAt, item.startAt + 15 * 60 * 1000); // minimum 15m collision window
+
     for (const cluster of clusters) {
-      // Check if item overlaps with any item in the cluster
-      const overlapsWithCluster = cluster.some(
-        (c) => item.startAt < c.endAt && item.endAt > c.startAt
-      );
+      // Check if item overlaps visually with any existing item in this cluster
+      const overlapsWithCluster = cluster.some((c) => {
+        const cVisualStart = c.startAt;
+        const cVisualEnd = Math.max(c.endAt, c.startAt + 15 * 60 * 1000);
+        return itemVisualStart < cVisualEnd && itemVisualEnd > cVisualStart;
+      });
+
       if (overlapsWithCluster) {
         cluster.push(item);
         placedInCluster = true;
@@ -187,13 +278,32 @@ export function calculateTimelineLayout(options: CalculateLayoutOptions): Timeli
   clusters.forEach((cluster) => {
     if (cluster.length > 1) {
       hasOverlaps = true;
-      const count = cluster.length;
-      cluster.forEach((item, index) => {
-        item.isOverlapping = true;
-        item.overlapGroupSize = count;
-        item.overlapIndex = index;
-        item.widthPercent = Math.max(30, 100 / count);
-        item.leftOffsetPercent = (index / count) * 100;
+      cluster.sort((a, b) => a.startAt - b.startAt || a.endAt - b.endAt);
+
+      const columns: number[] = []; // Stores the latest visual endAt of each column
+      cluster.forEach((item) => {
+        const itemVisualEnd = Math.max(item.endAt, item.startAt + 15 * 60 * 1000);
+        let placed = false;
+        for (let colIdx = 0; colIdx < columns.length; colIdx++) {
+          if (columns[colIdx] <= item.startAt) {
+            columns[colIdx] = itemVisualEnd;
+            item.overlapIndex = colIdx;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          item.overlapIndex = columns.length;
+          columns.push(itemVisualEnd);
+        }
+      });
+
+      const totalColumns = columns.length;
+      cluster.forEach((item) => {
+        item.isOverlapping = totalColumns > 1;
+        item.overlapGroupSize = totalColumns;
+        item.widthPercent = 100 / totalColumns;
+        item.leftOffsetPercent = ((item.overlapIndex ?? 0) / totalColumns) * 100;
       });
     }
   });

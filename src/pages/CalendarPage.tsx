@@ -42,7 +42,15 @@ export const CalendarPage: React.FC = () => {
   } = useUIStore();
 
   const [currentDateMs, setCurrentDateMs] = useState<number>(() => Date.now());
-  const [modalSlot, setModalSlot] = useState<{ dateStr: string; hour: number } | null>(null);
+  const [modalSlot, setModalSlot] = useState<{
+    dateStr: string;
+    hour: number;
+    startTime?: string;
+    endTime?: string;
+    taskId?: string;
+    projectId?: string;
+    title?: string;
+  } | null>(null);
   const [filter, setFilter] = useState<TimelineFilter>('all');
   const [allocationDrawerOpen, setAllocationDrawerOpen] = useState(false);
 
@@ -95,13 +103,14 @@ export const CalendarPage: React.FC = () => {
 
   const handleCreateBlock = async (params: {
     title: string;
+    type?: import('@/core/types/domain').PlannedBlockType;
     startAt: number;
     endAt: number;
     taskId?: string;
     projectId?: string;
   }) => {
     await createPlannedBlock({
-      type: 'task',
+      type: params.type || 'task',
       title: params.title,
       startAt: params.startAt,
       endAt: params.endAt,
@@ -148,8 +157,26 @@ export const CalendarPage: React.FC = () => {
     });
   };
 
-  const handlePlanTaskFromDrawer = () => {
-    setModalSlot({ dateStr: logicalDate, hour: 10 });
+  const handlePlanTaskFromDrawer = (task: Task) => {
+    const isToday = logicalDate === timeService.getLogicalDate();
+    const now = new Date();
+    const nowH = now.getHours().toString().padStart(2, '0');
+    const nowM = now.getMinutes().toString().padStart(2, '0');
+    const durationMins = task.estimateMinutes || 60;
+    const startTotalMins = isToday ? now.getHours() * 60 + now.getMinutes() : 9 * 60;
+    const endMinutesTotal = (startTotalMins + durationMins) % 1440;
+    const endH = Math.floor(endMinutesTotal / 60).toString().padStart(2, '0');
+    const endM = (endMinutesTotal % 60).toString().padStart(2, '0');
+
+    setModalSlot({
+      dateStr: logicalDate,
+      hour: isToday ? now.getHours() : 9,
+      startTime: isToday ? `${nowH}:${nowM}` : '09:00',
+      endTime: `${endH}:${endM}`,
+      taskId: task.id,
+      projectId: task.projectId,
+      title: task.title,
+    });
   };
 
   return (
@@ -160,6 +187,7 @@ export const CalendarPage: React.FC = () => {
         <div className="p-4 border-b border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 sticky top-0 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs z-10 select-none">
           {/* Navigation & Title */}
           <div className="flex items-center gap-3">
+            {/* Navigation Pill Group */}
             <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
               <button
                 type="button"
@@ -169,14 +197,69 @@ export const CalendarPage: React.FC = () => {
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleToday}
-                className="h-6 px-2 text-xs font-semibold cursor-pointer"
-              >
-                {t('today.title')}
-              </Button>
+              {(() => {
+                const todayLogical = timeService.getLogicalDate();
+                let label = language === 'zh-CN' ? '今日' : 'Today';
+                let isCurrent = true;
+
+                if (calendarViewMode === 'day') {
+                  if (logicalDate === todayLogical) {
+                    label = language === 'zh-CN' ? '今日' : 'Today';
+                    isCurrent = true;
+                  } else {
+                    isCurrent = false;
+                    const yesterdayLogical = timeService.getLogicalDate(Date.now() - 86400000);
+                    const tomorrowLogical = timeService.getLogicalDate(Date.now() + 86400000);
+                    if (logicalDate === yesterdayLogical) {
+                      label = language === 'zh-CN' ? '昨日' : 'Yesterday';
+                    } else if (logicalDate === tomorrowLogical) {
+                      label = language === 'zh-CN' ? '明日' : 'Tomorrow';
+                    } else {
+                      label = language === 'zh-CN' ? '回到今日' : 'Today';
+                    }
+                  }
+                } else if (calendarViewMode === 'week') {
+                  const currentWeekKey = timeService.getWeekKey(currentDateMs);
+                  const thisWeekKey = timeService.getWeekKey(Date.now());
+                  if (currentWeekKey === thisWeekKey) {
+                    label = language === 'zh-CN' ? '本周' : 'This Week';
+                    isCurrent = true;
+                  } else {
+                    label = language === 'zh-CN' ? '回到本周' : 'Back to Week';
+                    isCurrent = false;
+                  }
+                } else {
+                  const currentMonth = format(new Date(currentDateMs), 'yyyy-MM');
+                  const thisMonth = format(new Date(), 'yyyy-MM');
+                  if (currentMonth === thisMonth) {
+                    label = language === 'zh-CN' ? '本月' : 'This Month';
+                    isCurrent = true;
+                  } else {
+                    label = language === 'zh-CN' ? '回到本月' : 'Back to Month';
+                    isCurrent = false;
+                  }
+                }
+
+                return (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={handleToday}
+                    className={`h-6 px-2 text-xs font-semibold cursor-pointer transition-colors ${
+                      !isCurrent
+                        ? 'text-indigo-600 dark:text-indigo-400 font-bold bg-white/60 dark:bg-slate-700/60 shadow-2xs'
+                        : 'text-slate-700 dark:text-slate-200'
+                    }`}
+                    title={
+                      !isCurrent
+                        ? (language === 'zh-CN' ? '点击返回当前时间' : 'Click to return to today')
+                        : undefined
+                    }
+                  >
+                    {label}
+                  </Button>
+                );
+              })()}
               <button
                 type="button"
                 onClick={handleNext}
@@ -280,7 +363,19 @@ export const CalendarPage: React.FC = () => {
             <Button
               size="sm"
               variant="primary"
-              onClick={() => setModalSlot({ dateStr: logicalDate, hour: 9 })}
+              onClick={() => {
+                const isToday = logicalDate === timeService.getLogicalDate();
+                const now = new Date();
+                const nowH = now.getHours().toString().padStart(2, '0');
+                const nowM = now.getMinutes().toString().padStart(2, '0');
+                const endH = ((now.getHours() + 1) % 24).toString().padStart(2, '0');
+                setModalSlot({
+                  dateStr: logicalDate,
+                  hour: now.getHours(),
+                  startTime: isToday ? `${nowH}:${nowM}` : '09:00',
+                  endTime: isToday ? `${endH}:${nowM}` : '10:00',
+                });
+              }}
               className="h-7 text-xs gap-1 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -291,28 +386,41 @@ export const CalendarPage: React.FC = () => {
 
         {/* Selected View Rendering */}
         <div className="flex-1 overflow-hidden flex flex-col">
-          {calendarViewMode === 'day' && (
-            <DayView
-              dateStr={logicalDate}
-              plannedBlocks={plannedBlocks}
-              sessions={sessions}
-              tasks={allTasks}
-              projects={allProjects}
-              filter={filter}
-              onFilterChange={setFilter}
-              capacityConfig={capacityConfig}
-              onUpdateCapacityOverride={(d, mins) =>
-                setCapacityConfig((prev) => ({
-                  ...prev,
-                  overrides: { ...prev.overrides, [d]: mins },
-                }))
-              }
-              onInspectTask={handleInspectTask}
-              onInspectBlock={handleInspectBlock}
-              onInspectSession={handleInspectSession}
-              onDeleteBlock={handleDeleteBlock}
-            />
-          )}
+          {calendarViewMode === 'day' && (() => {
+            const dayStartMs = timeService.getStartOfLogicalDay(logicalDate);
+            const dayEndMs = timeService.getEndOfLogicalDay(logicalDate);
+            const dayPlannedBlocks = plannedBlocks.filter(
+              (b) => !b.deletedAt && b.startAt < dayEndMs && b.endAt > dayStartMs
+            );
+            const daySessions = sessions.filter((s) => {
+              if (s.deletedAt) return false;
+              const sessionEndAt = s.endedAt || s.startedAt + Math.max(60000, (s.activeDurationSeconds || 0) * 1000);
+              return s.startedAt < dayEndMs && sessionEndAt > dayStartMs;
+            });
+
+            return (
+              <DayView
+                dateStr={logicalDate}
+                plannedBlocks={dayPlannedBlocks}
+                sessions={daySessions}
+                tasks={allTasks}
+                projects={allProjects}
+                filter={filter}
+                onFilterChange={setFilter}
+                capacityConfig={capacityConfig}
+                onUpdateCapacityOverride={(d, mins) =>
+                  setCapacityConfig((prev) => ({
+                    ...prev,
+                    overrides: { ...prev.overrides, [d]: mins },
+                  }))
+                }
+                onInspectTask={handleInspectTask}
+                onInspectBlock={handleInspectBlock}
+                onInspectSession={handleInspectSession}
+                onDeleteBlock={handleDeleteBlock}
+              />
+            );
+          })()}
 
           {calendarViewMode === 'week' && (
             <WeekView
@@ -364,6 +472,11 @@ export const CalendarPage: React.FC = () => {
         <CreatePlannedBlockModal
           initialDate={modalSlot.dateStr}
           initialStartHour={modalSlot.hour}
+          initialStartTime={modalSlot.startTime}
+          initialEndTime={modalSlot.endTime}
+          initialTaskId={modalSlot.taskId}
+          initialProjectId={modalSlot.projectId}
+          initialTitle={modalSlot.title}
           tasks={allTasks.filter((t) => !t.deletedAt && t.statusId !== 'ws-task-done')}
           projects={allProjects.filter((p) => !p.deletedAt)}
           onSave={handleCreateBlock}
