@@ -53,4 +53,44 @@ describe('Goal Progress Calculation Engine', () => {
     await completeTask(t1.id, testDb);
     expect(await calculateGoalProgress(goal.id, testDb)).toBe(50);
   });
+
+  it('automatically clears weekly focus when goal is marked completed or archived', async () => {
+    const goal = await createGoal({ title: 'Focus Goal', isWeeklyFocus: true }, testDb);
+    await testDb.weeklyFocus.put({
+      id: 'wf-1',
+      workspaceId: goal.workspaceId,
+      weekKey: '2026-W35',
+      goalId: goal.id,
+      rank: 0,
+    });
+
+    expect((await testDb.goals.get(goal.id))?.isWeeklyFocus).toBe(true);
+    expect(await testDb.weeklyFocus.where('goalId').equals(goal.id).count()).toBe(1);
+
+    // Marking as completed should automatically clear isWeeklyFocus and weeklyFocus table entry
+    await updateGoal(goal.id, { status: 'completed' }, testDb);
+    const completedGoal = await testDb.goals.get(goal.id);
+    expect(completedGoal?.isWeeklyFocus).toBe(false);
+    expect(completedGoal?.status).toBe('completed');
+    expect(await testDb.weeklyFocus.where('goalId').equals(goal.id).count()).toBe(0);
+    expect(await calculateGoalProgress(goal.id, testDb)).toBe(100);
+
+    // Reset to active and set weekly focus again
+    await updateGoal(goal.id, { status: 'active', isWeeklyFocus: true }, testDb);
+    await testDb.weeklyFocus.put({
+      id: 'wf-2',
+      workspaceId: goal.workspaceId,
+      weekKey: '2026-W35',
+      goalId: goal.id,
+      rank: 0,
+    });
+
+    // Marking as archived should also automatically clear isWeeklyFocus and weeklyFocus table entry
+    await updateGoal(goal.id, { status: 'archived' }, testDb);
+    const archivedGoal = await testDb.goals.get(goal.id);
+    expect(archivedGoal?.isWeeklyFocus).toBe(false);
+    expect(archivedGoal?.status).toBe('archived');
+    expect(await testDb.weeklyFocus.where('goalId').equals(goal.id).count()).toBe(0);
+    expect(await calculateGoalProgress(goal.id, testDb)).toBe(100);
+  });
 });

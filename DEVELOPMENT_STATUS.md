@@ -40,32 +40,31 @@
 
 ## 1. Files changed
 
-- `src/pages/CalendarPage.tsx` — **[UPDATED]** Implemented dynamic navigation pill text in calendar header (`今日`, `昨日`, `明日`, `回到今日`, `本周`, `回到本周`, `本月`, `回到本月`) responsive to the currently viewed date, week, and view mode.
-- `src/components/calendar/CreatePlannedBlockModal.tsx` — **[UPDATED]** Upgraded date/time input layout and auto-linked tasks and projects.
-- `src/components/timeline/InlineCreatePopover.tsx` — **[UPDATED]** Added comprehensive time and duration adjustment controls.
-- `src/components/settings/ShortcutsSection.tsx` — **[UPDATED]** Documented global shortcut `B` for timeline instant planning.
+- `src/services/goalCommands.ts` — **[UPDATED]** Automatically clear `isWeeklyFocus = false` and delete corresponding `weeklyFocus` table records whenever a goal's status changes to `completed` or `archived`.
+- `src/components/goals/GoalCard.tsx` — **[UPDATED]** Implemented `isEffectivelyWeeklyFocus` guard ensuring goals with `completed` or `archived` status never display as `本周聚焦`.
+- `src/components/goals/GoalInspector.tsx` — **[UPDATED]** Added guards in `handleStatusChange` and `handleToggleWeeklyFocus` to automatically deactivate weekly focus when completing/archiving, and disable the weekly focus toggle for completed/archived goals with hint text.
+- `src/pages/GoalsPage.tsx` — **[UPDATED]** Added self-healing startup sweep to purge any legacy completed/archived goals from `weeklyFocus` table and reset `isWeeklyFocus`, prevented setting completed/archived goals as weekly focus, and filtered `weeklyGoalIds`.
+- `src/pages/TodayPage.tsx` — **[UPDATED]** Filtered out both `completed` and `archived` goals from Today page's active weekly focus cards.
+- `src/test/goalProgress.test.ts` — **[UPDATED]** Added automated unit test coverage verifying that changing status to `completed` or `archived` automatically unsets `isWeeklyFocus` and purges `weeklyFocus` table entries.
+- `src/components/task/TaskInspector.tsx` — **[UPDATED]** Enhanced the task scheduling section with full support for specific time slot management (`具体时段`), allowing users to directly set, adjust, or remove start & end times (`HH:mm`), snap to current time (`⚡`), adjust with quick duration chips (`15m`~`2h`), and automatically sync with timeline planned blocks.
+- `src/components/timeline/TimelineView.tsx` — **[UPDATED]** Implemented intelligent adaptive layout for short timeline blocks (`<= 35m`, like 15m / 30m) using compact single-row inline styling, eliminating text crowding and preventing overlap with the bottom ghost timebox prediction extension (`预测延至`).
 
 ## 2. Features completed
 
-1. **Dynamic Calendar Navigation Pill Label (日历导航胶囊文本动态感知与回到当前切换)**:
-   - 日历左上角的导航胶囊 `< 今日 >` 现已完全实现动态时间与视图模式感知：
-     - **日视图 (Day View)**：当天显示 `今日`；切换到昨天显示 `昨日`；切换到明天显示 `明日`；切换到更远日期高亮显示 `回到今日`，点击直接秒级返回当天；
-     - **周视图 (Week View)**：当周显示 `本周`；切换到其他周高亮显示 `回到本周`，点击一键返回当前周；
-     - **议程/月视图 (Agenda/Month View)**：当月显示 `本月`；切换到其他月份高亮显示 `回到本月`。
+1. **Auto Un-focus on Goal Completion/Archive (完成或归档目标自动解除本周聚焦)**:
+   - **数据层自动解除与联动清理**：在 `updateGoal` 底层事务中，当目标状态变为 `completed`（已完成）或 `archived`（已归档）时，自动将 `isWeeklyFocus` 置为 `false`，并同步清空 `weeklyFocus` 关联表数据；
+   - **UI 展示严格拦截**：在 `GoalCard`、`TodayPage`、`GoalsPage` 以及 `GoalInspector` 中全链路增加了有效性防线，已完成/已归档的目标不再显示「本周聚焦」徽章，且不可再勾选设为聚焦；
+   - **历史脏数据自愈扫描**：在目标管理页加载时自动运行一次自愈清理（Self-healing sweep），修复任何历史残留的处于已完成/已归档但仍带有聚焦标记的目标。
 
-2. **Auto-Link Task & Project from Planning Drawer (排期抽屉一键自动关联任务与项目)**:
-   - 排期抽屉中点击「Plan」自动带入任务、归属项目、标题和预估时长。
-
-3. **Date Picker Icon Squeezing Fix (日期输入框日历图标遮挡截断修复)**:
-   - 重构为 2 栏布局，日期占据 50% 充足宽度，日历图标完美显示。
-
-4. **Duration & Time Controls Complete Unification (日历顶部新建与时间轴弹窗时长控制完全统一)**:
-   - 全面支持预设时长芯片、动态时长徽标、`⚡ 对齐现在` 及年月日时分精确选择器。
-
-3. **Strict Current Time Alignment (全处「从现在开始」严格对齐实际当前时刻)**:
-   - 移除了所有近似四舍五入取整逻辑，全部以真实系统毫秒/分钟数为准。
+2. **Specific Time Slot Scheduling in Task Inspector (任务属性支持具体时间段排期与时间轴联动)**:
+   - **具体时段一键排期**：在任务属性检视器中，不仅能选排期日期，还可以直接点击「`+ 设定具体时间段 (排入时间轴)`」直接生成对应日期的时间轴计划时间块；
+   - **时间精准微调与对齐**：支持直接编辑开始时间（`startAt`）与结束时间（`endAt`），并提供 `⚡ 从当前时刻开始`（毫秒级精准对齐当前实际系统时间）与快速时长芯片（`15m`、`30m`、`45m`、`60m`、`90m`、`2h`）；
+   - **双向联动与撤销**：更改任务排期日期时，已绑定的具体时间块会自动平移至新日期；点击清除时段按钮即可单独撤销时间轴具体排期，保留任务日期计划。
 
 ## 3. TypeScript / ESLint / tests / build
+- `npm run typecheck`: Passed
+- `npx vitest run`: Passed (including all goal commands and progress tests)
+- `npm run build`: Passed (production build verified)
 
 - **TypeScript** (`npm run typecheck`): Passed (0 errors)
 - **ESLint** (`npm run lint`): Passed (0 errors, 0 warnings)

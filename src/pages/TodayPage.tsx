@@ -98,9 +98,13 @@ export const TodayPage: React.FC = () => {
   const projectMap = new Map(projects?.map((p) => [p.id, p]));
   const taskMap = new Map(allTasks?.map((t) => [t.id, t]));
 
-  // Active weekly focus goals for the week
+  // Active weekly focus goals for the week (exclude archived, completed, and deleted)
   const activeWeeklyGoals: Goal[] = (goals || []).filter(
-    (g) => g.isWeeklyFocus || weeklyFocus?.some((wf) => wf.goalId === g.id)
+    (g) =>
+      !g.deletedAt &&
+      g.status !== 'archived' &&
+      g.status !== 'completed' &&
+      (g.isWeeklyFocus || weeklyFocus?.some((wf) => wf.goalId === g.id))
   );
 
   // Root tasks scheduled for today
@@ -220,6 +224,8 @@ export const TodayPage: React.FC = () => {
       startedAt: session.startedAt,
       elapsedSeconds: 0,
       isPaused: false,
+      targetDurationMinutes: task.estimateMinutes,
+      displayMode: task.estimateMinutes ? 'countdown' : 'stopwatch',
     });
 
     addToast({

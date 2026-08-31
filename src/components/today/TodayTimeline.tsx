@@ -78,8 +78,18 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
     });
   };
 
-  const handleStartSession = async (target: Task | { id: string; title: string; projectId?: string }) => {
+  const handleStartSession = async (target: Task | PlannedBlock | { id: string; title: string; projectId?: string; estimateMinutes?: number; startAt?: number; endAt?: number }) => {
     const isTask = 'statusId' in target;
+    const isBlock = 'startAt' in target && 'endAt' in target;
+    let targetDurationMinutes: number | undefined;
+    if (isTask && (target as Task).estimateMinutes) {
+      targetDurationMinutes = (target as Task).estimateMinutes;
+    } else if (isBlock && (target as PlannedBlock).startAt && (target as PlannedBlock).endAt) {
+      targetDurationMinutes = Math.round(((target as PlannedBlock).endAt - (target as PlannedBlock).startAt) / 60000);
+    } else if ('estimateMinutes' in target && target.estimateMinutes) {
+      targetDurationMinutes = target.estimateMinutes;
+    }
+
     const session = await startSession({
       taskId: isTask ? target.id : undefined,
       projectId: target.projectId,
@@ -88,10 +98,13 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
     setRunningSession({
       sessionId: session.id,
       taskId: isTask ? target.id : undefined,
-      title: target.title,
+      plannedBlockId: isBlock ? target.id : undefined,
+      title: target.title || (language === 'zh-CN' ? '专注会话' : 'Focus Session'),
       startedAt: session.startedAt,
       elapsedSeconds: 0,
       isPaused: false,
+      targetDurationMinutes,
+      displayMode: targetDurationMinutes ? 'countdown' : 'stopwatch',
     });
   };
 

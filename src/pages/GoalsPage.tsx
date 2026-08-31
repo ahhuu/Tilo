@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/storage/db';
@@ -44,7 +44,30 @@ export const GoalsPage: React.FC = () => {
     [weekKey]
   ) || [];
 
-  const weeklyGoalIds = new Set(weeklyFocusEntries.map((w) => w.goalId));
+  const weeklyGoalIds = new Set(
+    weeklyFocusEntries
+      .filter((w) => {
+        const g = allGoals.find((goal) => goal.id === w.goalId);
+        return g && g.status !== 'completed' && g.status !== 'archived' && !g.deletedAt;
+      })
+      .map((w) => w.goalId)
+  );
+
+  // Self-healing sweep: ensure completed or archived goals never stay in weekly focus
+  useEffect(() => {
+    const sweepWeeklyFocus = async () => {
+      const staleGoals = await db.goals
+        .filter((g) => (g.status === 'completed' || g.status === 'archived') && Boolean(g.isWeeklyFocus))
+        .toArray();
+      if (staleGoals.length > 0) {
+        for (const sg of staleGoals) {
+          await db.goals.update(sg.id, { isWeeklyFocus: false });
+          await db.weeklyFocus.where('goalId').equals(sg.id).delete();
+        }
+      }
+    };
+    sweepWeeklyFocus();
+  }, [allGoals]);
 
   // 4 canonical statuses counts for Goals & Projects
   const activeGoalsCount = allGoals.filter((g) => g.status === 'active' || !g.status).length;
@@ -109,6 +132,17 @@ export const GoalsPage: React.FC = () => {
   };
 
   const handleToggleWeeklyFocus = async (goal: Goal) => {
+    if ((goal.status === 'completed' || goal.status === 'archived') && !goal.isWeeklyFocus) {
+      addToast({
+        message:
+          language === 'zh-CN'
+            ? '已达成或已归档的目标无法设为本周核心焦点'
+            : 'Completed or archived goals cannot be set to Weekly Focus',
+        type: 'warning',
+      });
+      return;
+    }
+
     const nextVal = !goal.isWeeklyFocus;
     await updateGoal(goal.id, { isWeeklyFocus: nextVal });
 

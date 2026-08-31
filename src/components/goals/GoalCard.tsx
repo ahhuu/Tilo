@@ -56,13 +56,16 @@ export const GoalCard: React.FC<GoalCardProps> = ({
     }
   };
 
+  const isEffectivelyWeeklyFocus =
+    Boolean(goal.isWeeklyFocus) && goal.status !== 'completed' && goal.status !== 'archived';
+
   return (
     <Card variant="interactive" className="p-5 space-y-4 shadow-2xs group relative">
       {/* Top badges & progress mode */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge
-            variant={goal.isWeeklyFocus ? 'indigo' : 'secondary'}
+            variant={isEffectivelyWeeklyFocus ? 'indigo' : 'secondary'}
             size="sm"
             className="gap-1 cursor-pointer"
             onClick={() => onToggleWeeklyFocus(goal)}
@@ -70,7 +73,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
           >
             <Sparkles className="w-3 h-3 text-indigo-600" />
             <span>
-              {goal.isWeeklyFocus
+              {isEffectivelyWeeklyFocus
                 ? (language === 'zh-CN' ? '本周聚焦' : 'Weekly Focus')
                 : (language === 'zh-CN' ? '常规目标' : 'Goal')}
             </span>

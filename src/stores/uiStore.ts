@@ -25,10 +25,13 @@ export interface ToastItem {
 export interface RunningSessionState {
   sessionId: string;
   taskId?: string;
+  plannedBlockId?: string;
   title: string;
   startedAt: number;
   elapsedSeconds: number;
   isPaused: boolean;
+  targetDurationMinutes?: number;
+  displayMode?: 'countdown' | 'stopwatch';
 }
 
 interface UIState {
@@ -92,6 +95,9 @@ interface UIState {
   setRunningSession: (session: RunningSessionState | null) => void;
   togglePauseSession: () => void;
   tickSession: () => void;
+  toggleTimerDisplayMode: () => void;
+  setTimerDisplayMode: (mode: 'countdown' | 'stopwatch') => void;
+  setSessionTargetDurationMinutes: (minutes: number) => void;
 
   addToast: (toast: Omit<ToastItem, 'id'>) => string;
   removeToast: (id: string) => void;
@@ -393,6 +399,38 @@ export const useUIStore = create<UIState>((set, get) => {
         runningSession: {
           ...current,
           elapsedSeconds: current.elapsedSeconds + 1,
+        },
+      });
+    },
+    toggleTimerDisplayMode: () => {
+      const current = get().runningSession;
+      if (!current) return;
+      const currentMode = current.displayMode || (current.targetDurationMinutes ? 'countdown' : 'stopwatch');
+      const nextMode = currentMode === 'countdown' ? 'stopwatch' : 'countdown';
+      set({
+        runningSession: {
+          ...current,
+          displayMode: nextMode,
+        },
+      });
+    },
+    setTimerDisplayMode: (mode) => {
+      const current = get().runningSession;
+      if (!current) return;
+      set({
+        runningSession: {
+          ...current,
+          displayMode: mode,
+        },
+      });
+    },
+    setSessionTargetDurationMinutes: (minutes) => {
+      const current = get().runningSession;
+      if (!current) return;
+      set({
+        runningSession: {
+          ...current,
+          targetDurationMinutes: minutes,
         },
       });
     },

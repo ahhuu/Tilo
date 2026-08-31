@@ -13,7 +13,7 @@ import {
   ChevronDown,
   Layers,
 } from 'lucide-react';
-import type { GoalStatus, GoalProgressMode } from '@/core/types/domain';
+import type { Goal, GoalStatus, GoalProgressMode } from '@/core/types/domain';
 
 const PRESET_COLORS = [
   '#4f46e5', // Indigo
@@ -100,7 +100,12 @@ export const GoalInspector: React.FC<GoalInspectorProps> = ({ goalId }) => {
 
   const handleStatusChange = async (newStatus: GoalStatus) => {
     setStatus(newStatus);
-    await updateGoal(goal.id, { status: newStatus });
+    const updates: Partial<Goal> = { status: newStatus };
+    if (newStatus === 'completed' || newStatus === 'archived') {
+      updates.isWeeklyFocus = false;
+      setIsWeeklyFocus(false);
+    }
+    await updateGoal(goal.id, updates);
     addToast({
       message: language === 'zh-CN' ? `目标状态已调整为: ${newStatus}` : `Status updated to ${newStatus}`,
       type: 'info',
@@ -127,6 +132,14 @@ export const GoalInspector: React.FC<GoalInspectorProps> = ({ goalId }) => {
   };
 
   const handleToggleWeeklyFocus = async () => {
+    if ((status === 'completed' || status === 'archived') && !isWeeklyFocus) {
+      addToast({
+        message: language === 'zh-CN' ? '已达成或已归档的目标无法设为本周核心焦点' : 'Completed or archived goals cannot be set to Weekly Focus',
+        type: 'warning',
+      });
+      return;
+    }
+
     const nextVal = !isWeeklyFocus;
     setIsWeeklyFocus(nextVal);
     await updateGoal(goal.id, { isWeeklyFocus: nextVal });
@@ -315,18 +328,30 @@ export const GoalInspector: React.FC<GoalInspectorProps> = ({ goalId }) => {
         </div>
 
         {/* Weekly Focus Toggle */}
-        <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-100 dark:border-slate-800">
+        <div className={`flex items-center justify-between p-2.5 rounded-xl border transition-opacity ${
+          status === 'completed' || status === 'archived'
+            ? 'opacity-60 bg-slate-100/60 dark:bg-slate-800/20 border-slate-200/50 dark:border-slate-800/50 cursor-not-allowed'
+            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-100 dark:border-slate-800'
+        }`}>
           <div className="flex items-center gap-2">
             <Sparkles className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span className="font-medium text-slate-700 dark:text-slate-300">
-              {language === 'zh-CN' ? '设为本周核心焦点' : 'Weekly Focus'}
-            </span>
+            <div className="flex flex-col">
+              <span className="font-medium text-slate-700 dark:text-slate-300">
+                {language === 'zh-CN' ? '设为本周核心焦点' : 'Weekly Focus'}
+              </span>
+              {(status === 'completed' || status === 'archived') && (
+                <span className="text-[10px] text-slate-400">
+                  {language === 'zh-CN' ? '已达成或已归档目标不支持聚焦' : 'Completed/archived goals cannot be focused'}
+                </span>
+              )}
+            </div>
           </div>
           <input
             type="checkbox"
-            checked={isWeeklyFocus}
+            checked={isWeeklyFocus && status !== 'completed' && status !== 'archived'}
+            disabled={status === 'completed' || status === 'archived'}
             onChange={handleToggleWeeklyFocus}
-            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+            className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer disabled:cursor-not-allowed"
           />
         </div>
       </div>

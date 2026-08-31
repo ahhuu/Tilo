@@ -65,6 +65,11 @@ export async function updateGoal(
   const goal = await database.goals.get(goalId);
   if (!goal) throw new Error(`Goal ${goalId} not found`);
 
+  // If goal is completed or archived, automatically clear weekly focus
+  if (updates.status === 'completed' || updates.status === 'archived') {
+    updates.isWeeklyFocus = false;
+  }
+
   const updated: Goal = { ...goal, ...updates, updatedAt: now };
 
   const event: ActivityEvent = {
@@ -78,8 +83,11 @@ export async function updateGoal(
     payloadJson: { updates },
   };
 
-  await database.transaction('rw', [database.goals, database.activityEvents], async () => {
+  await database.transaction('rw', [database.goals, database.weeklyFocus, database.activityEvents], async () => {
     await database.goals.put(updated);
+    if (updates.status === 'completed' || updates.status === 'archived') {
+      await database.weeklyFocus.where('goalId').equals(goalId).delete();
+    }
     await database.activityEvents.put(event);
   });
 
@@ -95,6 +103,11 @@ export async function calculateGoalProgress(
 ): Promise<number> {
   const goal = await database.goals.get(goalId);
   if (!goal) return 0;
+
+  // Completed or archived goals are considered 100% complete
+  if (goal.status === 'completed' || goal.status === 'archived') {
+    return 100;
+  }
 
   if (goal.progressMode === 'manual') {
     return Math.min(100, Math.max(0, Math.round(goal.currentProgress)));

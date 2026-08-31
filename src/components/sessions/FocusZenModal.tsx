@@ -30,13 +30,21 @@ interface FocusZenModalProps {
   onClose: () => void;
 }
 
-export type FocusTimerMode = 'stopwatch' | 'pomodoro';
+export type FocusTimerMode = 'stopwatch' | 'countdown';
 
 export const FocusZenModal: React.FC<FocusZenModalProps> = ({ isOpen, onClose }) => {
   const { language } = useI18n();
-  const { runningSession, togglePauseSession, setRunningSession, addToast } = useUIStore();
+  const {
+    runningSession,
+    togglePauseSession,
+    setRunningSession,
+    setSessionTargetDurationMinutes,
+    addToast,
+  } = useUIStore();
 
-  const [timerMode, setTimerMode] = useState<FocusTimerMode>('pomodoro');
+  const targetMinutes = runningSession?.targetDurationMinutes || 25;
+  const initialMode: FocusTimerMode = runningSession?.displayMode === 'stopwatch' ? 'stopwatch' : 'countdown';
+  const [timerMode, setTimerMode] = useState<FocusTimerMode>(initialMode);
   const [currentSound, setCurrentSound] = useState<AmbientSoundType>('none');
   const [volume, setVolume] = useState<number>(50);
   const [isMuted, setIsMuted] = useState<boolean>(false);
@@ -48,21 +56,21 @@ export const FocusZenModal: React.FC<FocusZenModalProps> = ({ isOpen, onClose })
     setIsMuted(ambientAudioService.getIsMuted());
   }, [isOpen]);
 
-  // Derive Pomodoro status directly from runningSession.elapsedSeconds (Single Source of Truth)
-  const FOCUS_SECONDS = 25 * 60;
+  // Derive Countdown & Cycle status dynamically based on targetMinutes
+  const FOCUS_SECONDS = targetMinutes * 60;
   const BREAK_SECONDS = 5 * 60;
   const CYCLE_SECONDS = FOCUS_SECONDS + BREAK_SECONDS;
 
   const elapsed = runningSession?.elapsedSeconds || 0;
   const cycleOffset = elapsed % CYCLE_SECONDS;
   const isBreak = cycleOffset >= FOCUS_SECONDS;
-  const pomodoroSecondsLeft = isBreak
+  const countdownSecondsLeft = isBreak
     ? CYCLE_SECONDS - cycleOffset
     : FOCUS_SECONDS - cycleOffset;
 
   const prevIsBreakRef = React.useRef<boolean>(isBreak);
 
-  // Trigger audio chime & toast on Pomodoro phase transitions
+  // Trigger audio chime & toast on phase transitions
   useEffect(() => {
     if (!isOpen || !runningSession || runningSession.isPaused) return;
 
@@ -86,8 +94,12 @@ export const FocusZenModal: React.FC<FocusZenModalProps> = ({ isOpen, onClose })
   if (!isOpen || !runningSession || typeof document === 'undefined') return null;
 
   const formatSeconds = (totalSec: number) => {
-    const mins = Math.floor(totalSec / 60);
+    const hrs = Math.floor(totalSec / 3600);
+    const mins = Math.floor((totalSec % 3600) / 60);
     const secs = totalSec % 60;
+    if (hrs > 0) {
+      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
@@ -170,19 +182,23 @@ export const FocusZenModal: React.FC<FocusZenModalProps> = ({ isOpen, onClose })
           </div>
 
           <div className="flex items-center gap-3">
-            {/* Mode Switcher: Pomodoro vs Stopwatch */}
+            {/* Mode Switcher: Countdown vs Stopwatch */}
             <div className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 text-xs">
               <button
                 type="button"
-                onClick={() => setTimerMode('pomodoro')}
+                onClick={() => setTimerMode('countdown')}
                 className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer flex items-center gap-1.5 ${
-                  timerMode === 'pomodoro'
+                  timerMode === 'countdown'
                     ? 'bg-indigo-600 text-white font-medium shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 <Timer className="w-3.5 h-3.5" />
-                <span>{language === 'zh-CN' ? '番茄钟 (25m)' : 'Pomodoro'}</span>
+                <span>
+                  {language === 'zh-CN'
+                    ? targetMinutes === 25 ? '番茄钟 (25m)' : `倒计时 (${targetMinutes}m)`
+                    : `Countdown (${targetMinutes}m)`}
+                </span>
               </button>
               <button
                 type="button"
@@ -210,8 +226,8 @@ export const FocusZenModal: React.FC<FocusZenModalProps> = ({ isOpen, onClose })
           </div>
         </div>
 
-        {/* Center: Status & Time Display */}
-        <div className="flex flex-col items-center justify-center space-y-6 text-center">
+        {/* Center: Status, Duration Chips, & Time Display */}
+        <div className="flex flex-col items-center justify-center space-y-5 text-center">
           {/* Status Label */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-indigo-950/70 border border-indigo-800/70 text-indigo-300 text-xs font-semibold">
             <span
@@ -232,10 +248,42 @@ export const FocusZenModal: React.FC<FocusZenModalProps> = ({ isOpen, onClose })
               ) : (
                 <>
                   <Brain className="w-3.5 h-3.5 text-indigo-300" />
-                  <span>{language === 'zh-CN' ? '深度专注中' : 'Deep Focus'}</span>
+                  <span>
+                    {language === 'zh-CN'
+                      ? `深度专注中 (${targetMinutes}m 目标)`
+                      : `Deep Focus (${targetMinutes}m Target)`}
+                  </span>
                 </>
               )}
             </div>
+          </div>
+
+          {/* Quick Target Duration Chips */}
+          <div className="flex items-center gap-1.5 bg-slate-900/60 p-1 rounded-xl border border-slate-800/60 text-xs">
+            <span className="text-[11px] text-slate-400 px-1.5">
+              {language === 'zh-CN' ? '设定目标' : 'Target'}:
+            </span>
+            {[15, 25, 30, 45, 60, 90].map((mins) => (
+              <button
+                key={mins}
+                type="button"
+                onClick={() => setSessionTargetDurationMinutes(mins)}
+                className={`px-2 py-1 rounded-lg text-xs cursor-pointer transition-colors ${
+                  targetMinutes === mins
+                    ? 'bg-indigo-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`}
+              >
+                {mins}m
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setSessionTargetDurationMinutes(targetMinutes + 15)}
+              className="px-2 py-1 rounded-lg text-xs bg-indigo-950/60 text-indigo-300 hover:bg-indigo-900/80 font-medium cursor-pointer"
+            >
+              +15m
+            </button>
           </div>
 
           {/* Task Title */}
@@ -244,12 +292,17 @@ export const FocusZenModal: React.FC<FocusZenModalProps> = ({ isOpen, onClose })
           </h2>
 
           {/* Huge Digital Clock */}
-          <div className="relative flex items-center justify-center my-2">
+          <div className="relative flex flex-col items-center justify-center my-1">
             <div className={`text-6xl md:text-8xl font-mono font-bold tracking-tight text-white ${!runningSession.isPaused ? 'drop-shadow-[0_0_35px_rgba(99,102,241,0.45)]' : 'opacity-70'}`}>
-              {timerMode === 'pomodoro'
-                ? formatSeconds(pomodoroSecondsLeft)
+              {timerMode === 'countdown'
+                ? formatSeconds(countdownSecondsLeft)
                 : formatSeconds(runningSession.elapsedSeconds)}
             </div>
+            {timerMode === 'stopwatch' && (
+              <div className="text-xs text-slate-400 font-mono mt-1">
+                {language === 'zh-CN' ? '目标时长' : 'Target'}: {targetMinutes}m ({Math.min(100, Math.round((runningSession.elapsedSeconds / (targetMinutes * 60)) * 100))}%)
+              </div>
+            )}
           </div>
 
           {/* Primary Controls: Pause/Resume + Complete */}

@@ -500,6 +500,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               2.5,
               ((effectiveEndAt - effectiveStartAt) / totalRangeMs) * 100
             );
+            const durationMinutes = Math.round((effectiveEndAt - effectiveStartAt) / 60000);
+            const isShortBlock = durationMinutes <= 35;
 
             return (
               <div
@@ -512,7 +514,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                     onInspectSession?.(originalSession);
                   }
                 }}
-                className={`absolute rounded-xl transition-all p-2 flex flex-col justify-between group/item cursor-pointer z-10 ${
+                className={`absolute rounded-xl transition-all group/item cursor-pointer z-10 ${
+                  isShortBlock
+                    ? 'p-1.5 px-2.5 flex items-center justify-between'
+                    : 'p-2 flex flex-col justify-between'
+                } ${
                   isPlan
                     ? isFocus
                       ? 'border border-dashed border-purple-400 dark:border-purple-600 bg-purple-50/85 dark:bg-purple-950/40 text-purple-950 dark:text-purple-100 shadow-2xs hover:border-purple-500'
@@ -551,107 +557,209 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   </div>
                 )}
 
-                {/* Card Header Info */}
-                <div className="flex items-center justify-between gap-1 min-w-0">
-                  <div className="flex items-center gap-1.5 truncate">
-                    {isPlan ? (
-                      isFocus ? (
-                        <Badge size="sm" className="bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 px-1 py-0 text-[10px] font-semibold">
-                          <Target className="w-2.5 h-2.5 mr-0.5 inline text-purple-600 dark:text-purple-400" />
-                          Focus
-                        </Badge>
-                      ) : isActivity ? (
-                        <Badge size="sm" className="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 px-1 py-0 text-[10px] font-semibold">
-                          <Sparkles className="w-2.5 h-2.5 mr-0.5 inline text-amber-600 dark:text-amber-400" />
-                          Activity
-                        </Badge>
+                {/* Card Content Layout: Single Inline Row for Short Blocks (<=35m) vs 2-Row for Taller Blocks */}
+                {isShortBlock ? (
+                  <>
+                    <div className="flex items-center gap-1.5 min-w-0 truncate">
+                      {isPlan ? (
+                        isFocus ? (
+                          <Badge size="sm" className="bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 px-1 py-0 text-[10px] font-semibold shrink-0">
+                            Focus
+                          </Badge>
+                        ) : isActivity ? (
+                          <Badge size="sm" className="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 px-1 py-0 text-[10px] font-semibold shrink-0">
+                            Activity
+                          </Badge>
+                        ) : (
+                          <Badge variant="indigo" size="sm" className="px-1 py-0 text-[10px] shrink-0">
+                            Plan
+                          </Badge>
+                        )
                       ) : (
-                        <Badge variant="indigo" size="sm" className="px-1 py-0 text-[10px]">
-                          Plan
+                        <Badge variant="low" size="sm" className="bg-emerald-700 text-white border-0 px-1 py-0 text-[10px] shrink-0">
+                          Actual {item.coalescedCount && item.coalescedCount > 1 ? `x${item.coalescedCount}` : ''}
                         </Badge>
-                      )
-                    ) : (
-                      <Badge variant="low" size="sm" className="bg-emerald-700 text-white border-0 px-1 py-0 text-[10px]">
-                        Actual {item.coalescedCount && item.coalescedCount > 1 ? `x${item.coalescedCount}` : ''}
-                      </Badge>
-                    )}
+                      )}
 
-                    <span
-                      onClick={(e) => {
-                        if (linkedTask && onInspectTask) {
-                          e.stopPropagation();
-                          onInspectTask(linkedTask);
-                        }
-                      }}
-                      className="text-xs font-semibold truncate hover:underline"
-                    >
-                      {item.title || linkedTask?.title}
-                    </span>
-                  </div>
-
-                  {/* Overlap Indicator Badge */}
-                  {item.isOverlapping && (
-                    <span
-                      className="text-[10px] bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 px-1 rounded flex items-center gap-0.5 shrink-0"
-                      title={language === 'zh-CN' ? '时间排期发生重叠' : 'Schedule overlap'}
-                    >
-                      <AlertTriangle className="w-2.5 h-2.5" />
-                      {language === 'zh-CN' ? '重叠' : 'Overlap'}
-                    </span>
-                  )}
-                </div>
-
-                {/* Card Footer: Duration & Quick Actions */}
-                <div className="flex items-center justify-between text-[10px] opacity-80 group-hover/item:opacity-100 transition-opacity">
-                  <span className="font-mono truncate">
-                    {timeService.formatTime(effectiveStartAt)} – {timeService.formatTime(effectiveEndAt)}{' '}
-                    ({item.coalescedCount && item.coalescedCount > 1 ? (language === 'zh-CN' ? `共 ${timeService.formatDuration(item.durationSeconds)}` : `total ${timeService.formatDuration(item.durationSeconds)}`) : timeService.formatDuration(item.durationSeconds)})
-                  </span>
-
-                  <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                    {isPlan && linkedTask && onStartSession && (
-                      <button
-                        type="button"
+                      <span
                         onClick={(e) => {
-                          e.stopPropagation();
-                          onStartSession(linkedTask);
+                          if (linkedTask && onInspectTask) {
+                            e.stopPropagation();
+                            onInspectTask(linkedTask);
+                          }
                         }}
-                        className="p-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-2xs"
-                        title={language === 'zh-CN' ? '快速开启会话' : 'Start session'}
+                        className="text-xs font-semibold truncate hover:underline"
                       >
-                        <Play className="w-2.5 h-2.5" />
-                      </button>
-                    )}
+                        {item.title || linkedTask?.title}
+                      </span>
 
-                    {isPlan && onDeletePlannedBlock && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeletePlannedBlock(item.id);
-                        }}
-                        className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
-                        title={language === 'zh-CN' ? '删除时间块' : 'Delete block'}
-                      >
-                        <Trash2 className="w-2.5 h-2.5" />
-                      </button>
-                    )}
+                      <span className="font-mono text-[10px] opacity-75 shrink-0 ml-1">
+                        {timeService.formatTime(effectiveStartAt)}–{timeService.formatTime(effectiveEndAt)} ({timeService.formatDuration(item.durationSeconds)})
+                      </span>
+                    </div>
 
-                    {!isPlan && onDeleteSession && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDeleteSession(item.id);
-                        }}
-                        className="p-1 rounded text-emerald-200 hover:text-white hover:bg-emerald-700/80 cursor-pointer transition-colors"
-                        title={language === 'zh-CN' ? '删除实际会话' : 'Delete session'}
-                      >
-                        <Trash2 className="w-2.5 h-2.5" />
-                      </button>
-                    )}
-                  </div>
-                </div>
+                    {/* Right side: Overlap badge or hover action buttons */}
+                    <div className="flex items-center gap-1 shrink-0 ml-2">
+                      {item.isOverlapping && (
+                        <span
+                          className="text-[10px] bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 px-1 rounded flex items-center gap-0.5"
+                          title={language === 'zh-CN' ? '时间排期发生重叠' : 'Schedule overlap'}
+                        >
+                          <AlertTriangle className="w-2.5 h-2.5" />
+                          <span className="hidden sm:inline">{language === 'zh-CN' ? '重叠' : 'Overlap'}</span>
+                        </span>
+                      )}
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        {isPlan && linkedTask && onStartSession && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStartSession(linkedTask);
+                            }}
+                            className="p-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-2xs"
+                            title={language === 'zh-CN' ? '快速开启会话' : 'Start session'}
+                          >
+                            <Play className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+
+                        {isPlan && onDeletePlannedBlock && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeletePlannedBlock(item.id);
+                            }}
+                            className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
+                            title={language === 'zh-CN' ? '删除时间块' : 'Delete block'}
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+
+                        {!isPlan && onDeleteSession && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteSession(item.id);
+                            }}
+                            className="p-1 rounded text-emerald-200 hover:text-white hover:bg-emerald-700/80 cursor-pointer transition-colors"
+                            title={language === 'zh-CN' ? '删除实际会话' : 'Delete session'}
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Card Header Info */}
+                    <div className="flex items-center justify-between gap-1 min-w-0">
+                      <div className="flex items-center gap-1.5 truncate">
+                        {isPlan ? (
+                          isFocus ? (
+                            <Badge size="sm" className="bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 px-1 py-0 text-[10px] font-semibold">
+                              <Target className="w-2.5 h-2.5 mr-0.5 inline text-purple-600 dark:text-purple-400" />
+                              Focus
+                            </Badge>
+                          ) : isActivity ? (
+                            <Badge size="sm" className="bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200 border border-amber-300 dark:border-amber-700/60 px-1 py-0 text-[10px] font-semibold">
+                              <Sparkles className="w-2.5 h-2.5 mr-0.5 inline text-amber-600 dark:text-amber-400" />
+                              Activity
+                            </Badge>
+                          ) : (
+                            <Badge variant="indigo" size="sm" className="px-1 py-0 text-[10px]">
+                              Plan
+                            </Badge>
+                          )
+                        ) : (
+                          <Badge variant="low" size="sm" className="bg-emerald-700 text-white border-0 px-1 py-0 text-[10px]">
+                            Actual {item.coalescedCount && item.coalescedCount > 1 ? `x${item.coalescedCount}` : ''}
+                          </Badge>
+                        )}
+
+                        <span
+                          onClick={(e) => {
+                            if (linkedTask && onInspectTask) {
+                              e.stopPropagation();
+                              onInspectTask(linkedTask);
+                            }
+                          }}
+                          className="text-xs font-semibold truncate hover:underline"
+                        >
+                          {item.title || linkedTask?.title}
+                        </span>
+                      </div>
+
+                      {/* Overlap Indicator Badge */}
+                      {item.isOverlapping && (
+                        <span
+                          className="text-[10px] bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:bg-amber-200 px-1 rounded flex items-center gap-0.5 shrink-0"
+                          title={language === 'zh-CN' ? '时间排期发生重叠' : 'Schedule overlap'}
+                        >
+                          <AlertTriangle className="w-2.5 h-2.5" />
+                          {language === 'zh-CN' ? '重叠' : 'Overlap'}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Card Footer: Duration & Quick Actions */}
+                    <div className="flex items-center justify-between text-[10px] opacity-80 group-hover/item:opacity-100 transition-opacity">
+                      <span className="font-mono truncate">
+                        {timeService.formatTime(effectiveStartAt)} – {timeService.formatTime(effectiveEndAt)}{' '}
+                        ({item.coalescedCount && item.coalescedCount > 1 ? (language === 'zh-CN' ? `共 ${timeService.formatDuration(item.durationSeconds)}` : `total ${timeService.formatDuration(item.durationSeconds)}`) : timeService.formatDuration(item.durationSeconds)})
+                      </span>
+
+                      <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
+                        {isPlan && linkedTask && onStartSession && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onStartSession(linkedTask);
+                            }}
+                            className="p-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-2xs"
+                            title={language === 'zh-CN' ? '快速开启会话' : 'Start session'}
+                          >
+                            <Play className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+
+                        {isPlan && onDeletePlannedBlock && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeletePlannedBlock(item.id);
+                            }}
+                            className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
+                            title={language === 'zh-CN' ? '删除时间块' : 'Delete block'}
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+
+                        {!isPlan && onDeleteSession && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDeleteSession(item.id);
+                            }}
+                            className="p-1 rounded text-emerald-200 hover:text-white hover:bg-emerald-700/80 cursor-pointer transition-colors"
+                            title={language === 'zh-CN' ? '删除实际会话' : 'Delete session'}
+                          >
+                            <Trash2 className="w-2.5 h-2.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                )}
 
                 {/* Bottom Resize Handle (for planned blocks) */}
                 {isPlan && (
@@ -686,15 +794,16 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   );
                   return (
                     <div
-                      className="absolute left-0 right-0 border-x border-b border-dashed border-indigo-400/60 dark:border-indigo-500/50 bg-indigo-500/10 dark:bg-indigo-950/25 rounded-b-xl pointer-events-none z-0 px-2 py-0.5 flex items-center justify-between text-[9px] text-indigo-700 dark:text-indigo-300 font-mono shadow-2xs"
+                      className="absolute left-0 right-0 border-x border-b border-dashed border-indigo-400/60 dark:border-indigo-500/50 bg-indigo-500/10 dark:bg-indigo-950/25 rounded-b-xl pointer-events-none z-0 px-2 py-1 flex items-center justify-between text-[9px] text-indigo-700 dark:text-indigo-300 font-mono shadow-2xs"
                       style={{
-                        top: '100%',
+                        top: 'calc(100% + 2px)',
                         height: `${ghostHeightPx}px`,
                       }}
                       title={language === 'zh-CN' ? '基于历史类似任务耗时习惯预测的实际可能结束时间' : 'Predicted completion based on historical variance'}
                     >
-                      <span className="truncate">
-                        {language === 'zh-CN' ? `预测延至 ${timeService.formatTime(ghostEndAt)}` : `Ghost ${timeService.formatTime(ghostEndAt)}`}
+                      <span className="truncate flex items-center gap-1">
+                        <span className="opacity-70">⏳</span>
+                        <span>{language === 'zh-CN' ? `预测延至 ${timeService.formatTime(ghostEndAt)}` : `Ghost ${timeService.formatTime(ghostEndAt)}`}</span>
                       </span>
                     </div>
                   );

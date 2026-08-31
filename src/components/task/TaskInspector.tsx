@@ -3,6 +3,8 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db, type TiloDB } from '@/storage/db';
 import { updateTask, rescheduleTask, deleteTaskToTrash, completeTask, reopenTask } from '@/services/taskCommands';
 import { startSession } from '@/services/sessionCommands';
+import { createPlannedBlock, updatePlannedBlock, deletePlannedBlock } from '@/services/planCommands';
+import { timeService } from '@/core/time/timeService';
 import { useProjects } from '@/storage/hooks/useLiveQuery';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
@@ -18,6 +20,8 @@ import {
   Layers,
   ChevronDown,
   Maximize2,
+  Clock,
+  Zap,
   X,
 } from 'lucide-react';
 import type { PriorityLevel } from '@/core/types/domain';
@@ -53,63 +57,190 @@ export const TaskInspector: React.FC<TaskInspectorProps> = ({
     [database, taskId]
   );
 
+  const linkedBlocks = useLiveQuery(
+    () => database.plannedBlocks.where('taskId').equals(taskId).filter((b) => !b.deletedAt).toArray(),
+    [database, taskId]
+  ) || [];
+  const primaryBlock = linkedBlocks[0];
+
   if (!task) {
     return (
-      <div className="p-4 text-xs text-slate-400 text-center">
-        Loading task properties...
+      <div className="p-4 text-center text-xs text-slate-400">
+        {language === 'zh-CN' ? '未找到任务。' : 'Task not found.'}
       </div>
     );
   }
 
   const isDone = task.statusId === 'ws-task-done';
 
-  const handleTitleChange = async (newTitle: string) => {
-    if (!newTitle.trim()) return;
-    await updateTask(taskId, { title: newTitle.trim() }, database);
-  };
-
-  const handlePriorityChange = async (priority: PriorityLevel) => {
-    await updateTask(taskId, { priority }, database);
-  };
-
-  const handleStatusChange = async (statusId: string) => {
-    await updateTask(taskId, { statusId }, database);
-  };
-
-  const handleProjectChange = async (projectId: string) => {
-    await updateTask(taskId, { projectId: projectId === 'none' ? undefined : projectId }, database);
-  };
-
-  const handleEstimateChange = async (estimateMinutes: number | undefined) => {
-    await updateTask(taskId, { estimateMinutes }, database);
-  };
-
-  const handleDueDateChange = async (dueDate: string) => {
-    await updateTask(taskId, { dueDate: dueDate || undefined }, database);
-  };
-
-  const handleReschedule = async (newDate: string, reason?: string) => {
-    await rescheduleTask(taskId, newDate, reason, database);
-    addToast({ message: `Task scheduled for ${newDate}`, type: 'info' });
-  };
-
   const handleToggleComplete = async () => {
     if (isDone) {
-      await reopenTask(taskId, database);
-      addToast({ message: 'Task reopened', type: 'info' });
+      await reopenTask(task.id, database);
+      addToast({
+        message: language === 'zh-CN' ? '任务已重开' : 'Task reopened',
+        type: 'info',
+      });
     } else {
-      await completeTask(taskId, database);
-      addToast({ message: 'Task completed', type: 'success' });
+      await completeTask(task.id, database);
+      addToast({
+        message: language === 'zh-CN' ? '任务已完成！' : 'Task completed!',
+        type: 'success',
+      });
     }
   };
 
+  const handleStatusChange = async (statusId: string) => {
+    if (statusId === 'ws-task-done') {
+      await completeTask(task.id, database);
+    } else {
+      await updateTask(task.id, { statusId }, database);
+    }
+  };
+
+  const handlePriorityChange = async (priority: PriorityLevel) => {
+    await updateTask(task.id, { priority }, database);
+  };
+
+  const handleProjectChange = async (projectId: string) => {
+    await updateTask(
+      task.id,
+      { projectId: projectId === 'none' ? undefined : projectId },
+      database
+    );
+  };
+
+  const handleDueDateChange = async (dueDate: string) => {
+    await updateTask(task.id, { dueDate: dueDate || undefined }, database);
+  };
+
+  const handleEstimateChange = async (estimateMinutes?: number) => {
+    await updateTask(task.id, { estimateMinutes }, database);
+  };
+
+  const handleTitleChange = async (newTitle: string) => {
+    if (newTitle.trim() && newTitle.trim() !== task.title) {
+      await updateTask(task.id, { title: newTitle.trim() }, database);
+      addToast({
+        message: language === 'zh-CN' ? '标题已更新' : 'Title updated',
+        type: 'info',
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    await deleteTaskToTrash(task.id, database);
+    addToast({
+      message: language === 'zh-CN' ? '已移至废纸篓' : 'Moved to trash',
+      type: 'info',
+    });
+    closeInspector();
+  };
+
+  const formatTimeInput = (ms: number) => {
+    const d = new Date(ms);
+    const hrs = d.getHours().toString().padStart(2, '0');
+    const mins = d.getMinutes().toString().padStart(2, '0');
+    return `${hrs}:${mins}`;
+  };
+
+  const parseTimeOnDate = (timeStr: string, baseDateMs: number) => {
+    const [hrs, mins] = timeStr.split(':').map(Number);
+    const d = new Date(baseDateMs);
+    d.setHours(hrs, mins, 0, 0);
+    return d.getTime();
+  };
+
+  const handleCreateSpecificTime = async () => {
+    const targetDate = task.scheduledDate || timeService.getLogicalDate();
+    const isTargetToday = targetDate === timeService.getLogicalDate();
+    let startAt: number;
+
+    if (isTargetToday) {
+      startAt = Date.now();
+    } else {
+      const d = new Date(`${targetDate}T09:00:00`);
+      startAt = d.getTime();
+    }
+
+    const durationMs = (task.estimateMinutes || 60) * 60000;
+    const endAt = startAt + durationMs;
+
+    await createPlannedBlock(
+      {
+        taskId: task.id,
+        projectId: task.projectId,
+        type: 'task',
+        title: task.title,
+        startAt,
+        endAt,
+      },
+      database
+    );
+
+    if (!task.scheduledDate) {
+      await rescheduleTask(task.id, targetDate, undefined, database);
+    }
+
+    addToast({
+      message: language === 'zh-CN' ? '已为任务添加具体时间段并排入时间轴' : 'Specific time slot scheduled on timeline',
+      type: 'success',
+    });
+  };
+
+  const handleSnapToNow = async () => {
+    if (!primaryBlock) return;
+    const nowMs = Date.now();
+    const currentDuration = primaryBlock.endAt - primaryBlock.startAt;
+    await updatePlannedBlock(
+      primaryBlock.id,
+      {
+        startAt: nowMs,
+        endAt: nowMs + currentDuration,
+      },
+      database
+    );
+    const todayStr = timeService.getLogicalDate();
+    if (task.scheduledDate !== todayStr) {
+      await rescheduleTask(task.id, todayStr, undefined, database);
+    }
+    addToast({
+      message: language === 'zh-CN' ? '已将排期具体时间对齐至当前时刻' : 'Snapped scheduled time to now',
+      type: 'info',
+    });
+  };
+
+  const handleReschedule = async (newDate: string, reason?: string) => {
+    await rescheduleTask(task.id, newDate, reason, database);
+    if (primaryBlock) {
+      const dur = primaryBlock.endAt - primaryBlock.startAt;
+      const [y, m, d] = newDate.split('-').map(Number);
+      const newStartDate = new Date(primaryBlock.startAt);
+      newStartDate.setFullYear(y, m - 1, d);
+      await updatePlannedBlock(
+        primaryBlock.id,
+        {
+          startAt: newStartDate.getTime(),
+          endAt: newStartDate.getTime() + dur,
+        },
+        database
+      );
+    }
+    addToast({
+      message: language === 'zh-CN' ? `已重新排期至 ${newDate}` : `Task scheduled for ${newDate}`,
+      type: 'info',
+    });
+  };
+
   const handleStartSession = async (kind: 'active' | 'background') => {
-    const session = await startSession({
-      taskId: task.id,
-      projectId: task.projectId,
-      title: task.title,
-      kind,
-    }, database);
+    const session = await startSession(
+      {
+        taskId: task.id,
+        projectId: task.projectId,
+        title: task.title,
+        kind,
+      },
+      database
+    );
 
     if (kind === 'active') {
       setRunningSession({
@@ -119,19 +250,18 @@ export const TaskInspector: React.FC<TaskInspectorProps> = ({
         startedAt: session.startedAt,
         elapsedSeconds: 0,
         isPaused: false,
+        targetDurationMinutes: task.estimateMinutes,
+        displayMode: task.estimateMinutes ? 'countdown' : 'stopwatch',
       });
     }
 
     addToast({
-      message: `Started ${kind} session on "${task.title}"`,
+      message:
+        language === 'zh-CN'
+          ? `已开启 ${kind === 'active' ? '前台' : '后台'} 专注: "${task.title}"`
+          : `Started ${kind} session on "${task.title}"`,
       type: 'info',
     });
-  };
-
-  const handleDelete = async () => {
-    await deleteTaskToTrash(taskId);
-    addToast({ message: 'Task moved to Trash', type: 'info' });
-    closeInspector();
   };
 
   return (
@@ -244,34 +374,149 @@ export const TaskInspector: React.FC<TaskInspectorProps> = ({
           </div>
         </div>
 
-        {/* Scheduled Date */}
-        <div className="grid grid-cols-3 items-center">
-          <span className="text-slate-500 dark:text-slate-400">{language === 'zh-CN' ? '排期日期' : 'Scheduled'}</span>
-          <div className="col-span-2 flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => setShowReschedule(true)}
-              className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
-            >
-              <Calendar className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
-              <span>{task.scheduledDate || (language === 'zh-CN' ? '未排期' : 'Not scheduled')}</span>
-            </button>
-            {task.scheduledDate && (
+        {/* Scheduled Date & Specific Time */}
+        <div className="space-y-2 py-1 border-y border-slate-100 dark:border-slate-800/80">
+          <div className="grid grid-cols-3 items-center">
+            <span className="text-slate-500 dark:text-slate-400 font-medium">
+              {language === 'zh-CN' ? '排期日期' : 'Scheduled'}
+            </span>
+            <div className="col-span-2 flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={async () => {
-                  await rescheduleTask(task.id, '');
-                  addToast({
-                    message: language === 'zh-CN' ? '已将任务设为未排期' : 'Task unscheduled',
-                    type: 'info',
-                  });
-                }}
-                className="p-1 text-slate-400 hover:text-red-500 rounded-md cursor-pointer"
-                title={language === 'zh-CN' ? '设为未排期' : 'Clear schedule'}
+                onClick={() => setShowReschedule(true)}
+                className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors cursor-pointer text-xs"
               >
-                <X className="w-3 h-3" />
+                <Calendar className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                <span>{task.scheduledDate || (language === 'zh-CN' ? '未排期' : 'Not scheduled')}</span>
               </button>
-            )}
+              {task.scheduledDate && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await rescheduleTask(task.id, '', undefined, database);
+                    if (primaryBlock) {
+                      await deletePlannedBlock(primaryBlock.id, database);
+                    }
+                    addToast({
+                      message: language === 'zh-CN' ? '已将任务设为未排期' : 'Task unscheduled',
+                      type: 'info',
+                    });
+                  }}
+                  className="p-1 text-slate-400 hover:text-red-500 rounded-md cursor-pointer"
+                  title={language === 'zh-CN' ? '设为未排期' : 'Clear schedule'}
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Specific Time Slot / Timeline Block */}
+          <div className="grid grid-cols-3 items-start pt-1">
+            <span className="text-slate-500 dark:text-slate-400 text-[11px] pt-1">
+              {language === 'zh-CN' ? '具体时段' : 'Time Slot'}
+            </span>
+            <div className="col-span-2 space-y-1.5">
+              {primaryBlock ? (
+                <div className="space-y-1.5 bg-slate-50 dark:bg-slate-800/60 p-2 rounded-xl border border-slate-200/80 dark:border-slate-700/60">
+                  <div className="flex items-center gap-1.5 text-xs">
+                    <input
+                      type="time"
+                      value={formatTimeInput(primaryBlock.startAt)}
+                      onChange={async (e) => {
+                        const newStart = parseTimeOnDate(e.target.value, primaryBlock.startAt);
+                        const dur = Math.max(15 * 60000, primaryBlock.endAt - primaryBlock.startAt);
+                        await updatePlannedBlock(
+                          primaryBlock.id,
+                          {
+                            startAt: newStart,
+                            endAt: newStart + dur,
+                          },
+                          database
+                        );
+                      }}
+                      className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-mono text-xs w-20 cursor-pointer"
+                    />
+                    <span className="text-slate-400">~</span>
+                    <input
+                      type="time"
+                      value={formatTimeInput(primaryBlock.endAt)}
+                      onChange={async (e) => {
+                        const newEnd = parseTimeOnDate(e.target.value, primaryBlock.endAt);
+                        if (newEnd > primaryBlock.startAt) {
+                          await updatePlannedBlock(
+                            primaryBlock.id,
+                            { endAt: newEnd },
+                            database
+                          );
+                        }
+                      }}
+                      className="px-1.5 py-0.5 rounded bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-200 font-mono text-xs w-20 cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSnapToNow}
+                      className="p-1 rounded bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 hover:bg-amber-100 cursor-pointer"
+                      title={language === 'zh-CN' ? '⚡ 从当前时刻开始' : 'Snap to current time'}
+                    >
+                      <Zap className="w-3 h-3" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        await deletePlannedBlock(primaryBlock.id, database);
+                        addToast({
+                          message: language === 'zh-CN' ? '已移除时间轴具体时段' : 'Removed timeline slot',
+                          type: 'info',
+                        });
+                      }}
+                      className="p-1 text-slate-400 hover:text-red-500 rounded cursor-pointer"
+                      title={language === 'zh-CN' ? '清除具体时段' : 'Remove time slot'}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+
+                  {/* Quick Duration Chips */}
+                  <div className="flex items-center gap-1 flex-wrap">
+                    {[15, 30, 45, 60, 90, 120].map((mins) => {
+                      const currentMins = Math.round((primaryBlock.endAt - primaryBlock.startAt) / 60000);
+                      return (
+                        <button
+                          key={mins}
+                          type="button"
+                          onClick={async () => {
+                            await updatePlannedBlock(
+                              primaryBlock.id,
+                              {
+                                endAt: primaryBlock.startAt + mins * 60000,
+                              },
+                              database
+                            );
+                          }}
+                          className={`px-1.5 py-0.5 rounded text-[10px] font-mono cursor-pointer transition-colors ${
+                            currentMins === mins
+                              ? 'bg-indigo-600 text-white font-semibold'
+                              : 'bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600'
+                          }`}
+                        >
+                          {mins >= 60 ? `${mins / 60}h` : `${mins}m`}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleCreateSpecificTime}
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-dashed border-indigo-300 dark:border-indigo-800 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/70 text-indigo-700 dark:text-indigo-300 text-xs font-medium cursor-pointer transition-colors"
+                >
+                  <Clock className="w-3 h-3 text-indigo-600 dark:text-indigo-400" />
+                  <span>{language === 'zh-CN' ? '+ 设定具体时间段 (排入时间轴)' : '+ Schedule Specific Time'}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

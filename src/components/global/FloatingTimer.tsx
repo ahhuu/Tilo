@@ -5,11 +5,28 @@ import { finishSession, pauseSession, resumeSession } from '@/services/sessionCo
 import { completeTask } from '@/services/taskCommands';
 import { FocusZenModal } from '@/components/sessions/FocusZenModal';
 import { ambientAudioService } from '@/core/audio/ambientAudioService';
-import { Play, Pause, CheckCircle2, MoreHorizontal, Clock, Maximize2 } from 'lucide-react';
+import {
+  Play,
+  Pause,
+  CheckCircle2,
+  MoreHorizontal,
+  Clock,
+  Timer,
+  Maximize2,
+  RotateCcw,
+} from 'lucide-react';
 
 export const FloatingTimer: React.FC = () => {
   const { language } = useI18n();
-  const { runningSession, togglePauseSession, setRunningSession, tickSession, addToast } = useUIStore();
+  const {
+    runningSession,
+    togglePauseSession,
+    setRunningSession,
+    tickSession,
+    toggleTimerDisplayMode,
+    setSessionTargetDurationMinutes,
+    addToast,
+  } = useUIStore();
   const [showMenu, setShowMenu] = useState(false);
   const [showZenModal, setShowZenModal] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -53,6 +70,28 @@ export const FloatingTimer: React.FC = () => {
     }
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  const targetMinutes = runningSession.targetDurationMinutes;
+  const isCountdown = (runningSession.displayMode || (targetMinutes ? 'countdown' : 'stopwatch')) === 'countdown';
+
+  let displayTime = formatTimer(runningSession.elapsedSeconds);
+  let isOvertime = false;
+  let progressPercent = 0;
+
+  if (targetMinutes) {
+    const targetSeconds = targetMinutes * 60;
+    progressPercent = Math.min(100, Math.round((runningSession.elapsedSeconds / targetSeconds) * 100));
+
+    if (isCountdown) {
+      const remainingSeconds = targetSeconds - runningSession.elapsedSeconds;
+      if (remainingSeconds >= 0) {
+        displayTime = formatTimer(remainingSeconds);
+      } else {
+        isOvertime = true;
+        displayTime = `+${formatTimer(Math.abs(remainingSeconds))}`;
+      }
+    }
+  }
 
   const handleTogglePause = async () => {
     togglePauseSession();
@@ -126,100 +165,193 @@ export const FloatingTimer: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-3 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 animate-in slide-in-from-bottom-5 duration-200 select-none">
-      {/* Circular icon container */}
-      <div className="relative flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 shrink-0">
-        <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-      </div>
-
-      {/* Timer & Task Title */}
-      <div className="flex flex-col min-w-32 max-w-56">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-bold text-slate-900 dark:text-slate-100 tracking-tight">
-            {formatTimer(runningSession.elapsedSeconds)}
-          </span>
-          <span
-            className={`inline-block w-2 h-2 rounded-full transition-colors ${
-              runningSession.isPaused
-                ? 'bg-amber-500'
-                : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]'
-            }`}
-          />
-        </div>
-        <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 truncate">
-          <span className="truncate font-medium text-slate-700 dark:text-slate-300">
-            {runningSession.title}
-          </span>
-        </div>
-      </div>
-
-      {/* Controls */}
-      <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-        {/* Pause / Resume Button */}
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 animate-in slide-in-from-bottom-5 duration-200 select-none">
+      <div className="flex items-center gap-3 px-4 py-3">
+        {/* Mode Icon & Interactive Switcher */}
         <button
           type="button"
-          onClick={handleTogglePause}
-          className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          title={runningSession.isPaused ? (language === 'zh-CN' ? '继续专注' : 'Resume') : (language === 'zh-CN' ? '暂停' : 'Pause')}
+          onClick={toggleTimerDisplayMode}
+          className="relative flex items-center justify-center w-8 h-8 rounded-full bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 shrink-0 cursor-pointer hover:scale-105 active:scale-95 transition-transform"
+          title={
+            language === 'zh-CN'
+              ? `当前模式：${isCountdown ? '倒计时' : '正向计时'} (点击切换)`
+              : `Mode: ${isCountdown ? 'Countdown' : 'Stopwatch'} (Click to switch)`
+          }
         >
-          {runningSession.isPaused ? (
-            <Play className="w-4 h-4 fill-current" />
+          {isCountdown ? (
+            <Timer className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           ) : (
-            <Pause className="w-4 h-4 fill-current" />
+            <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
           )}
         </button>
 
-        {/* Primary "Finish session" One-Click Complete Button */}
-        <button
-          type="button"
-          onClick={handleFinishAndComplete}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
-          title={language === 'zh-CN' ? '一键完成任务并结束会话' : 'Finish session and mark task done'}
-        >
-          <CheckCircle2 className="w-3.5 h-3.5" />
-          <span>{language === 'zh-CN' ? '一键完成' : 'Finish session'}</span>
-        </button>
+        {/* Timer & Task Title */}
+        <div className="flex flex-col min-w-32 max-w-56">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggleTimerDisplayMode}
+              className={`font-mono text-sm font-bold tracking-tight cursor-pointer hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors ${
+                isOvertime ? 'text-amber-500 font-extrabold' : 'text-slate-900 dark:text-slate-100'
+              }`}
+              title={language === 'zh-CN' ? '点击切换倒计时 / 正向计时' : 'Click to toggle countdown / stopwatch'}
+            >
+              {displayTime}
+            </button>
+            {targetMinutes && (
+              <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono">
+                {isCountdown ? (isOvertime ? '(超时)' : `/${targetMinutes}m`) : `/${targetMinutes}m`}
+              </span>
+            )}
+            <span
+              className={`inline-block w-2 h-2 rounded-full transition-colors ${
+                runningSession.isPaused
+                  ? 'bg-amber-500'
+                  : 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]'
+              }`}
+            />
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 truncate">
+            <span className="truncate font-medium text-slate-700 dark:text-slate-300">
+              {runningSession.title}
+            </span>
+          </div>
+        </div>
 
-        {/* Maximize to Zen Focus Mode */}
-        <button
-          type="button"
-          onClick={() => setShowZenModal(true)}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          title={language === 'zh-CN' ? '全屏沉浸专注 (番茄钟 & 白噪音)' : 'Full-screen Zen Mode (Pomodoro & Ambient Audio)'}
-        >
-          <Maximize2 className="w-4 h-4" />
-        </button>
-
-        {/* More Actions Menu */}
-        <div className="relative" ref={menuRef}>
+        {/* Controls */}
+        <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+          {/* Pause / Resume Button */}
           <button
             type="button"
-            onClick={() => setShowMenu((prev) => !prev)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            onClick={handleTogglePause}
+            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title={runningSession.isPaused ? (language === 'zh-CN' ? '继续专注' : 'Resume') : (language === 'zh-CN' ? '暂停' : 'Pause')}
           >
-            <MoreHorizontal className="w-4 h-4" />
+            {runningSession.isPaused ? (
+              <Play className="w-4 h-4 fill-current" />
+            ) : (
+              <Pause className="w-4 h-4 fill-current" />
+            )}
           </button>
 
-          {showMenu && (
-            <div className="absolute right-0 bottom-full mb-2 w-48 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1 z-50 text-xs animate-in fade-in-50 zoom-in-95 duration-150">
-              <button
-                type="button"
-                onClick={handleEndWithoutComplete}
-                className="w-full text-left px-3 py-2 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
-              >
-                {language === 'zh-CN' ? '仅结束专注（不完成任务）' : 'End session (keep task open)'}
-              </button>
-              <button
-                type="button"
-                onClick={handleDiscard}
-                className="w-full text-left px-3 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
-              >
-                {language === 'zh-CN' ? '放弃本次计时' : 'Discard session'}
-              </button>
-            </div>
-          )}
+          {/* Primary "Finish session" One-Click Complete Button */}
+          <button
+            type="button"
+            onClick={handleFinishAndComplete}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            title={language === 'zh-CN' ? '一键完成任务并结束会话' : 'Finish session and mark task done'}
+          >
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            <span>{language === 'zh-CN' ? '一键完成' : 'Finish session'}</span>
+          </button>
+
+          {/* Maximize to Zen Focus Mode */}
+          <button
+            type="button"
+            onClick={() => setShowZenModal(true)}
+            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            title={language === 'zh-CN' ? '全屏沉浸专注 (番茄钟 & 白噪音)' : 'Full-screen Zen Mode (Pomodoro & Ambient Audio)'}
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+
+          {/* More Actions Menu */}
+          <div className="relative" ref={menuRef}>
+            <button
+              type="button"
+              onClick={() => setShowMenu((prev) => !prev)}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <MoreHorizontal className="w-4 h-4" />
+            </button>
+
+            {showMenu && (
+              <div className="absolute right-0 bottom-full mb-2 w-56 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 py-1.5 z-50 text-xs animate-in fade-in-50 zoom-in-95 duration-150 space-y-1">
+                {/* Target Duration Adjustment */}
+                <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700/60 pb-1">
+                  {language === 'zh-CN' ? '设定目标时长' : 'Target Duration'}
+                </div>
+                <div className="px-2 py-1 flex flex-wrap gap-1">
+                  {[15, 25, 30, 45, 60, 90].map((mins) => (
+                    <button
+                      key={mins}
+                      type="button"
+                      onClick={() => {
+                        setSessionTargetDurationMinutes(mins);
+                        setShowMenu(false);
+                      }}
+                      className={`px-1.5 py-0.5 rounded text-[10px] cursor-pointer transition-colors ${
+                        targetMinutes === mins
+                          ? 'bg-indigo-600 text-white font-semibold'
+                          : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                      }`}
+                    >
+                      {mins}m
+                    </button>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSessionTargetDurationMinutes((targetMinutes || 25) + 15);
+                      setShowMenu(false);
+                    }}
+                    className="px-1.5 py-0.5 rounded text-[10px] bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 font-medium hover:bg-indigo-100 cursor-pointer"
+                  >
+                    +15m
+                  </button>
+                </div>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-700/60 my-1" />
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleTimerDisplayMode();
+                    setShowMenu(false);
+                  }}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+                  <span>
+                    {language === 'zh-CN'
+                      ? `切换为${isCountdown ? '正向计时' : '倒计时'}`
+                      : `Switch to ${isCountdown ? 'Stopwatch' : 'Countdown'}`}
+                  </span>
+                </button>
+
+                <div className="h-px bg-slate-100 dark:bg-slate-700/60 my-1" />
+
+                <button
+                  type="button"
+                  onClick={handleEndWithoutComplete}
+                  className="w-full text-left px-3 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors cursor-pointer"
+                >
+                  {language === 'zh-CN' ? '仅结束专注（不完成任务）' : 'End session (keep task open)'}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDiscard}
+                  className="w-full text-left px-3 py-1.5 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                >
+                  {language === 'zh-CN' ? '放弃本次计时' : 'Discard session'}
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
+
+      {/* Visual Progress Bar on Bottom */}
+      {targetMinutes && progressPercent > 0 && (
+        <div className="w-full h-1 bg-slate-100 dark:bg-slate-800 rounded-b-2xl overflow-hidden">
+          <div
+            className={`h-full transition-all duration-300 ${
+              isOvertime ? 'bg-amber-500' : 'bg-indigo-600 dark:bg-indigo-500'
+            }`}
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      )}
 
       {/* Full-Screen Zen Focus Modal */}
       <FocusZenModal

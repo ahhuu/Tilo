@@ -52,11 +52,20 @@ export const InspectorShell: React.FC = () => {
 
   if (!inspectorOpen) return null;
 
-  const handleStartSession = async (target: Task | { id: string; title: string; projectId?: string }) => {
+  const handleStartSession = async (target: Task | { id: string; title: string; projectId?: string; estimateMinutes?: number }) => {
     const isTask = 'statusId' in target;
+    let targetDurationMinutes: number | undefined;
+    if (inspectedBlock && inspectedBlock.startAt && inspectedBlock.endAt) {
+      targetDurationMinutes = Math.round((inspectedBlock.endAt - inspectedBlock.startAt) / 60000);
+    }
+    if (isTask && (target as Task).estimateMinutes) {
+      targetDurationMinutes = (target as Task).estimateMinutes;
+    } else if ('estimateMinutes' in target && target.estimateMinutes) {
+      targetDurationMinutes = target.estimateMinutes;
+    }
+
     const session = await startSession({
       taskId: isTask ? target.id : undefined,
-      plannedBlockId: inspectedBlock?.id,
       projectId: target.projectId,
       title: target.title,
     });
@@ -64,10 +73,13 @@ export const InspectorShell: React.FC = () => {
     setRunningSession({
       sessionId: session.id,
       taskId: isTask ? target.id : undefined,
+      plannedBlockId: inspectedBlock?.id,
       title: target.title,
       startedAt: session.startedAt,
       elapsedSeconds: 0,
       isPaused: false,
+      targetDurationMinutes,
+      displayMode: targetDurationMinutes ? 'countdown' : 'stopwatch',
     });
 
     addToast({
