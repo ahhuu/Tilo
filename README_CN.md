@@ -9,8 +9,8 @@
 
 ## 发行状态 (Release Status)
 
-**当前正式版本**: `Tilo v1.1.1`  
-**状态**: `Production Ready`（桌面 Web 端、PWA 独立客户端与 Android APK 移动端全量验证通过）
+**当前正式版本**: `Tilo v1.2.0`  
+**状态**: `Production Ready`（桌面 Web 端、Tauri 原生桌面端、PWA 独立客户端与 Android APK 移动端全量验证通过）
 
 ---
 
@@ -68,6 +68,7 @@
 - **统计分析 (`/analytics`)**：时间准确度、排期准确度、完成准确度、临时插入工作 (Unplanned Work) 及多维时间分配分析。
 - **复盘中心 (`/review`)**：3 步每日收尾与 6 步每周复盘向导，自动生成周度叙事与不可变历史快照。
 - **设置与定制 (`/settings`)**：外观、动效级别、自定义工作流状态、任务/反思模板与数据备份恢复。
+- **桌面独立挂件 (Desktop Widgets)**：基于 Tauri 的 6 款独立轻量桌面浮窗（今日待办、闪念收集、专注番茄、日程时间线、随手便签、核心目标），支持 5 款质感主题（毛玻璃/暗黑极简/纸质/无界悬浮/复古终端）、独立位置锁定、双击折叠展开与内联自然语法速记。
 
 ---
 
@@ -93,8 +94,11 @@ cd tilo
 # 安装依赖
 npm install
 
-# 启动本地开发服务
+# 启动 Web 本地开发服务
 npm run dev
+
+# 启动 Tauri 原生桌面端开发环境
+npm run tauri:dev
 
 # 类型检查与代码校验
 npm run typecheck
@@ -103,11 +107,11 @@ npm run lint
 # 运行单元测试
 npm run test
 
-# 运行端到端测试
-npm run e2e
-
-# 生产环境构建打包
+# 生产环境 Web 构建打包
 npm run build
+
+# 构建 Tauri 原生桌面客户端安装包 (.exe / .msi)
+npm run tauri:build
 ```
 
 ---

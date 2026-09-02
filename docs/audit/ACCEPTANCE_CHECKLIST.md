@@ -145,6 +145,19 @@
 - [x] Keyboard navigation is complete for primary paths
 - [x] Focus-visible and accessible names verified
 
+## Desktop Widgets (v1.2.0)
+
+- [x] 6 standalone floating native widgets supported (Tasks, Inbox, Session, Timeline, Notes, Goals)
+- [x] Multi-window lifecycle and multi-monitor layout persistence
+- [x] 5 curated window themes (Glassmorphic, Minimal Dark, Clean Paper, Borderless Float, Retro Terminal)
+- [x] 5-key titlebar control architecture (Pin, Lock, Settings, Theme, Close) with per-button visibility
+- [x] Independent single-window locking and global widget lock
+- [x] Double-click compact folding with auto restoration on window resize
+- [x] Inline NLP quick capture in Tasks widget with persistent syntax chips and flexible date parsing
+- [x] Aligned 4-category Inbox widget (Unsorted, Ideas + Notes, Archived, All) with collapsible capture
+- [x] Scratchpad Notes widget with Edit / Split / Preview modes
+- [x] Native Windows package generation (`.exe` / `.msi`) via Tauri
+
 ## Release gates
 
 - [x] `npm run typecheck` passes

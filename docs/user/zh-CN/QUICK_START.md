@@ -107,8 +107,9 @@ Capture (捕获) → Plan (规划) → Execute (执行) → Actual (实绩) → 
 ## 5. 探索更多功能
 
 完成第一次闭环后，你可以继续探索：
+- **桌面独立挂件 (Desktop Widgets)** — 在原生客户端右上角开启今日待办、闪念收集、专注番茄等悬浮小组件，脱离主界面常驻执行与速记
 - [核心概念 (Concepts)](./CONCEPTS.md) — 深入了解 Task 与 Session、Plan 与 Actual 的设计区别
-- [完整使用手册 (User Guide)](./USER_GUIDE.md) — 查阅收件箱连续整理、日历高级排期与数据分析图表说明
+- [完整使用手册 (User Guide)](./USER_GUIDE.md) — 查阅桌面挂件系统、收件箱连续整理、日历高级排期与数据分析图表说明
 - [快捷键清单 (Keyboard Shortcuts)](./KEYBOARD_SHORTCUTS.md) — 掌握 `Ctrl+K`、`[`、`C`、`P` 等全局快捷键
 - [数据与备份 (Data & Backup)](./DATA_AND_BACKUP.md) — 了解 Local-first 本地存储与 JSON 导入导出
 - [常见问题 (FAQ)](./FAQ.md) — 查阅常见疑问与最佳实践解答

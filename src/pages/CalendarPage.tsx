@@ -123,6 +123,34 @@ export const CalendarPage: React.FC = () => {
     });
   };
 
+  const handleDropTaskOnSlot = async (taskId: string, dateStr: string, hour: number) => {
+    let task = allTasks.find((t) => t.id === taskId);
+    if (!task) {
+      task = await db.tasks.get(taskId);
+    }
+    if (!task) return;
+
+    const startAt = new Date(`${dateStr}T${hour.toString().padStart(2, '0')}:00:00`).getTime();
+    const durationMinutes = task.estimateMinutes && task.estimateMinutes > 0 ? task.estimateMinutes : 60;
+    const endAt = startAt + durationMinutes * 60000;
+
+    await createPlannedBlock({
+      title: task.title,
+      type: 'task',
+      startAt,
+      endAt,
+      taskId: task.id,
+      projectId: task.projectId,
+    });
+
+    addToast({
+      message: language === 'zh-CN'
+        ? `已将「${task.title}」排期至 ${dateStr} ${hour.toString().padStart(2, '0')}:00`
+        : `Scheduled "${task.title}" for ${dateStr} ${hour}:00`,
+      type: 'success',
+    });
+  };
+
   const handleDeleteBlock = async (blockId: string) => {
     await deletePlannedBlock(blockId);
     addToast({
@@ -430,6 +458,7 @@ export const CalendarPage: React.FC = () => {
               sessions={sessions}
               tasks={allTasks}
               onSlotClick={(dateStr, hour) => setModalSlot({ dateStr, hour })}
+              onDropTask={handleDropTaskOnSlot}
               onInspectTask={handleInspectTask}
               onDeleteBlock={handleDeleteBlock}
             />

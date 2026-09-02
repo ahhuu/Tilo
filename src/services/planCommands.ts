@@ -1,5 +1,6 @@
 import { db, DEFAULT_WORKSPACE_ID, type TiloDB } from '@/storage/db';
-import type { PlannedBlock, PlannedBlockType, DailyFocus, ActivityEvent } from '@/core/types/domain';
+import type { PlannedBlock, PlannedBlockType, DailyFocus, ActivityEvent, Task } from '@/core/types/domain';
+import { timeService } from '@/core/time/timeService';
 
 export interface CreatePlannedBlockInput {
   taskId?: string;
@@ -49,9 +50,29 @@ export async function createPlannedBlock(
     payloadJson: { startAt: block.startAt, endAt: block.endAt, type: block.type, taskId: block.taskId },
   };
 
-  await database.transaction('rw', [database.plannedBlocks, database.activityEvents], async () => {
+  await database.transaction('rw', [database.plannedBlocks, database.tasks, database.activityEvents], async () => {
     await database.plannedBlocks.put(block);
     await database.activityEvents.put(event);
+
+    // 核心：若关联了原任务，自动同步更新任务的排期日期、预估工时与截止日期
+    if (input.taskId) {
+      const task = await database.tasks.get(input.taskId);
+      if (task) {
+        const scheduledDate = timeService.getLogicalDate(input.startAt);
+        const durationMinutes = Math.max(5, Math.round((input.endAt - input.startAt) / 60000));
+        const taskUpdates: Partial<Task> = {
+          scheduledDate,
+          updatedAt: now,
+        };
+        if (durationMinutes > 0) {
+          taskUpdates.estimateMinutes = durationMinutes;
+        }
+        if (!task.dueDate) {
+          taskUpdates.dueDate = scheduledDate;
+        }
+        await database.tasks.update(input.taskId, taskUpdates);
+      }
+    }
   });
 
   return block;
@@ -80,9 +101,29 @@ export async function updatePlannedBlock(
     payloadJson: { updates },
   };
 
-  await database.transaction('rw', [database.plannedBlocks, database.activityEvents], async () => {
+  await database.transaction('rw', [database.plannedBlocks, database.tasks, database.activityEvents], async () => {
     await database.plannedBlocks.put(updated);
     await database.activityEvents.put(event);
+
+    // 若时间块调整了起止时间且有关联任务，同步更新任务的排期日期与预估工时
+    if (updated.taskId && (updates.startAt || updates.endAt)) {
+      const task = await database.tasks.get(updated.taskId);
+      if (task) {
+        const scheduledDate = timeService.getLogicalDate(updated.startAt);
+        const durationMinutes = Math.max(5, Math.round((updated.endAt - updated.startAt) / 60000));
+        const taskUpdates: Partial<Task> = {
+          scheduledDate,
+          updatedAt: now,
+        };
+        if (durationMinutes > 0) {
+          taskUpdates.estimateMinutes = durationMinutes;
+        }
+        if (!task.dueDate) {
+          taskUpdates.dueDate = scheduledDate;
+        }
+        await database.tasks.update(updated.taskId, taskUpdates);
+      }
+    }
   });
 
   return updated;

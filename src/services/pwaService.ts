@@ -40,6 +40,9 @@ class PWAService {
   public registerServiceWorker(): void {
     if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
 
+    // 在 Tauri 桌面客户端中由原生资源加载，禁止注册 Service Worker 以免拦截白屏
+    if ('__TAURI_INTERNALS__' in window) return;
+
     window.addEventListener('load', () => {
       // In production or development, register the root sw.js
       navigator.serviceWorker

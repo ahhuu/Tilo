@@ -9,8 +9,8 @@ English Documentation | [简体中文文档](README_CN.md)
 
 ## Release Status
 
-**Current Release**: `Tilo v1.1.1`  
-**Status**: `Production Ready` (Desktop Web, PWA Standalone & Android APK Validated)
+**Current Release**: `Tilo v1.2.0`  
+**Status**: `Production Ready` (Desktop Web, Tauri Desktop Native, PWA Standalone & Android APK Validated)
 
 ---
 
@@ -68,6 +68,7 @@ English Documentation | [简体中文文档](README_CN.md)
 - **Analytics (`/analytics`)**: 12 objective metrics including Time, Schedule, and Completion Accuracy, Start Delay, Unplanned Work, and Capacity analysis.
 - **Review Hub (`/review`)**: 3-step Daily Close and 6-step Weekly Review with rule-generated weekly narratives and immutable revision snapshots.
 - **Settings (`/settings`)**: Theme, density, motion level, custom workflows, templates, and data backup/restore.
+- **Desktop Widgets**: 6 standalone lightweight floating desktop widgets (Today Tasks, Quick Inbox, Pomodoro Focus, Schedule Timeline, Scratchpad Notes, Goals Dashboard) built on Tauri with 5 curated themes, per-widget locking, collapsible states, and inline NLP capture.
 
 ---
 
@@ -87,7 +88,7 @@ English Documentation | [简体中文文档](README_CN.md)
 
 ## Tech Stack & Requirements
 
-- **Runtime**: Modern Evergreen Web Browsers (Chrome 110+, Edge 110+, Firefox 110+, Safari 16.4+)
+- **Runtime**: Modern Evergreen Web Browsers & Tauri v2 Desktop Shell
 - **Frontend**: React 19, TypeScript 5.7, Tailwind CSS v4, Motion 12, Lucide React
 - **Storage**: IndexedDB via Dexie.js 4 & Dexie React Hooks
 - **Testing**: Vitest, React Testing Library, Playwright E2E
@@ -104,8 +105,11 @@ cd tilo
 # Install dependencies
 npm install
 
-# Start local dev server
+# Start local web dev server
 npm run dev
+
+# Start native desktop dev environment via Tauri
+npm run tauri:dev
 
 # Run typecheck & lint
 npm run typecheck
@@ -114,11 +118,11 @@ npm run lint
 # Run unit tests
 npm run test
 
-# Run E2E tests
-npm run e2e
-
-# Build production bundle
+# Build web production bundle
 npm run build
+
+# Build native desktop installers (.exe / .msi) via Tauri
+npm run tauri:build
 ```
 
 ---

@@ -537,7 +537,7 @@ export const TodayPage: React.FC = () => {
         <div className={`${rightColSpanClass} sticky top-4`}>
           <TodayTimeline
             logicalDate={logicalDate}
-            tasks={todayTasks}
+            tasks={[...todayTasks, ...unscheduledTasks]}
             projects={projects}
             onInspectTask={(t) => openInspector({ type: 'task', id: t.id, title: t.title })}
           />

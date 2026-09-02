@@ -9,6 +9,7 @@ import { TemplatesSection } from '@/components/settings/TemplatesSection';
 import { TimeSection } from '@/components/settings/TimeSection';
 import { DataBackupSection } from '@/components/settings/DataBackupSection';
 import { ShortcutsSection } from '@/components/settings/ShortcutsSection';
+import { WidgetSettingsSection } from '@/components/settings/WidgetSettingsSection';
 import {
   Settings as SettingsIcon,
   Palette,
@@ -20,6 +21,7 @@ import {
   Clock,
   Database,
   Command,
+  LayoutGrid,
 } from 'lucide-react';
 
 type SettingsTab =
@@ -30,6 +32,7 @@ type SettingsTab =
   | 'workflow'
   | 'templates'
   | 'time'
+  | 'widgets'
   | 'data'
   | 'shortcuts';
 
@@ -45,6 +48,7 @@ export const SettingsPage: React.FC = () => {
     { id: 'workflow', label: language === 'zh-CN' ? '工作流与字段' : 'Workflow & Fields', icon: GitFork },
     { id: 'templates', label: language === 'zh-CN' ? '模板与提示' : 'Templates & Prompts', icon: FileText },
     { id: 'time', label: t('settings.time'), icon: Clock },
+    { id: 'widgets', label: language === 'zh-CN' ? '桌面挂件' : 'Desktop Widgets', icon: LayoutGrid },
     { id: 'data', label: t('settings.data'), icon: Database },
     { id: 'shortcuts', label: t('settings.shortcuts'), icon: Command },
   ];
@@ -103,6 +107,7 @@ export const SettingsPage: React.FC = () => {
           {activeTab === 'workflow' && <WorkflowSection />}
           {activeTab === 'templates' && <TemplatesSection />}
           {activeTab === 'time' && <TimeSection />}
+          {activeTab === 'widgets' && <WidgetSettingsSection />}
           {activeTab === 'data' && <DataBackupSection />}
           {activeTab === 'shortcuts' && <ShortcutsSection />}
         </div>

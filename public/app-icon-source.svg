@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <defs>
+    <!-- Background Elegant Dark Indigo Radial/Linear Gradient -->
+    <linearGradient id="bg-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#312E81" />
+      <stop offset="50%" stop-color="#1E1B4B" />
+      <stop offset="100%" stop-color="#0F172A" />
+    </linearGradient>
+
+    <!-- Tilo Monolithic T Vibrant Indigo Accent Gradient -->
+    <linearGradient id="tilo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#A5B4FC" />
+      <stop offset="35%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#4338CA" />
+    </linearGradient>
+
+    <!-- Subtle Drop Shadow for the T Mark -->
+    <filter id="mark-shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.45" />
+    </filter>
+  </defs>
+
+  <!-- Squircle Rounded Container Background -->
+  <rect x="16" y="16" width="480" height="480" rx="108" ry="108" fill="url(#bg-grad)" stroke="#4F46E5" stroke-opacity="0.3" stroke-width="4" />
+
+  <!-- Tilo Unified Seamless Monolithic T Brandmark (Scaled & Centered) -->
+  <g transform="translate(68, 64) scale(7.8)" filter="url(#mark-shadow)">
+    <path
+      d="M 12 10
+         L 36 10
+         A 4 4 0 0 1 36 18
+         L 31 18
+         Q 28 18 28 21
+         L 28 34
+         A 4 4 0 0 1 20 34
+         L 20 21
+         Q 20 18 17 18
+         L 12 18
+         A 4 4 0 0 1 12 10
+         Z"
+      fill="url(#tilo-grad)"
+    />
+  </g>
+</svg>

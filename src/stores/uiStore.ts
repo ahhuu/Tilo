@@ -255,6 +255,55 @@ export const useUIStore = create<UIState>((set, get) => {
         // ignore in environments without addEventListener on matchMedia
       }
     }
+
+    // 跨窗口同步语言、主题与进行中的专注会话
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', (e) => {
+        if (e.key === 'tilo_active_running_session') {
+          if (e.newValue) {
+            try {
+              const session = JSON.parse(e.newValue);
+              set({ runningSession: session });
+            } catch {
+              // ignore
+            }
+          } else {
+            set({ runningSession: null });
+          }
+        } else if (e.key === STORAGE_KEY_LANGUAGE && e.newValue) {
+          if (e.newValue === 'zh-CN' || e.newValue === 'en-US') {
+            set({ language: e.newValue });
+          }
+        } else if (e.key === STORAGE_KEY_THEME && e.newValue) {
+          const theme = e.newValue as ThemeMode;
+          set({ theme });
+          applyThemeToDOM(theme);
+        }
+      });
+
+      if ('__TAURI_INTERNALS__' in window) {
+        import('@tauri-apps/api/event').then(({ listen }) => {
+          listen<Language>('tilo:language-changed', (event) => {
+            if (event.payload === 'zh-CN' || event.payload === 'en-US') {
+              set({ language: event.payload });
+            }
+          }).catch(() => {});
+        }).catch(() => {});
+      }
+    }
+  }
+
+  let initialRunningSession: RunningSessionState | null = null;
+  try {
+    const rawSession = localStorage.getItem('tilo_active_running_session');
+    if (rawSession) {
+      const parsed = JSON.parse(rawSession);
+      if (parsed && parsed.sessionId) {
+        initialRunningSession = parsed;
+      }
+    }
+  } catch {
+    // ignore
   }
 
   return {
@@ -263,6 +312,7 @@ export const useUIStore = create<UIState>((set, get) => {
     density: initialDensity,
     motionLevel: initialMotion,
     sidebarCollapsed: initialSidebar,
+    runningSession: initialRunningSession,
 
     calendarViewMode: initialCalView,
     calendarDaysCount: initialCalDays,
@@ -274,13 +324,17 @@ export const useUIStore = create<UIState>((set, get) => {
     inspectorOpen: false,
     inspectorTarget: null,
 
-    runningSession: null,
     toasts: [],
     unsortedInboxCount: 0,
 
     setLanguage: (language) => {
       try {
         localStorage.setItem(STORAGE_KEY_LANGUAGE, language);
+        if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+          import('@tauri-apps/api/event').then(({ emit }) => {
+            emit('tilo:language-changed', language).catch(() => {});
+          }).catch(() => {});
+        }
       } catch {
         // ignore
       }
@@ -381,7 +435,18 @@ export const useUIStore = create<UIState>((set, get) => {
     openInspector: (target) => set({ inspectorOpen: true, inspectorTarget: target }),
     closeInspector: () => set({ inspectorOpen: false, inspectorTarget: null }),
 
-    setRunningSession: (session) => set({ runningSession: session }),
+    setRunningSession: (session) => {
+      try {
+        if (session) {
+          localStorage.setItem('tilo_active_running_session', JSON.stringify(session));
+        } else {
+          localStorage.removeItem('tilo_active_running_session');
+        }
+      } catch {
+        // ignore
+      }
+      set({ runningSession: session });
+    },
     togglePauseSession: () => {
       const current = get().runningSession;
       if (!current) return;

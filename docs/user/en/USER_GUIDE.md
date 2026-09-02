@@ -305,6 +305,21 @@ The 6-step structured weekly review:
   ```
 - Lightweight 4.5 MB `.apk` file for direct installation on Android devices.
 
+### 18.3 Tauri Native Desktop & Desktop Widgets System
+- Native desktop application built on Tauri v2, packageable into Windows installers (`.exe` / `.msi`) and portable executables:
+  ```bash
+  npm run tauri:dev    # Local desktop development and live reload
+  npm run tauri:build  # Compile production native desktop installers
+  ```
+- **6 Standalone Lightweight Desktop Widgets**:
+  - **Today Tasks**: Inline NLP quick capture, flexible dates, persistent syntax chips, and filter categories;
+  - **Quick Inbox**: Aligned with main app's 4 tabs (Unsorted, Ideas + Notes, Archived, All), with top-bar collapsible capture;
+  - **Pomodoro Focus**: Minimal circular countdown/stopwatch timer with target duration configuration and progress bar;
+  - **Schedule Timeline**: Mini compact view of daily scheduled blocks and actual session history;
+  - **Scratchpad Notes**: Offline markdown note scratchpad with Edit, Split, and Preview modes;
+  - **Goals Dashboard**: Real-time progress monitoring for Weekly Focus goals and milestones.
+- **5 Curated Themes & Controls**: Glassmorphism, Minimal Dark, Clean Paper, Borderless Float, and Retro Terminal. Titlebar buttons support independent visibility (Always / Hover / Hidden), single-window locking, and double-click compact collapse.
+
 ---
 
 ## 19. Recommended Daily Workflow

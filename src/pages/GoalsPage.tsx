@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/storage/db';
@@ -36,7 +36,8 @@ export const GoalsPage: React.FC = () => {
   const { openInspector, addToast } = useUIStore();
   const weekKey = timeService.getWeekKey();
 
-  const allGoals = useLiveQuery(() => db.goals.filter((g) => !g.deletedAt).toArray(), []) || [];
+  const allGoalsRaw = useLiveQuery<Goal[]>(() => db.goals.filter((g) => !g.deletedAt).toArray(), []);
+  const allGoals: Goal[] = useMemo(() => allGoalsRaw || [], [allGoalsRaw]);
   const allProjects = useLiveQuery(() => db.projects.filter((p) => !p.deletedAt).toArray(), []) || [];
   const allTasks = useLiveQuery(() => db.tasks.filter((t) => !t.deletedAt).toArray(), []) || [];
   const weeklyFocusEntries = useLiveQuery(

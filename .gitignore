@@ -42,3 +42,7 @@ android/local.properties
 android/captures/
 *.apk
 *.aab
+
+# Tauri build artifacts
+src-tauri/target/
+src-tauri/gen/

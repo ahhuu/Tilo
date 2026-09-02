@@ -16,13 +16,16 @@ import {
   SlidersHorizontal,
   Minimize2,
   Maximize2,
+  LayoutGrid,
 } from 'lucide-react';
 import { pwaService } from '@/services/pwaService';
+import { WidgetLauncherPopover } from '@/components/widget/WidgetLauncherPopover';
 
 export const Header: React.FC = () => {
   const location = useLocation();
   const { t, language, setLanguage } = useI18n();
   const [canInstallPWA, setCanInstallPWA] = React.useState(false);
+  const [isWidgetPopoverOpen, setIsWidgetPopoverOpen] = React.useState(false);
 
   React.useEffect(() => {
     return pwaService.subscribe((installable) => {
@@ -139,6 +142,32 @@ export const Header: React.FC = () => {
             <span className="hidden sm:inline">{language === 'zh-CN' ? '安装客户端' : 'Install App'}</span>
           </button>
         )}
+
+        {/* Desktop Native Widget Launcher & Popover Manager */}
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setIsWidgetPopoverOpen(!isWidgetPopoverOpen)}
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer border shadow-2xs ${
+              isWidgetPopoverOpen
+                ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-800'
+                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border-slate-200/80 dark:border-slate-800'
+            }`}
+            title={
+              language === 'zh-CN'
+                ? '管理桌面快捷挂件 (独立小窗、自由拖拽拉伸)'
+                : 'Manage Desktop Widgets'
+            }
+          >
+            <LayoutGrid className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+            <span>{language === 'zh-CN' ? '桌面挂件' : 'Widget'}</span>
+          </button>
+
+          <WidgetLauncherPopover
+            isOpen={isWidgetPopoverOpen}
+            onClose={() => setIsWidgetPopoverOpen(false)}
+          />
+        </div>
 
         <div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
 

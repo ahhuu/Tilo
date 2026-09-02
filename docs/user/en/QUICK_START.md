@@ -106,8 +106,9 @@ At the end of the week, open **Weekly Review** from the Review Hub:
 
 ## 5. Next Steps
 
+- **Desktop Widgets** — Launch floating Today Tasks, Quick Inbox, and Focus timer widgets from the native client header
 - [Core Concepts](./CONCEPTS.md) — Deep dive into Domain hierarchy, Plan vs Actual, and Task vs Session
-- [User Guide](./USER_GUIDE.md) — Comprehensive guide to Inbox Continuous Mode, Calendar, and Analytics formulas
+- [User Guide](./USER_GUIDE.md) — Comprehensive guide to Desktop Widgets, Inbox Continuous Mode, Calendar, and Analytics formulas
 - [Keyboard Shortcuts](./KEYBOARD_SHORTCUTS.md) — Fast keyboard navigation cheat sheet
 - [Data & Backup](./DATA_AND_BACKUP.md) — Local-first persistence and JSON backup/restore guide
 - [FAQ](./FAQ.md) — Frequently asked questions and edge cases

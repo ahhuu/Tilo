@@ -69,3 +69,21 @@ Do not silently change frozen decisions during implementation.
 - Affected modules/data: visible app branding, document titles, backup filename prefix, package metadata when bootstrap occurs, window/document title, manifests, generated screenshots and future assets.
 - Migration implications: none for domain data; implementation agents must not reintroduce any previous working title in UI or metadata.
 
+### 2026-08-31 — Native Desktop Shell & Multi-Window Widget (Tauri v2)
+- Previous decision: Tilo V1 was strictly pure web-first React browser client application.
+- New decision: Introduce Tauri v2 native desktop shell to support:
+  1. Standalone Windows desktop app package (`.exe`/`.msi`);
+  2. Native frameless translucent multi-window desktop widget with mouse dragging (`data-tauri-drag-region`), always-on-top toggle, and frosted glass background.
+- Affected modules/data: `src-tauri/` project workspace, `package.json` scripts, `src/services/tauriWidgetService.ts`, `src/components/widget/`, `src/pages/WidgetPage.tsx`.
+- Migration implications: Local-first persistence remains 100% compatible on Dexie/IndexedDB via WebView2 without backend server requirement. Pure web browsers continue to run with fallback popups.
+
+### 2026-09-02 — Desktop Widgets Architecture & NLP Quick Capture (Tilo v1.2.0)
+- Previous decision: Widgets were a unified popover grid on top of the web client.
+- New decision:
+  1. Expand Desktop Widgets into 6 fully standalone frameless native floating windows (Tasks, Inbox, Session, Timeline, Notes, Goals) with multi-monitor layout recall and per-widget position locking;
+  2. Implement inline NLP quick capture directly within the Today Tasks widget with persistent syntax chips;
+  3. Align Inbox widget with main application's 4-category workflow (Unsorted, Ideas + Notes, Archived, All) with top-bar collapsible capture;
+  4. Release as formal milestone **Tilo v1.2.0**.
+- Affected modules/data: `src/components/widget/`, `src-tauri/tauri.conf.json`, `package.json`, `README_CN.md`, `README.md`, `docs/releases/V1_2_0_RELEASE_NOTES.md`.
+- Migration implications: 100% backward compatible; layout preferences and widget configurations seamlessly persist in local storage and Dexie.
+

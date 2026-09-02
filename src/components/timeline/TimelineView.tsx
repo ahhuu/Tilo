@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { db } from '@/storage/db';
 import { useI18n } from '@/core/i18n';
 import { timeService } from '@/core/time/timeService';
 import { Badge } from '@/components/ui/Badge';
@@ -249,7 +250,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     const taskId = e.dataTransfer.getData('application/json-task-id') || e.dataTransfer.getData('text/plain');
     if (!taskId) return;
 
-    const task = taskMap.get(taskId);
+    let task = taskMap.get(taskId);
+    if (!task) {
+      task = await db.tasks.get(taskId);
+    }
     if (!task) return;
 
     const snappedStartAt = getTimeFromPointerY(e.clientY);
@@ -282,6 +286,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col overflow-hidden shadow-xs select-none h-full flex-1 ${className}`}
       onPointerMove={handleGridPointerMove}
       onPointerUp={handleGridPointerUp}
+      onDragOver={handleDragOver}
+      onDragEnter={handleDragOver}
     >
       {/* Header Controls: Filters & Capacity Summary */}
       <div className="p-3.5 border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur-xs z-10">
@@ -396,6 +402,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           ref={gridRef}
           onPointerDown={handleGridPointerDown}
           onDragOver={handleDragOver}
+          onDragEnter={handleDragOver}
           onDrop={handleDrop}
           style={{ height: `${hours.length * HOUR_HEIGHT}px` }}
           className="flex-1 relative bg-white dark:bg-slate-900 cursor-crosshair group select-none"

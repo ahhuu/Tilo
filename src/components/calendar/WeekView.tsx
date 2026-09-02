@@ -12,6 +12,7 @@ interface WeekViewProps {
   sessions: Session[];
   tasks: Task[];
   onSlotClick: (dateStr: string, hour: number) => void;
+  onDropTask?: (taskId: string, dateStr: string, hour: number) => Promise<void> | void;
   onInspectTask?: (task: Task) => void;
   onDeleteBlock?: (blockId: string) => void;
 }
@@ -23,6 +24,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   sessions,
   tasks,
   onSlotClick,
+  onDropTask,
   onInspectTask,
   onDeleteBlock,
 }) => {
@@ -121,6 +123,23 @@ export const WeekView: React.FC<WeekViewProps> = ({
                   <div
                     key={day.dateStr}
                     onClick={() => onSlotClick(day.dateStr, hour)}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDragEnter={(e) => {
+                      e.preventDefault();
+                      e.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDrop={async (e) => {
+                      e.preventDefault();
+                      const taskId =
+                        e.dataTransfer.getData('application/json-task-id') ||
+                        e.dataTransfer.getData('text/plain');
+                      if (taskId && onDropTask) {
+                        await onDropTask(taskId, day.dateStr, hour);
+                      }
+                    }}
                     className="flex-1 border-r border-slate-100 dark:border-slate-800/60 last:border-r-0 p-1 space-y-1 hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors cursor-pointer group relative"
                   >
                     {/* Planned blocks */}
