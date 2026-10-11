@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet } from 'react-router-dom';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
+import { MobileBottomNav } from './MobileBottomNav';
 import { InspectorShell } from '@/components/global/InspectorShell';
 import { CommandMenu } from '@/components/global/CommandMenu';
 import { InstantCaptureModal } from '@/components/global/InstantCaptureModal';
@@ -28,7 +29,7 @@ export const AppLayout: React.FC = () => {
 
         {/* Workspace Body + Inspector */}
         <div className="flex flex-1 min-h-0 overflow-hidden relative">
-          <main className="flex-1 overflow-y-auto min-w-0">
+          <main className="flex-1 overflow-y-auto min-w-0 pb-16 md:pb-0">
             <Outlet />
           </main>
 
@@ -36,6 +37,9 @@ export const AppLayout: React.FC = () => {
           <InspectorShell />
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileBottomNav />
 
       {/* Global Overlays and Modals */}
       <CommandMenu />

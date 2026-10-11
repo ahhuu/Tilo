@@ -106,6 +106,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const [isDragCreating, setIsDragCreating] = useState(false);
   const [dragCreateStartMs, setDragCreateStartMs] = useState<number | null>(null);
   const [dragCreateCurrentMs, setDragCreateCurrentMs] = useState<number | null>(null);
+  const pointerDownYRef = useRef<number>(0);
+  const pointerDownTimeRef = useRef<number>(0);
 
   // Drag Move & Resize state
   const [activeResizeBlock, setActiveResizeBlock] = useState<{
@@ -190,10 +192,12 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     if (e.target !== gridRef.current && !(e.target as HTMLElement).classList.contains('timeline-slot-bg')) {
       return;
     }
+    pointerDownYRef.current = e.clientY;
+    pointerDownTimeRef.current = Date.now();
     const snappedMs = getTimeFromPointerY(e.clientY);
     setIsDragCreating(true);
     setDragCreateStartMs(snappedMs);
-    setDragCreateCurrentMs(snappedMs + 3600000); // 1 hr draft default
+    setDragCreateCurrentMs(snappedMs + 1800000); // 30 min draft default
   };
 
   const handleGridPointerMove = (e: React.PointerEvent) => {
@@ -217,14 +221,25 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     }
   };
 
-  const handleGridPointerUp = () => {
-    if (isDragCreating && dragCreateStartMs !== null && dragCreateCurrentMs !== null) {
-      const startAt = Math.min(dragCreateStartMs, dragCreateCurrentMs);
-      const endAt = Math.max(
-        startAt + 900000, // min 15m
-        Math.max(dragCreateStartMs, dragCreateCurrentMs)
-      );
-      setCreateDraftRange({ startAt, endAt });
+  const handleGridPointerUp = (e: React.PointerEvent) => {
+    if (isDragCreating && dragCreateStartMs !== null) {
+      const deltaY = Math.abs(e.clientY - pointerDownYRef.current);
+      const deltaTime = Date.now() - pointerDownTimeRef.current;
+      // 轻触 (Tap) 或极微小的滑动直接判定为在该时间段快速创建 30 分钟时间块
+      if (deltaY < 12 || deltaTime < 250) {
+        setCreateDraftRange({
+          startAt: dragCreateStartMs,
+          endAt: dragCreateStartMs + 1800000,
+        });
+      } else {
+        const currentMs = dragCreateCurrentMs ?? (dragCreateStartMs + 1800000);
+        const startAt = Math.min(dragCreateStartMs, currentMs);
+        const endAt = Math.max(
+          startAt + 900000, // min 15m
+          Math.max(dragCreateStartMs, currentMs)
+        );
+        setCreateDraftRange({ startAt, endAt });
+      }
       setIsDragCreating(false);
       setDragCreateStartMs(null);
       setDragCreateCurrentMs(null);
@@ -664,9 +679,9 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                   </>
                 ) : (
                   <>
-                    {/* Card Header Info */}
-                    <div className="flex items-center justify-between gap-1 min-w-0">
-                      <div className="flex items-center gap-1.5 truncate">
+                    {/* Card Header: Type badge & Overlap & Quick actions */}
+                    <div className="flex items-center justify-between gap-1 min-w-0 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         {isPlan ? (
                           isFocus ? (
                             <Badge size="sm" className="bg-purple-100 text-purple-800 dark:bg-purple-900/60 dark:text-purple-200 border border-purple-300 dark:border-purple-700/60 px-1 py-0 text-[10px] font-semibold">
@@ -688,82 +703,89 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                             Actual {item.coalescedCount && item.coalescedCount > 1 ? `x${item.coalescedCount}` : ''}
                           </Badge>
                         )}
-
-                        <span
-                          onClick={(e) => {
-                            if (linkedTask && onInspectTask) {
-                              e.stopPropagation();
-                              onInspectTask(linkedTask);
-                            }
-                          }}
-                          className="text-xs font-semibold truncate hover:underline"
-                        >
-                          {item.title || linkedTask?.title}
-                        </span>
                       </div>
 
-                      {/* Overlap Indicator Badge */}
-                      {item.isOverlapping && (
-                        <span
-                          className="text-[10px] bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:bg-amber-200 px-1 rounded flex items-center gap-0.5 shrink-0"
-                          title={language === 'zh-CN' ? '时间排期发生重叠' : 'Schedule overlap'}
-                        >
-                          <AlertTriangle className="w-2.5 h-2.5" />
-                          {language === 'zh-CN' ? '重叠' : 'Overlap'}
-                        </span>
-                      )}
+                      {/* Right side: Compact overlap warning & Quick actions */}
+                      <div className="flex items-center gap-1 shrink-0">
+                        {item.isOverlapping && (
+                          <span
+                            className="text-[10px] bg-amber-100 dark:bg-amber-900/60 text-amber-800 dark:text-amber-200 px-1 rounded flex items-center gap-0.5 shrink-0"
+                            title={language === 'zh-CN' ? '时间排期发生重叠' : 'Schedule overlap'}
+                          >
+                            <AlertTriangle className="w-2.5 h-2.5" />
+                            <span className="hidden sm:inline">{language === 'zh-CN' ? '重叠' : 'Overlap'}</span>
+                          </span>
+                        )}
+
+                        <div className="flex items-center gap-1 sm:opacity-0 sm:group-hover/item:opacity-100 opacity-80 transition-opacity">
+                          {isPlan && linkedTask && onStartSession && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onStartSession(linkedTask);
+                              }}
+                              className="p-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-2xs"
+                              title={language === 'zh-CN' ? '快速开启会话' : 'Start session'}
+                            >
+                              <Play className="w-2.5 h-2.5" />
+                            </button>
+                          )}
+
+                          {isPlan && onDeletePlannedBlock && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeletePlannedBlock(item.id);
+                              }}
+                              className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
+                              title={language === 'zh-CN' ? '删除时间块' : 'Delete block'}
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          )}
+
+                          {!isPlan && onDeleteSession && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteSession(item.id);
+                              }}
+                              className="p-1 rounded text-emerald-200 hover:text-white hover:bg-emerald-700/80 cursor-pointer transition-colors"
+                              title={language === 'zh-CN' ? '删除实际会话' : 'Delete session'}
+                            >
+                              <Trash2 className="w-2.5 h-2.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Card Footer: Duration & Quick Actions */}
-                    <div className="flex items-center justify-between text-[10px] opacity-80 group-hover/item:opacity-100 transition-opacity">
+                    {/* Middle Title Area: Full width, line-clamp-2 to display full task name */}
+                    <div
+                      onClick={(e) => {
+                        if (linkedTask && onInspectTask) {
+                          e.stopPropagation();
+                          onInspectTask(linkedTask);
+                        }
+                      }}
+                      className="text-xs font-semibold leading-snug line-clamp-2 hover:underline break-words my-auto py-0.5"
+                    >
+                      {item.title || linkedTask?.title || (isPlan ? (language === 'zh-CN' ? '排期计划' : 'Planned Task') : (language === 'zh-CN' ? '专注记录' : 'Session'))}
+                    </div>
+
+                    {/* Card Footer: Time info */}
+                    <div className="flex items-center justify-between text-[10px] opacity-80 shrink-0">
                       <span className="font-mono truncate">
-                        {timeService.formatTime(effectiveStartAt)} – {timeService.formatTime(effectiveEndAt)}{' '}
-                        ({item.coalescedCount && item.coalescedCount > 1 ? (language === 'zh-CN' ? `共 ${timeService.formatDuration(item.durationSeconds)}` : `total ${timeService.formatDuration(item.durationSeconds)}`) : timeService.formatDuration(item.durationSeconds)})
+                        {timeService.formatTime(effectiveStartAt)} – {timeService.formatTime(effectiveEndAt)}
                       </span>
-
-                      <div className="flex items-center gap-1 opacity-0 group-hover/item:opacity-100 transition-opacity">
-                        {isPlan && linkedTask && onStartSession && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onStartSession(linkedTask);
-                            }}
-                            className="p-1 rounded bg-indigo-600 text-white hover:bg-indigo-700 cursor-pointer shadow-2xs"
-                            title={language === 'zh-CN' ? '快速开启会话' : 'Start session'}
-                          >
-                            <Play className="w-2.5 h-2.5" />
-                          </button>
-                        )}
-
-                        {isPlan && onDeletePlannedBlock && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeletePlannedBlock(item.id);
-                            }}
-                            className="p-1 rounded text-slate-400 hover:text-red-500 cursor-pointer"
-                            title={language === 'zh-CN' ? '删除时间块' : 'Delete block'}
-                          >
-                            <Trash2 className="w-2.5 h-2.5" />
-                          </button>
-                        )}
-
-                        {!isPlan && onDeleteSession && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteSession(item.id);
-                            }}
-                            className="p-1 rounded text-emerald-200 hover:text-white hover:bg-emerald-700/80 cursor-pointer transition-colors"
-                            title={language === 'zh-CN' ? '删除实际会话' : 'Delete session'}
-                          >
-                            <Trash2 className="w-2.5 h-2.5" />
-                          </button>
-                        )}
-                      </div>
+                      {item.durationSeconds >= 1800 && (
+                        <span className="font-mono text-[9px] opacity-75 shrink-0 ml-1">
+                          {timeService.formatDuration(item.durationSeconds)}
+                        </span>
+                      )}
                     </div>
                   </>
                 )}

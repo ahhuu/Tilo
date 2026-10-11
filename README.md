@@ -9,7 +9,7 @@ English Documentation | [简体中文文档](README_CN.md)
 
 ## Release Status
 
-**Current Release**: `Tilo v1.2.0`  
+**Current Release**: `Tilo v1.2.1`  
 **Status**: `Production Ready` (Desktop Web, Tauri Desktop Native, PWA Standalone & Android APK Validated)
 
 ---

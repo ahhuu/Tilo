@@ -15,18 +15,35 @@ import { ErrorBoundary } from '@/components/global/ErrorBoundary';
 import { db, ensureDefaultWorkspace } from '@/storage/db';
 import { seedDemoData } from '@/storage/seed';
 import { tauriWidgetService } from '@/services/tauriWidgetService';
+import { nativeService } from '@/services/nativeService';
+import { useUIStore } from '@/stores/uiStore';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
 
 export const App: React.FC = () => {
   const [showCloseModal, setShowCloseModal] = useState(false);
+  const theme = useUIStore((s) => s.theme);
+
+  useEffect(() => {
+    // 初始化 Capacitor Android 原生能力（沉浸式状态栏与物理返回键）
+    nativeService.initNative();
+  }, []);
+
+  useEffect(() => {
+    // 主题切换时动态同步 Android 状态栏图标与文字明暗
+    nativeService.updateTheme(theme);
+  }, [theme]);
 
   useEffect(() => {
     async function initDB() {
       try {
         await ensureDefaultWorkspace(db);
-        const count = await db.tasks.count();
-        if (count === 0) {
-          await seedDemoData(db);
+        const hasInitialized = localStorage.getItem('tilo_has_initialized_seed');
+        if (!hasInitialized) {
+          localStorage.setItem('tilo_has_initialized_seed', 'true');
+          const count = await db.tasks.count();
+          if (count === 0) {
+            await seedDemoData(db);
+          }
         }
       } catch (err) {
         console.warn('Init DB warning:', err);
@@ -72,6 +89,30 @@ export const App: React.FC = () => {
             }
           }, 400);
         }
+        // 在后台预加载局域网同步 Payload 并监听手机合并请求
+        import('@/services/lanSyncService').then(({ lanSyncService }) => {
+          lanSyncService.exportFullPayload('Desktop Tilo').then((payload) => {
+            import('@tauri-apps/api/core').then(({ invoke }) => {
+              invoke('update_desktop_sync_payload', { payload: JSON.stringify(payload) }).catch(() => {});
+            });
+          });
+        });
+
+        import('@tauri-apps/api/event').then(({ listen }) => {
+          listen<string>('lan-sync-received', async (event) => {
+            try {
+              const { lanSyncService } = await import('@/services/lanSyncService');
+              const remote = JSON.parse(event.payload);
+              await lanSyncService.mergeRemotePayload(remote);
+              // 同步完成后将最新本地完整数据写回 Rust
+              const updated = await lanSyncService.exportFullPayload('Desktop Tilo');
+              const { invoke } = await import('@tauri-apps/api/core');
+              await invoke('update_desktop_sync_payload', { payload: JSON.stringify(updated) });
+            } catch (err) {
+              console.warn('Auto merge error:', err);
+            }
+          });
+        });
       } catch (err) {
         console.warn('Failed to listen close request:', err);
       }

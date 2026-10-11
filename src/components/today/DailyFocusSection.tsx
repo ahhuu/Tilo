@@ -91,124 +91,101 @@ const SortableFocusItem: React.FC<SortableFocusItemProps> = ({
       ref={setNodeRef}
       style={style}
       onClick={() => onInspect(task)}
-      className={`flex items-center justify-between p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group select-none ${
+      className={`p-3.5 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group select-none ${
         isDone ? 'opacity-60 bg-slate-50/40 dark:bg-slate-900/20' : ''
       }`}
     >
-      {/* Left side: Drag handle, Rank circle, Title + Tag, Project dot + Name */}
-      <div className="flex items-center gap-3.5 min-w-0 flex-1">
-        {/* Drag handle & Complete checkbox */}
-        <div className="flex items-center gap-1.5 shrink-0">
+      {/* Responsive layout: Top row with Rank, Title, and Action buttons; Bottom row with Project, Tag & Time */}
+      <div className="flex items-start justify-between gap-3">
+        {/* Left: Drag handle + Rank/Complete circle + Title */}
+        <div className="flex items-start gap-2.5 min-w-0 flex-1">
           <button
             type="button"
             {...attributes}
             {...listeners}
             onClick={(e) => e.stopPropagation()}
-            className="p-0.5 text-slate-300 hover:text-slate-600 dark:hover:text-slate-200 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+            className="p-1 text-slate-300 hover:text-slate-600 dark:hover:text-slate-200 cursor-grab active:cursor-grabbing sm:opacity-0 sm:group-hover:opacity-100 opacity-60 transition-opacity mt-0.5"
             title={language === 'zh-CN' ? '拖拽调整排序' : 'Drag to reorder'}
           >
             <GripVertical className="w-3.5 h-3.5" />
           </button>
 
-          {/* Big circular rank pill matching reference with interactive complete/reopen toggle */}
+          {/* Big circular rank pill with interactive complete/reopen toggle */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onToggleComplete(task);
             }}
-            className={`w-9 h-9 rounded-full font-bold text-sm flex items-center justify-center shrink-0 border transition-all cursor-pointer ${
+            className={`w-8 h-8 rounded-full font-bold text-xs flex items-center justify-center shrink-0 border transition-all cursor-pointer mt-0.5 ${
               isDone
                 ? 'bg-emerald-50 text-emerald-600 border-emerald-200 dark:bg-emerald-950/60 dark:border-emerald-800'
                 : 'bg-indigo-50/80 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 border-indigo-100/60 dark:border-indigo-900/60 hover:border-emerald-400 hover:text-emerald-600'
             }`}
             title={isDone ? (language === 'zh-CN' ? '点击撤销完成 (恢复未完成)' : 'Click to reopen') : (language === 'zh-CN' ? '点击标记为完成' : 'Click to complete')}
           >
-            {isDone ? <CheckCircle2 className="w-5 h-5 text-emerald-600" /> : rank}
+            {isDone ? <CheckCircle2 className="w-4 h-4 text-emerald-600" /> : rank}
           </button>
-        </div>
 
-        {/* Title, Tag, and Project */}
-        <div className="min-w-0 flex-1 space-y-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span
-              className={`text-sm font-semibold truncate transition-colors ${
+          <div className="min-w-0 flex-1">
+            <h4
+              className={`text-sm font-semibold transition-colors leading-snug break-words line-clamp-2 ${
                 isDone
                   ? 'line-through text-slate-400 dark:text-slate-500'
                   : 'text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
               }`}
             >
               {task.title}
-            </span>
+            </h4>
 
-            {/* Block Tag Badge matching reference */}
-            <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-100/70 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 shrink-0">
-              {blockTag}
-            </span>
-          </div>
+            {/* Sub details: Project, Block Tag, Time info */}
+            <div className="flex items-center gap-2 flex-wrap text-xs text-slate-500 dark:text-slate-400 mt-1.5">
+              <span className="flex items-center gap-1 shrink-0 font-medium">
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ backgroundColor: project?.color || '#6366f1' }}
+                />
+                <span className="truncate max-w-32">{project ? project.name : (language === 'zh-CN' ? '独立任务' : 'Standalone')}</span>
+              </span>
 
-          <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-            <span
-              className="w-2 h-2 rounded-full shrink-0"
-              style={{ backgroundColor: project?.color || '#6366f1' }}
-            />
-            <span className="truncate font-medium">{project ? project.name : (language === 'zh-CN' ? '独立任务' : 'Standalone')}</span>
-          </div>
-        </div>
-      </div>
+              {blockTag && (
+                <span className="px-1.5 py-0.2 rounded-md text-[10px] font-medium bg-indigo-50 text-indigo-700 dark:bg-indigo-950/80 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-900/40 shrink-0">
+                  {blockTag}
+                </span>
+              )}
 
-      {/* Right side: Time range, Duration, and Big Circular Play button */}
-      <div className="flex items-center gap-4 shrink-0 pl-3">
-        <div className="text-right space-y-0.5">
-          {timeRangeText && (
-            <div className="flex items-center justify-end gap-1 text-xs text-slate-600 dark:text-slate-300 font-medium">
-              <Calendar className="w-3 h-3 text-slate-400" />
-              <span>{timeRangeText}</span>
+              {(timeRangeText || durationText) && (
+                <span className="flex items-center gap-1 font-mono text-[11px] text-slate-400 shrink-0">
+                  <Calendar className="w-3 h-3 text-slate-400" />
+                  <span>{timeRangeText ? `${timeRangeText} · ${durationText}` : durationText}</span>
+                </span>
+              )}
             </div>
-          )}
-          <div className="text-xs font-mono text-slate-400">
-            {durationText}
           </div>
         </div>
 
-        {/* Actions: Toggle Complete, Remove, and Big Play button */}
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleComplete(task);
-            }}
-            className={`p-1.5 rounded-full transition-colors cursor-pointer ${
-              isDone
-                ? 'text-emerald-600 bg-emerald-50 dark:bg-emerald-950/50'
-                : 'text-slate-300 hover:text-emerald-600 opacity-0 group-hover:opacity-100'
-            }`}
-            title={isDone ? (language === 'zh-CN' ? '重新开启任务' : 'Reopen task') : (language === 'zh-CN' ? '标记为完成' : 'Mark complete')}
-          >
-            <CheckCircle2 className="w-4 h-4" />
-          </button>
-
+        {/* Right side: Action buttons always accessible on mobile, no hover barrier */}
+        <div className="flex items-center gap-1 shrink-0 pl-1 mt-0.5">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onRemoveFromFocus(task);
             }}
-            className="p-1.5 text-slate-300 hover:text-red-500 rounded-full opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-red-500 rounded-full sm:opacity-0 sm:group-hover:opacity-100 opacity-70 transition-all cursor-pointer"
             title={language === 'zh-CN' ? '从聚焦中移除' : 'Remove from Focus'}
           >
-            <X className="w-3.5 h-3.5" />
+            <X className="w-4 h-4" />
           </button>
 
-          {/* Big circular Play button matching screenshot */}
+          {/* Big circular Play button */}
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
               onStartSession(task);
             }}
-            className="w-9 h-9 rounded-full border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:border-indigo-400 flex items-center justify-center transition-all shadow-2xs cursor-pointer group/btn shrink-0"
+            className="w-8 h-8 rounded-full border border-indigo-200 dark:border-indigo-800 bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 hover:border-indigo-400 flex items-center justify-center transition-all shadow-2xs cursor-pointer group/btn shrink-0 ml-1"
             title={language === 'zh-CN' ? '开启专注会话' : 'Start Focus Session'}
           >
             <Play className="w-3.5 h-3.5 fill-indigo-600 ml-0.5 group-hover/btn:scale-110 transition-transform" />

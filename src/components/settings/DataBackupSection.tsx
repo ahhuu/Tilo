@@ -6,6 +6,7 @@ import { useI18n } from '@/core/i18n';
 import { exportWorkspaceBackupJson, importWorkspaceBackupJson } from '@/services/exportImportService';
 import { seedDemoData } from '@/storage/seed';
 import { db, ensureDefaultWorkspace } from '@/storage/db';
+import { LanSyncModal } from '@/components/sync/LanSyncModal';
 import {
   Download,
   Upload,
@@ -15,6 +16,7 @@ import {
   FileText,
   FileSpreadsheet,
   Table2,
+  Wifi,
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -27,6 +29,7 @@ export const DataBackupSection: React.FC = () => {
   const [isImporting, setIsImporting] = useState(false);
   const [isSeeding, setIsSeeding] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showLanSyncModal, setShowLanSyncModal] = useState(false);
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -139,6 +142,43 @@ export const DataBackupSection: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* LAN WiFi P2P Direct Sync (方案 A) */}
+      <Card className="p-5 space-y-4 border border-indigo-200/90 dark:border-indigo-800/80 bg-linear-to-r from-indigo-50/50 via-white to-white dark:from-indigo-950/20 dark:via-slate-900 dark:to-slate-900 shadow-2xs">
+        <div className="flex items-center justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Wifi className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                {language === 'zh-CN' ? '局域网 WiFi 一键同步 (方案 A)' : 'LAN WiFi Direct Sync'}
+              </h3>
+              <span className="px-1.5 py-0.5 text-[10px] font-semibold bg-indigo-100 dark:bg-indigo-900/60 text-indigo-700 dark:text-indigo-300 rounded-md">
+                Local-First P2P
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {language === 'zh-CN'
+                ? '手机 App 与电脑端连接在同一 WiFi 下时，一键秒级增量合并两端 Dexie 数据库，无云端中转，隐私绝对安全。'
+                : 'Directly sync and merge Dexie database between phone and desktop over same Wi-Fi in seconds.'}
+            </p>
+          </div>
+
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={() => setShowLanSyncModal(true)}
+            className="shrink-0 gap-1.5 cursor-pointer shadow-sm"
+          >
+            <Wifi className="w-3.5 h-3.5" />
+            <span>{language === 'zh-CN' ? '局域网同步' : 'LAN Sync'}</span>
+          </Button>
+        </div>
+      </Card>
+
+      <LanSyncModal
+        isOpen={showLanSyncModal}
+        onClose={() => setShowLanSyncModal(false)}
+      />
+
       {/* Export & Import Backup */}
       <Card className="p-5 space-y-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
         <div>

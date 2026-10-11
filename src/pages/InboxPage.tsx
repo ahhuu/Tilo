@@ -321,186 +321,212 @@ export const InboxPage: React.FC = () => {
   }, [items, focusedIndex, tab, handleTriage, handleDelete]);
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-6 pb-20">
+    <div className="p-3.5 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6 pb-24">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
+      <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-4">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg sm:text-xl font-semibold tracking-tight text-slate-900 dark:text-slate-100">
             {t('inbox.title')}
           </h2>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 hidden sm:block">
             {language === 'zh-CN'
               ? '全局想法快速收集与分流中心 • 快捷键：P 连续整理，J/K 上下选择，T 转任务，N 转笔记，S 移入 Someday，E 归档'
               : 'Universal capture and thought processing hub • Keyboard: P process mode, J/K navigate, T task, N note, S someday, E archive'}
           </p>
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 sm:hidden truncate">
+            {language === 'zh-CN' ? '全局想法快速收集与分流中心' : 'Capture & triage center'}
+          </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {unsortedCount > 0 && (
-            <div className="relative group inline-block">
-              <Button
-                size="sm"
-                variant="secondary"
-                onClick={() => setIsContinuousOpen(true)}
-                className="border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/60 cursor-pointer"
-              >
-                <Sparkles className="w-3.5 h-3.5 mr-1.5 text-indigo-600 dark:text-indigo-400" />
-                <span>{language === 'zh-CN' ? '连续整理 (P)' : 'Process Inbox (P)'}</span>
-                <span className="ml-1.5 px-1.5 py-0.2 rounded-full bg-indigo-200/70 dark:bg-indigo-900/70 text-[10px] font-semibold">
-                  {unsortedCount}
-                </span>
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setIsContinuousOpen(true)}
+              className="border-indigo-200 dark:border-indigo-800/60 bg-indigo-50/50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/60 cursor-pointer whitespace-nowrap shrink-0 px-2 sm:px-3 h-8 text-xs"
+            >
+              <Sparkles className="w-3.5 h-3.5 sm:mr-1.5 text-indigo-600 dark:text-indigo-400 shrink-0" />
+              <span className="hidden sm:inline">{language === 'zh-CN' ? '连续整理 (P)' : 'Process Inbox (P)'}</span>
+              <span className="sm:hidden">{language === 'zh-CN' ? '整理' : 'Process'}</span>
+              <span className="ml-1 sm:ml-1.5 px-1.5 py-0.2 rounded-full bg-indigo-200/70 dark:bg-indigo-900/70 text-[10px] font-semibold">
+                {unsortedCount}
+              </span>
+            </Button>
           )}
 
-          <Button size="sm" variant="primary" onClick={openInstantCapture} className="cursor-pointer">
-            <Plus className="w-3.5 h-3.5 mr-1" />
+          <Button
+            size="sm"
+            variant="primary"
+            onClick={openInstantCapture}
+            className="cursor-pointer whitespace-nowrap shrink-0 px-2.5 sm:px-3 h-8 text-xs"
+          >
+            <Plus className="w-3.5 h-3.5 mr-1 shrink-0" />
             <span>{language === 'zh-CN' ? '新建条目' : 'Add Item'}</span>
           </Button>
         </div>
       </div>
 
-      {/* Tabs: Unsorted | Someday | Notes | Archived */}
-      <div className="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2 gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setTab('unsorted');
-              setSelectedIds(new Set());
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-              tab === 'unsorted'
-                ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
-            }`}
-          >
-            <InboxIcon className="w-3.5 h-3.5" />
-            <span>{t('inbox.unsorted')}</span>
-            {unsortedCount > 0 && (
-              <Badge variant="indigo" size="sm">
-                {unsortedCount}
-              </Badge>
-            )}
-          </button>
-
-          <div className="flex items-center gap-1">
+      {/* Tabs: Unsorted | Someday | Notes | Archived - Scrollable on mobile to never clip */}
+      <div className="border-b border-slate-200 dark:border-slate-800 pb-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full py-0.5 -mx-1 px-1">
             <button
               type="button"
               onClick={() => {
-                setTab('someday');
+                setTab('unsorted');
                 setSelectedIds(new Set());
               }}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-                tab === 'someday'
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+                tab === 'unsorted'
                   ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
               }`}
             >
-              <Clock className="w-3.5 h-3.5" />
-              <span>{t('inbox.someday')}</span>
+              <InboxIcon className="w-3.5 h-3.5 shrink-0" />
+              <span>{t('inbox.unsorted')}</span>
+              {unsortedCount > 0 && (
+                <Badge variant="indigo" size="sm">
+                  {unsortedCount}
+                </Badge>
+              )}
             </button>
-            <span
-              title={
-                language === 'zh-CN'
-                  ? '稍后/将来清单：存放暂时不排入日程或近期冲刺，但未来可能启动的灵感与延期待办'
-                  : 'Someday / Maybe list for future ideas and delayed backlog'
-              }
-              className="text-slate-400 hover:text-slate-600 cursor-help"
+
+            <div className="flex items-center gap-1 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setTab('someday');
+                  setSelectedIds(new Set());
+                }}
+                className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer whitespace-nowrap ${
+                  tab === 'someday'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+                }`}
+              >
+                <Clock className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">{t('inbox.someday')}</span>
+                <span className="sm:hidden">{language === 'zh-CN' ? '稍后处理' : 'Someday'}</span>
+              </button>
+              <span
+                title={
+                  language === 'zh-CN'
+                    ? '稍后/将来清单：存放暂时不排入日程或近期冲刺，但未来可能启动的灵感与延期待办'
+                    : 'Someday / Maybe list for future ideas and delayed backlog'
+                }
+                className="text-slate-400 hover:text-slate-600 cursor-help hidden sm:inline"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setTab('notes');
+                setSelectedIds(new Set());
+              }}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+                tab === 'notes'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
             >
-              <Info className="w-3.5 h-3.5" />
-            </span>
+              <FileText className="w-3.5 h-3.5 shrink-0" />
+              <span className="hidden sm:inline">{language === 'zh-CN' ? '笔记与资料' : 'Notes & Docs'}</span>
+              <span className="sm:hidden">{language === 'zh-CN' ? '笔记资料' : 'Notes'}</span>
+              {allNotes.length > 0 && (
+                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
+                  {allNotes.length}
+                </span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setTab('archived');
+                setSelectedIds(new Set());
+              }}
+              className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 whitespace-nowrap ${
+                tab === 'archived'
+                  ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
+              }`}
+            >
+              <Archive className="w-3.5 h-3.5 shrink-0" />
+              <span>{t('inbox.archived')}</span>
+            </button>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              setTab('notes');
-              setSelectedIds(new Set());
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-              tab === 'notes'
-                ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
-            }`}
-          >
-            <FileText className="w-3.5 h-3.5" />
-            <span>{language === 'zh-CN' ? '工作资料与笔记' : 'Notes & Docs'}</span>
-            {allNotes.length > 0 && (
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-mono">
-                {allNotes.length}
-              </span>
-            )}
-          </button>
+          {/* Someday Filter Pills */}
+          {tab === 'someday' && (
+            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg text-xs shrink-0">
+              <button
+                type="button"
+                onClick={() => setSomedayFilter('all')}
+                className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                  somedayFilter === 'all'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-300'
+                }`}
+              >
+                {language === 'zh-CN' ? '全部' : 'All'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setSomedayFilter('ideas')}
+                className={`px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors cursor-pointer whitespace-nowrap ${
+                  somedayFilter === 'ideas'
+                    ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-2xs font-semibold'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-300'
+                }`}
+              >
+                <Lightbulb className="w-3 h-3 text-amber-500" />
+                <span className="hidden sm:inline">{language === 'zh-CN' ? '仅想法灵感' : 'Ideas'}</span>
+                <span className="sm:hidden">{language === 'zh-CN' ? '想法' : 'Ideas'}</span>
+              </button>
+            </div>
+          )}
 
-          <button
-            type="button"
-            onClick={() => {
-              setTab('archived');
-              setSelectedIds(new Set());
-            }}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-              tab === 'archived'
-                ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-semibold'
-                : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-100'
-            }`}
-          >
-            <Archive className="w-3.5 h-3.5" />
-            <span>{t('inbox.archived')}</span>
-          </button>
+          {/* Notes Search input and New Note button */}
+          {tab === 'notes' && (
+            <div className="flex items-center gap-2 shrink-0">
+              <div className="relative hidden sm:block">
+                <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2 pointer-events-none" />
+                <input
+                  type="text"
+                  placeholder={language === 'zh-CN' ? '搜索笔记内容...' : 'Search notes...'}
+                  value={noteSearch}
+                  onChange={(e) => setNoteSearch(e.target.value)}
+                  className="h-7 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+                />
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={handleOpenCreateNote}
+                className="h-7 text-xs gap-1 cursor-pointer font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100/60 whitespace-nowrap"
+              >
+                <Plus className="w-3 h-3" />
+                <span>{language === 'zh-CN' ? '新建笔记' : 'New Note'}</span>
+              </Button>
+            </div>
+          )}
         </div>
 
-        {/* Someday Filter Pills */}
-        {tab === 'someday' && (
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-0.5 rounded-lg text-xs">
-            <button
-              type="button"
-              onClick={() => setSomedayFilter('all')}
-              className={`px-2 py-0.5 rounded-md transition-colors cursor-pointer ${
-                somedayFilter === 'all'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-2xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-300'
-              }`}
-            >
-              {language === 'zh-CN' ? '全部待办' : 'All'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setSomedayFilter('ideas')}
-              className={`px-2 py-0.5 rounded-md flex items-center gap-1 transition-colors cursor-pointer ${
-                somedayFilter === 'ideas'
-                  ? 'bg-white dark:bg-slate-700 text-amber-600 dark:text-amber-400 shadow-2xs font-semibold'
-                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-300'
-              }`}
-            >
-              <Lightbulb className="w-3 h-3 text-amber-500" />
-              <span>{language === 'zh-CN' ? '仅想法灵感' : 'Ideas Only'}</span>
-            </button>
-          </div>
-        )}
-
-        {/* Notes Search input and New Note button */}
+        {/* Mobile Search input for Notes */}
         {tab === 'notes' && (
-          <div className="flex items-center gap-2">
-            <div className="relative">
-              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2 pointer-events-none" />
-              <input
-                type="text"
-                placeholder={language === 'zh-CN' ? '搜索笔记内容...' : 'Search notes...'}
-                value={noteSearch}
-                onChange={(e) => setNoteSearch(e.target.value)}
-                className="h-7 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
-              />
-            </div>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={handleOpenCreateNote}
-              className="h-7 text-xs gap-1 cursor-pointer font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100/60"
-            >
-              <Plus className="w-3 h-3" />
-              <span>{language === 'zh-CN' ? '新建笔记' : 'New Note'}</span>
-            </Button>
+          <div className="mt-2 sm:hidden relative">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder={language === 'zh-CN' ? '搜索笔记内容...' : 'Search notes...'}
+              value={noteSearch}
+              onChange={(e) => setNoteSearch(e.target.value)}
+              className="w-full h-8 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 focus:outline-hidden focus:ring-1 focus:ring-indigo-500"
+            />
           </div>
         )}
       </div>
@@ -527,17 +553,17 @@ export const InboxPage: React.FC = () => {
                 <div
                   key={note.id}
                   onClick={() => setEditingNote(note)}
-                  className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-2xs space-y-2 group cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 transition-all"
+                  className="p-3.5 sm:p-4 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800 shadow-2xs space-y-2 group cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-700 transition-all"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
                       <FileText className="w-4 h-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
-                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 transition-colors">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 transition-colors truncate">
                         {note.title}
                       </h4>
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 shrink-0">
                       <span className="text-[11px] text-slate-400 font-mono">
                         {new Date(note.createdAt).toLocaleDateString(language === 'zh-CN' ? 'zh-CN' : 'en-US')}
                       </span>
@@ -572,7 +598,7 @@ export const InboxPage: React.FC = () => {
                     </p>
                   )}
 
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
                     {project && (
                       <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-medium">
                         <span
@@ -597,7 +623,7 @@ export const InboxPage: React.FC = () => {
         </div>
       ) : (
         /* Inbox Items List (Unsorted, Someday, Archived) */
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {items.length === 0 ? (
             <div className="py-16 text-center text-xs text-slate-400 space-y-3">
               <InboxIcon className="w-8 h-8 mx-auto text-slate-300 dark:text-slate-600" />
@@ -616,19 +642,20 @@ export const InboxPage: React.FC = () => {
                 <div
                   key={item.id}
                   onClick={() => setFocusedIndex(index)}
-                  className={`flex items-center justify-between p-3.5 rounded-xl border transition-all group shadow-2xs ${
+                  className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-3.5 rounded-xl border transition-all group shadow-2xs gap-2.5 sm:gap-3 ${
                     isFocused
                       ? 'border-indigo-400 dark:border-indigo-600 ring-2 ring-indigo-500/10 bg-white dark:bg-slate-800'
                       : 'border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800 hover:border-slate-300'
                   }`}
                 >
-                  <div className="flex items-center gap-3 min-w-0 flex-1">
+                  {/* Title and metadata row */}
+                  <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
                     {/* Multi-select checkbox */}
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => handleToggleSelect(item.id)}
-                      className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      className="mt-0.5 sm:mt-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0"
                     />
 
                     {/* URL icon or point */}
@@ -638,41 +665,54 @@ export const InboxPage: React.FC = () => {
                         target="_blank"
                         rel="noreferrer"
                         onClick={(e) => e.stopPropagation()}
-                        className="p-1.5 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0 cursor-pointer"
+                        className="mt-0.5 sm:mt-0 p-1 rounded-md bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 shrink-0 cursor-pointer"
                         title={item.url}
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
                       </a>
                     ) : item.kind === 'idea' ? (
-                      <span className="p-1 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0" title={language === 'zh-CN' ? '想法备忘' : 'Idea'}>
+                      <span className="mt-0.5 sm:mt-0 p-1 rounded-md bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 shrink-0" title={language === 'zh-CN' ? '想法备忘' : 'Idea'}>
                         <Lightbulb className="w-3.5 h-3.5" />
                       </span>
                     ) : (
-                      <div className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
+                      <div className="mt-1.5 sm:mt-0 w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
                     )}
 
                     {/* Raw Text & domain */}
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-100 truncate">
+                      <div className="flex items-start sm:items-center gap-1.5 flex-wrap sm:flex-nowrap">
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100 break-words leading-snug">
                           {item.rawText}
                         </p>
                         {item.kind === 'idea' && (
-                          <Badge variant="outline" size="sm" className="text-[10px] px-1 py-0 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40">
+                          <Badge variant="outline" size="sm" className="text-[10px] px-1 py-0 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 shrink-0">
                             {language === 'zh-CN' ? '想法' : 'Idea'}
                           </Badge>
                         )}
                       </div>
                       {item.urlDomain && (
-                        <span className="text-[11px] text-slate-400 font-mono">
+                        <span className="text-[10px] sm:text-[11px] text-slate-400 font-mono block mt-0.5">
                           {item.urlDomain}
                         </span>
                       )}
                     </div>
+
+                    {/* Mobile top-right delete button */}
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(item.id);
+                      }}
+                      className="sm:hidden p-1 text-slate-300 hover:text-red-500 cursor-pointer shrink-0 ml-auto"
+                      title={language === 'zh-CN' ? '删除条目' : 'Delete item'}
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
 
-                  {/* Triage Actions */}
-                  <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {/* Triage Actions: Full row on mobile, right-aligned on desktop */}
+                  <div className="flex items-center gap-1 sm:gap-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity justify-end shrink-0 pt-1.5 sm:pt-0 border-t border-slate-100 dark:border-slate-800/80 sm:border-t-0">
                     {tab === 'unsorted' && (
                       <>
                         <Button
@@ -682,7 +722,7 @@ export const InboxPage: React.FC = () => {
                             e.stopPropagation();
                             setTaskModalItem(item);
                           }}
-                          className="h-7 text-xs gap-1 font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 cursor-pointer"
+                          className="h-6 sm:h-7 text-[11px] sm:text-xs px-2 gap-1 font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50/50 sm:bg-transparent dark:bg-indigo-950/30 sm:dark:bg-transparent hover:bg-indigo-50 dark:hover:bg-indigo-950/40 cursor-pointer whitespace-nowrap"
                         >
                           <span>{language === 'zh-CN' ? '转任务' : 'Task'}</span>
                           <ArrowRight className="w-3 h-3" />
@@ -695,7 +735,7 @@ export const InboxPage: React.FC = () => {
                             e.stopPropagation();
                             setNoteModalItem(item);
                           }}
-                          className="h-7 text-xs gap-1 font-medium text-slate-600 dark:text-slate-300 cursor-pointer"
+                          className="h-6 sm:h-7 text-[11px] sm:text-xs px-2 gap-1 font-medium text-slate-600 dark:text-slate-300 bg-slate-100/50 sm:bg-transparent dark:bg-slate-800/40 sm:dark:bg-transparent cursor-pointer whitespace-nowrap"
                         >
                           <BookOpen className="w-3 h-3" />
                           <span>{language === 'zh-CN' ? '转笔记' : 'Note'}</span>
@@ -708,9 +748,9 @@ export const InboxPage: React.FC = () => {
                             e.stopPropagation();
                             handleTriage(item.id, 'someday');
                           }}
-                          className="h-7 text-xs text-slate-500 cursor-pointer"
+                          className="h-6 sm:h-7 text-[11px] sm:text-xs px-1.5 sm:px-2 text-slate-500 cursor-pointer whitespace-nowrap"
                         >
-                          Someday
+                          {language === 'zh-CN' ? '稍后' : 'Someday'}
                         </Button>
 
                         <Button
@@ -720,7 +760,7 @@ export const InboxPage: React.FC = () => {
                             e.stopPropagation();
                             handleTriage(item.id, 'archived');
                           }}
-                          className="h-7 text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+                          className="h-6 sm:h-7 text-[11px] sm:text-xs px-1.5 sm:px-2 text-slate-400 hover:text-slate-600 cursor-pointer whitespace-nowrap"
                         >
                           {language === 'zh-CN' ? '归档' : 'Archive'}
                         </Button>
@@ -735,7 +775,7 @@ export const InboxPage: React.FC = () => {
                           e.stopPropagation();
                           setTaskModalItem(item);
                         }}
-                        className="h-7 text-xs gap-1 text-indigo-600 cursor-pointer"
+                        className="h-6 sm:h-7 text-[11px] sm:text-xs gap-1 text-indigo-600 cursor-pointer whitespace-nowrap"
                       >
                         <span>{language === 'zh-CN' ? '转为执行任务' : 'Convert to Task'}</span>
                         <ArrowRight className="w-3 h-3" />
@@ -748,7 +788,7 @@ export const InboxPage: React.FC = () => {
                         e.stopPropagation();
                         handleDelete(item.id);
                       }}
-                      className="p-1 rounded text-slate-300 hover:text-red-500 cursor-pointer"
+                      className="hidden sm:inline-flex p-1 rounded text-slate-300 hover:text-red-500 cursor-pointer"
                       title={language === 'zh-CN' ? '删除条目' : 'Delete item'}
                     >
                       <Trash2 className="w-3.5 h-3.5" />

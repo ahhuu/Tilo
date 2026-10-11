@@ -36,11 +36,14 @@ type SettingsTab =
   | 'data'
   | 'shortcuts';
 
+import { nativeService } from '@/services/nativeService';
+
 export const SettingsPage: React.FC = () => {
   const { t, language } = useI18n();
   const [activeTab, setActiveTab] = useState<SettingsTab>('appearance');
+  const isMobile = nativeService.isNative() || (typeof window !== 'undefined' && window.innerWidth < 768);
 
-  const tabs: { id: SettingsTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  const allTabs: { id: SettingsTab; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
     { id: 'appearance', label: t('settings.appearance'), icon: Palette },
     { id: 'motion', label: t('settings.motion'), icon: Play },
     { id: 'today', label: language === 'zh-CN' ? '今日工作台' : 'Today Layout', icon: Sun },
@@ -49,9 +52,17 @@ export const SettingsPage: React.FC = () => {
     { id: 'templates', label: language === 'zh-CN' ? '模板与提示' : 'Templates & Prompts', icon: FileText },
     { id: 'time', label: t('settings.time'), icon: Clock },
     { id: 'widgets', label: language === 'zh-CN' ? '桌面挂件' : 'Desktop Widgets', icon: LayoutGrid },
-    { id: 'data', label: t('settings.data'), icon: Database },
+    { id: 'data', label: language === 'zh-CN' ? '数据与局域网同步' : 'Data & Sync', icon: Database },
     { id: 'shortcuts', label: t('settings.shortcuts'), icon: Command },
   ];
+
+  // 移动端自动过滤隐藏桌面专有设置
+  const tabs = allTabs.filter((tab) => {
+    if (isMobile && (tab.id === 'widgets' || tab.id === 'shortcuts')) {
+      return false;
+    }
+    return true;
+  });
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6 pb-20">

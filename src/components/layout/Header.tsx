@@ -82,16 +82,16 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <header className="h-13 border-b border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs px-4 flex items-center justify-between gap-4 select-none shrink-0 z-20">
+    <header className="h-[calc(3.25rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)] border-b border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-xs px-3 sm:px-4 flex items-center justify-between gap-2 sm:gap-4 select-none shrink-0 z-20">
       {/* Left Title / Context line */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
         <h1 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
           {getPageTitle()}
         </h1>
       </div>
 
-      {/* Center Search trigger */}
-      <div className="flex-1 max-w-sm">
+      {/* Center Search trigger (Desktop) */}
+      <div className="hidden md:block flex-1 max-w-sm">
         <button
           type="button"
           onClick={openCommandMenu}
@@ -106,24 +106,34 @@ export const Header: React.FC = () => {
       </div>
 
       {/* Right Controls */}
-      <div className="flex items-center gap-1.5">
-        {/* Instant Raw Inbox Capture */}
+      <div className="flex items-center gap-1 sm:gap-1.5">
+        {/* Mobile Search button (Small screen only) */}
+        <button
+          type="button"
+          onClick={openCommandMenu}
+          className="md:hidden p-2 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          title={t('search.placeholder')}
+        >
+          <Search className="w-4 h-4" />
+        </button>
+
+        {/* Instant Raw Inbox Capture (Desktop only) */}
         <button
           type="button"
           onClick={openInstantCapture}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-800 shadow-2xs"
+          className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-800 shadow-2xs"
           title={language === 'zh-CN' ? '闪念快速收集 (Shift + Space)' : 'Instant Raw Inbox Capture (Shift + Space)'}
         >
           <Inbox className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
           <span>{language === 'zh-CN' ? '闪念收集' : 'Capture'}</span>
         </button>
 
-        {/* Natural Language New Task Button */}
+        {/* Natural Language New Task Button (Desktop only) */}
         <Button
           size="sm"
           variant="primary"
           onClick={() => openQuickTaskHUD()}
-          className="h-8 gap-1.5 text-xs font-medium cursor-pointer"
+          className="hidden md:flex h-8 gap-1.5 text-xs font-medium cursor-pointer"
           title={language === 'zh-CN' ? '任务速记 HUD (按 C 键唤出)' : 'Quick Task Capture (Press C)'}
         >
           <Plus className="w-3.5 h-3.5" />
@@ -135,16 +145,16 @@ export const Header: React.FC = () => {
           <button
             type="button"
             onClick={handleInstallClick}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer shadow-2xs animate-in fade-in"
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100/80 dark:hover:bg-indigo-900/60 border border-indigo-200 dark:border-indigo-800 transition-colors cursor-pointer shadow-2xs animate-in fade-in"
             title={language === 'zh-CN' ? '安装 Tilo 为桌面独立客户端应用' : 'Install Tilo as Standalone Desktop App'}
           >
             <Download className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span className="hidden sm:inline">{language === 'zh-CN' ? '安装客户端' : 'Install App'}</span>
+            <span>{language === 'zh-CN' ? '安装客户端' : 'Install App'}</span>
           </button>
         )}
 
-        {/* Desktop Native Widget Launcher & Popover Manager */}
-        <div className="relative">
+        {/* Desktop Native Widget Launcher & Popover Manager (Desktop only) */}
+        <div className="hidden md:block relative">
           <button
             type="button"
             onClick={() => setIsWidgetPopoverOpen(!isWidgetPopoverOpen)}
@@ -169,13 +179,13 @@ export const Header: React.FC = () => {
           />
         </div>
 
-        <div className="w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
+        <div className="hidden sm:block w-px h-4 bg-slate-200 dark:bg-slate-800 mx-1" />
 
         {/* Language switcher */}
         <button
           type="button"
           onClick={() => setLanguage(language === 'zh-CN' ? 'en-US' : 'zh-CN')}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-800 shadow-2xs"
+          className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer border border-slate-200/80 dark:border-slate-800 shadow-2xs"
           title={language === 'zh-CN' ? '当前语言: 简体中文 (点击切换为 English)' : 'Current: English (Click to switch to 简体中文)'}
         >
           <Languages className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
@@ -202,11 +212,11 @@ export const Header: React.FC = () => {
           )}
         </button>
 
-        {/* Density switcher */}
+        {/* Density switcher (Desktop/Tablet only) */}
         <button
           type="button"
           onClick={toggleDensity}
-          className="p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          className="hidden sm:flex p-1.5 rounded-lg text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           title={
             language === 'zh-CN'
               ? `当前视图密度: ${density === 'comfortable' ? '舒适' : '紧凑'} (点击切换)`
@@ -220,11 +230,11 @@ export const Header: React.FC = () => {
           )}
         </button>
 
-        {/* Inspector panel toggle */}
+        {/* Inspector panel toggle (Desktop/Tablet only) */}
         <button
           type="button"
           onClick={handleToggleInspector}
-          className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+          className={`hidden sm:flex p-1.5 rounded-lg transition-colors cursor-pointer ${
             inspectorOpen
               ? 'bg-indigo-50 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
               : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800'

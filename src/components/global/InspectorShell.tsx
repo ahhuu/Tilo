@@ -99,14 +99,20 @@ export const InspectorShell: React.FC = () => {
 
   return (
     <>
+      {/* 移动端全屏半透明遮罩 */}
+      <div
+        className="md:hidden fixed inset-0 z-40 bg-black/30 backdrop-blur-xs animate-in fade-in duration-150"
+        onClick={closeInspector}
+      />
+
       <aside
         aria-label="Inspector Panel"
         className={cn(
-          'w-88 shrink-0 border-l border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs flex flex-col h-full z-20 select-none animate-in slide-in-from-right-4 duration-200'
+          'fixed inset-0 z-50 md:relative md:inset-auto md:z-20 w-full md:w-88 shrink-0 border-l border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 backdrop-blur-md flex flex-col h-full select-none animate-in slide-in-from-right duration-200 shadow-2xl md:shadow-none'
         )}
       >
         {/* Inspector Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/70 dark:border-slate-800">
+        <div className="flex items-center justify-between px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] md:pt-3 border-b border-slate-200/70 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <SlidersHorizontal className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -132,7 +138,7 @@ export const InspectorShell: React.FC = () => {
         </div>
 
         {/* Inspector Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]">
           {inspectorTarget?.type === 'task' ? (
             <div className="p-4">
               <TaskInspector

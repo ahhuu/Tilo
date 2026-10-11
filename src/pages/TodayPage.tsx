@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useUIStore } from '@/stores/uiStore';
@@ -545,12 +546,19 @@ export const TodayPage: React.FC = () => {
       </div>
 
       {/* Focus Picker Modal (for + Add Focus button) */}
-      {showFocusPicker && (
-        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in-50 duration-150">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-md w-full p-5 shadow-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+      {showFocusPicker && typeof document !== 'undefined' && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
+          onClick={() => setShowFocusPicker(false)}
+        >
+          <div
+            className="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl max-w-md w-full p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-5 shadow-2xl border-t sm:border border-slate-200 dark:border-slate-800 space-y-4 animate-in slide-in-from-bottom-6 sm:zoom-in-98 duration-150"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mt-2 mb-2" />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-indigo-600" />
+                <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
                 <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
                   {language === 'zh-CN' ? '选择任务加入今日聚焦' : 'Select Task for Daily Focus'}
                 </h3>
@@ -582,7 +590,8 @@ export const TodayPage: React.FC = () => {
                 ))}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Focus Full Replace Flow Modal */}

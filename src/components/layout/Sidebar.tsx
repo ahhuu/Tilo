@@ -97,7 +97,7 @@ export const Sidebar: React.FC = () => {
       <aside
         aria-label="Sidebar Navigation"
         className={cn(
-          'flex flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 h-full select-none transition-all duration-200 z-30 shrink-0',
+          'hidden md:flex flex-col border-r border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 h-full select-none transition-all duration-200 z-30 shrink-0',
           sidebarCollapsed ? 'w-14' : 'w-56'
         )}
       >

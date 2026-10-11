@@ -5,7 +5,7 @@
 
 ## Current phase
 
-**Phase 22 — Smart Day Auto-Packing, Annual Focus Heatmap, Natural Language Capture HUD & Roadmap Gantt (COMPLETE & VERIFIED)**
+**Phase 27 — LAN & QR Code Two-Way Sync, Android Mobile Adaptations, & Inbox Responsive Polish (v1.2.1 RELEASE - COMPLETE & VERIFIED)**
 
 ## Overall status
 
@@ -36,28 +36,40 @@
 - [x] Phase 24 — PWA Desktop Standalone App & Smart Clipboard Paste Integration
 - [x] Phase 25 — Android Native App & Local Gradle Build Pipeline
 - [x] Phase 26 — Tauri v2 Desktop Native App & Multi-Window Desktop Widget
+- [x] Phase 27 — LAN & QR Code Two-Way Sync, Android Mobile Adaptations, & Inbox Responsive Polish (v1.2.1)
 
 ---
 
 ## 1. Files changed
 
-- `package.json` — **[UPDATED]** Added `@tauri-apps/api` and `@tauri-apps/cli` dependencies, added `tauri:dev` and `tauri:build` scripts.
-- `eslint.config.js` — **[UPDATED]** Added `src-tauri` to ignore list to prevent linting Rust compilation artifacts.
-- `src-tauri/Cargo.toml` — **[NEW]** Rust crate definition with Tauri v2 dependencies.
-- `src-tauri/tauri.conf.json` — **[NEW]** Configured `main` and `widget` native windows with transparency, shadow, and resizability.
-- `src-tauri/capabilities/default.json` — **[UPDATED]** Granted multi-window permissions for `main`, `widget`, and dynamic `widget-*` windows.
-- `src-tauri/src/lib.rs` & `src-tauri/src/main.rs` — **[NEW]** Tauri Rust runtime bootstrap.
-- `src/services/tauriWidgetService.ts` — **[UPDATED]** Re-architected for multi-widget standalone window lifecycle management: `openWidget`, `closeWidget`, `toggleWidget`, `isWidgetVisible`, `openDualDefaultWidgets`, and `closeAllWidgets`.
-- `src/components/widget/StandaloneWidgetShell.tsx` — **[NEW]** Elegant standalone widget container shell with perfectly symmetric `rounded-2xl` corners, frosted acrylic glass styling, and `data-tauri-drag-region` mouse dragging.
-- `src/pages/SingleWidgetPage.tsx` — **[NEW]** Route handler loading individual standalone widgets via `/widget/:gridId`.
-- `src/components/widget/WidgetLauncherPopover.tsx` — **[NEW]** Desktop widget control center dropdown allowing users to toggle any core widget on/off or launch dual widgets with 1 click.
-- `src/components/widget/grids/InboxGrid.tsx` — **[UPDATED]** Refactored outer container to fill standalone shell flexibly with no nested border and zero corner cut-offs.
-- `src/components/widget/grids/TasksGrid.tsx` — **[UPDATED]** Refactored outer container to fill standalone shell flexibly with infinite vertical/horizontal resize support.
-- `src/components/widget/grids/SessionGrid.tsx` — **[UPDATED]** Refactored outer container to adaptively fit custom window dimensions.
-- `src/components/widget/grids/TimelineGrid.tsx` — **[UPDATED]** Refactored outer container to adaptively fit custom window dimensions.
-- `src/components/widget/grids/NotesGrid.tsx` — **[UPDATED]** Refactored outer container to adaptively fit custom window dimensions.
-- `src/components/layout/Header.tsx` — **[UPDATED]** Replaced simple launcher button with the `WidgetLauncherPopover` interactive control center.
-- `src/App.tsx` — **[UPDATED]** Registered dynamic `/widget/:gridId` standalone route.
+- `src-tauri/src/lib.rs` — **[UPDATED]** 彻底修复局域网 IP 识别被代理工具 TUN 虚拟网卡劫持的 Bug：
+  1. 新增网卡过滤与评分机制，彻底剔除 `28.*`（如 Clash Meta TUN 模式）、`198.18.*`、`169.254.*`、`127.*` 等虚拟/非物理 IP；
+  2. 优先匹配加权 `192.168.*`（典型 Wi-Fi 物理局域网）、`10.*` 等真实局域网私有网段；
+  3. 新增 `get_all_local_ips` 命令，支持返回所有可用物理网卡供前端自由切换。
+- `src/components/sync/LanSyncModal.tsx` — **[UPDATED]** 电脑端支持多网卡识别与切换标签；手机端清空过期代理虚拟 IP 缓存，增加对 `28.*` 虚拟网卡的阻断警示提示；优化手动填入推荐 IP 逻辑。
+- `src/App.tsx` — **[UPDATED]** 在 Tauri 桌面端后台就绪时自动准备局域网同步 Payload 并持续监听手机端数据合并事件，手机扫码即可随时自动双向合并。
+
+## 2. Features completed
+
+- 彻底根除局域网二维码识别到 `28.0.0.1` 导致手机端 `Failed to fetch` 的连通性故障。
+- 手机端相机扫码与手动同步全面连通，支持无缝双向增量合并。
+- 重新验证并通过 TypeScript 类型检查与全量 130 个单元测试。
+- 重新编译打包最新的 Android APK (`app-debug.apk`) 与 Windows 桌面端应用 (`app.exe` 和安装包)。
+
+## 3. TypeScript / ESLint / tests / build
+
+- `npm run typecheck` — Passed (0 errors).
+- `npm run test` — Passed (130/130 unit tests passed).
+- `npm run cap:build; npm run android:debug` — Build successful (Android Debug APK generated).
+- `npm run tauri:build` — Build successful (Windows x64 app.exe and installer generated).
+
+## 4. Known issues
+
+- 无阻碍性问题。
+
+## 5. Next task
+
+- 请用户使用最新打包的双端安装包体验扫码配对与秒级双向数据同步。
 - `src/pages/SingleWidgetPage.tsx` — **[UPDATED]** Enforced pure transparency by purging `bg-surface-app` from `body` and setting transparent style properties on `html`, `body`, and `#root`.
 - `src/components/widget/StandaloneWidgetShell.tsx` — **[UPDATED]** Eliminated outer padding and bright white border to remove outer framing artifacts; added a dedicated "⚙️ 自定义" button in the header; added per-grid custom preference drawer with opacity slider and quick tab/filter/duration switches.
 - `src/test/desktopWidget.test.ts` — **[UPDATED]** Added automated unit test coverage for standalone widget metadata and multi-window service capabilities.
@@ -231,13 +243,106 @@
     - **标签样式自由切换**：像今日待办一样，默认采用纯小图标展示，顶栏右侧配备 `LayoutGrid` 按钮，可随时在「纯图标 (默认) / 纯文字 / 图文并存」之间循环切换，且状态独立持久化；
     - 支持在挂件内直接查看工作资料与笔记（带专属笔记标识、复制正文与删除）。
 
+16. **Android 移动端全方位适配与本地 Gradle 命令行构建体系**：
+    - **移动端视口与安全区域（Safe Area）适配**：
+      - 在 `index.html` 的 `viewport` meta 标签中加入 `viewport-fit=cover` 与 `interactive-widget=resizes-content`；
+      - 在 `src/index.css` 注入 `--sat`, `--sab`, `--sal`, `--sar` 映射 `env(safe-area-inset-*)` 变量，并为移动端添加 `-webkit-tap-highlight-color: transparent` 触控高亮清除与安全内边距工具类；
+    - **响应式双轨导航体系**：
+      - **隐藏桌面侧栏**：在移动端视口（`< md`）下通过 `hidden md:flex` 隐藏 PC 端左侧竖向 `Sidebar`，把整个横屏空间完整释放给内容；
+      - **移动端专属底部导航栏 (`MobileBottomNav`)**：常驻屏幕底部（今日、收集箱带未整理角标、中央快捷悬浮 FAB 按钮、日历、更多功能抽屉），自带安全底部内边距防手势条遮挡；
+      - **快捷记录 FAB 弹层**：点击中间高亮 `＋` 按钮弹出极简 Action Sheet，可快捷唤出「闪念收集」或「任务速记」；
+      - **更多抽屉**：轻触「更多」平滑升起底部面板，包含目标、统计、复盘、设置等二级导航；
+    - **顶部状态栏沉浸式与 Header 响应式精简**：
+      - 顶栏高度自适应加上状态栏高度 `h-[calc(3.25rem+env(safe-area-inset-top,0px))] pt-[env(safe-area-inset-top,0px)]`，彻底解决截图中的顶栏被系统状态栏遮挡问题；
+      - 移动端自动精简隐藏桌面挂件、`Ctrl+K` 桌面快捷键提示与冗长文字，折叠为小屏专属搜索图标，杜绝挤压换行；
+    - **Android 原生能力增强 (`nativeService`)**：
+      - 集成 `@capacitor/status-bar` 与 `@capacitor/app`；
+      - 状态栏透明浮动在 Webview 上层，根据系统/用户主题自动同步状态栏文字明暗（深色/浅色）；
+      - 监听 Android 物理返回键：优先关闭瞬时弹窗与浮层，根路由页面 2 秒内双击退出防误触；
+    - **本地 Gradle 命令行编译体系**：
+      - 写入 `android/local.properties` 绑定本地 SDK 路径（`sdk.dir=D:\\develop\\SDK`）；
+      - 在 `package.json` 中配置快捷命令：`cap:build`, `android:debug`, `android:run`, `android:release`；
+      - 执行 `.\gradlew.bat assembleDebug` 成功编译生成 `android/app/build/outputs/apk/debug/app-debug.apk` (4.6 MB)。
+
+17. **Android 移动端弹窗与全屏抽屉重构、触控时间轴优化、Windows设置清理、局域网 WiFi 一键同步（方案 A）与品牌图标升级**：
+    - **移动端全屏抽屉重构（彻底解决图 2 挤压）**：
+      - 将日历排期抽屉 (`SidePlanningDrawer.tsx`)、任务属性检视面板 (`InspectorShell.tsx`) 以及时间分配洞察 (`AllocationDrawer.tsx`) 全部升级为响应式全屏覆盖抽屉：桌面端并排，移动端为 `fixed inset-0 z-50 w-full`，自带全屏遮罩、顶部状态栏安全避让与清晰的关闭返回按钮，彻底告别日历主界面被挤压变形；
+    - **移动端弹窗 BottomSheet 重构（彻底解决图 1 遮挡）**：
+      - 将时间块创建弹窗 (`InlineCreatePopover.tsx`)、任务详情弹窗 (`TaskDetailModal.tsx`)、智能排盒弹窗 (`AutoPackModal.tsx`) 等全部重构为移动端自底向上 BottomSheet，顶部带有移动端指示手柄条，底部操作按钮栏增加 `pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)]`，杜绝被底部导航栏或手势条遮挡；
+    - **时间轴触屏轻触创建（Tap-to-Create）**：
+      - 在 `TimelineView.tsx` 中增加单击/轻触时间槽智能判定，点击空白时段自动选取 30 分钟并唤起新建时间块弹窗，无需艰难拖拽；时间轴顶栏新增一键快捷「加时间块」按钮；
+    - **Windows 专属功能在移动端自动过滤与清理**：
+      - 在 `SettingsPage.tsx` 中针对移动端环境自动隐藏「桌面挂件」与「键盘快捷键」两项 Windows/桌面专属设置标签；
+    - **局域网 WiFi 一键数据同步（方案 A 落地）**：
+      - 创建 `lanSyncService.ts`，实现全量 Dexie 数据库导出与基于 `updatedAt` 时间戳的双向智能增量合并引擎（Last-Write-Wins，保证不丢数据）；
+      - 创建 `LanSyncModal.tsx`，电脑端一键提供当前局域网连接地址，手机端输入 IP 或扫码一键秒级双向同步；
+      - 在移动端「更多」抽屉与设置「数据与局域网同步」模块中均挂载一键同步入口；
+    - **Android 品牌矢量自适应图标与 1.2.0 版本升级**：
+      - 提取品牌标志创建 `ic_launcher_foreground.xml` 矢量图形，背景采用 `#1E1B4B`，自适应覆盖 `mipmap-anydpi-v26`；
+      - `android/app/build.gradle` 全面对齐版本号为 `1.2.0`（`versionCode: 4`）；
+18. **今日页面弹窗层级穿透修复 (Portal)、顶栏加号精简与全套电脑端品牌图标同步**：
+    - **弹窗彻底脱离 Stacking Context**：
+      - 深入定位并解决了今日页面因外层 `sticky` 容器形成的局部层叠上下文问题，在 `InlineCreatePopover.tsx`、`AutoPackModal.tsx`、`FocusFullModal.tsx` 以及 `TodayPage.tsx` 的今日聚焦弹窗中全面引入 React `createPortal` 挂载至 `document.body` 根节点，并设为 `z-[9999]`。弹窗与深色遮罩完全凌驾于全局之上，**底部导航栏彻底被遮罩覆盖在下方，底部 Sticky 操作栏（取消/创建）清晰完整可见**（彻底解决图 1、图 2）；
+    - **顶栏加时间块快捷按钮移除**：
+      - 根据用户反馈，精简删除 `TimelineView.tsx` 顶栏的「加时间块 (＋)」常设快捷按钮，保留触屏轻触（Tap）网格空白处 1 秒即选的便捷操作；
+    - **APP 图标与电脑端 100% 像素级对齐**：
+      - 编写 `scripts/generate_android_icons.ps1`，从电脑端 512x512 高清原图 `src-tauri/icons/icon.png` 批量生成全套 Android 规范分辨率位图（`mipmap-mdpi/hdpi/xhdpi/xxhdpi/xxxhdpi` 下的 `ic_launcher.png`、`ic_launcher_round.png`、`ic_launcher_foreground.png`），并同步 `mipmap-anydpi-v26` 配置；
+      - 彻底消除应用安装器（如小米安装界面图 3）读取到原生默认 Android 机器人图标的问题，实现电脑端与手机端品牌视觉完全统一；
+19. **彻底修复清空后重启重复注入演示数据问题、完善局域网真实 HTTP 同步服务与输入交互**：
+    - **彻底修复演示数据重启反复注入 bug**：
+      - 排查发现 `App.tsx` 原逻辑中仅以 `db.tasks.count() === 0` 判断是否新用户，导致用户在设置中清空数据后每次重启又自动执行 `seedDemoData`；改为增加 `localStorage.getItem('tilo_has_initialized_seed')` 标记，确保只有全新的首次安装才会执行演示数据注入，用户清空数据后重启绝对保持干净空白；
+    - **Rust 端内建极简高并发局域网 HTTP 同步服务 (端口 27123)**：
+      - 在 `src-tauri/src/lib.rs` 中使用 Rust 标准库纯净实现 HTTP 服务端，自动处理所有跨域预检请求（CORS OPTIONS 204），并实现 `POST /api/sync/merge` 接口；
+      - 电脑端打开时自动导出 Dexie 数据缓存到 Rust 内存中，当手机请求时秒级返回电脑端数据，同时通过 Tauri 事件通知电脑端前端将手机数据实时合入电脑端 Dexie；
+    - **手机端输入体验优化与错误即时清空**：
+      - 在 `LanSyncModal.tsx` 中绑定 `onChange` 实时清空原有 `errorMessage`，支持回车直接触发同步，并自动智能格式化 IP 与端口；
+    - **两端全量构建成功**：
+      - Windows 客户端（`app.exe`, `Tilo_1.2.0_x64-setup.exe`）与 Android 客户端（`app-debug.apk`）全部完成最终重新打包。
+
+20. **解决 Android 明文 HTTP 通信限制 (usesCleartextTraffic) 与双向二维码/快传口令同步方案**：
+    - **解除 Android 局域网 HTTP 拦截**：
+      - 排查确定截图中的 `Failed to fetch` 根因：Android 9+ (API 28+) 默认强制阻断 WebView 向内网 `http://` 端口发起的明文请求；在 `android/app/src/main/AndroidManifest.xml` 中追加 `android:usesCleartextTraffic="true"`，彻底放行局域网端口通信；
+    - **双向二维码配对与快传口令同步 (QR & Sync Code)**：
+      - 集成轻量 `qrcode` 库，在 `LanSyncModal.tsx` 中新增子选项卡「二维码与快传口令」；
+      - **电脑端**：自动渲染局域网配对二维码，手机可一扫直达；同时支持「导出快传口令（Sync Code）」，无论何种网络环境，复制粘贴即可瞬间完成双向增量合并；
+      - **手机端**：支持一键「读取剪贴板并合并」口令，也可以生成手机端二维码/口令供电脑合并，实现两端 100% 互相同步；
+    - **双端最新产物生成**：
+      - Windows: `app.exe` (9.59 MB), `Tilo_1.2.0_x64-setup.exe` (2.30 MB)
+      - Android: `app-debug.apk` (5.99 MB)
+
+21. **手机端直接调用摄像头扫码、电脑端高清大二维码与废除冗长口令**：
+    - **废除万字冗长口令，改为极简短地址配对**：
+      - 针对口令过长的体验问题，彻底移除将整个 Dexie 序列化为几万字 Base64 的旧逻辑；配对二维码内容改为标准的极简局域网通信地址（如 `http://192.168.0.105:27123`），二维码图案大而清晰，极易识别；
+    - **手机端一键调用相机扫码 (`html5-qrcode`)**：
+      - 在 `AndroidManifest.xml` 中配置 Android 原生相机权限（`CAMERA` 与 `autofocus`）；
+      - 手机端界面核心呈现醒目的「📷 开启相机扫一扫」主按钮；点击直接在弹窗内呼出摄像头实时取景器，对准电脑屏幕二维码；
+      - 扫到的瞬间自动识别提取电脑端 IP，立即停止取景，**并自动触发双向增量合并**，全程完全无需用户手动敲键盘或输任何数字；
+    - **双端最终构建完成**：
+      - Windows: `app.exe` (9.68 MB), `Tilo_1.2.0_x64-setup.exe` (2.39 MB)
+      - Android: `app-debug.apk` (5.64 MB)
+
+22. **彻底解决 HTTP 服务请求阻塞、今日聚焦多层文本遮挡、时间轴信息充分呈现、收集箱 Tab 截断与全局触屏适配**：
+    - **修复 Rust HTTP 同步服务阻塞 Bug (彻底解决 Failed to fetch)**：
+      - 排查定位出 `src-tauri/src/lib.rs` 中在读取到 `\r\n\r\n` 请求头结束标志后缺失了 `break`，导致服务端一直等待后续流输入直到 10 秒超时；加上 `break` 并在响应头追加 `Connection: close`，局域网 HTTP 接口在毫秒级极速响应；
+    - **重构今日聚焦卡片 (彻底解决图 2 文本遮挡重叠)**：
+      - 彻底重构 `DailyFocusSection.tsx` 为响应式分层结构，首行容纳序号、完整任务标题（`line-clamp-2`）与专注大按钮，次行排布项目、标签与排期时间，彻底根除时间文本盖在任务标题之上的混乱层叠；
+      - `NextUpSection.tsx` 中移除无日期时的无意义占位符，释放标题宽度；
+    - **时间轴卡片立体排版 (彻底解决图 3 标题被压成“第..”)**：
+      - 重构 `TimelineView.tsx` 时间块卡片布局：顶部仅放轻量 Badge 与微型重叠警告角标，中间整块完整展示任务名称（`line-clamp-2` 并支持换行），底部展示时间；实际（Actual）会话块清晰显示任务标题，彻底消除大片空白与截断；
+    - **收集箱分类 Tab 栏防截断 (彻底解决图 4 挡在屏幕外)**：
+      - 将 `InboxPage.tsx` 中的 Tab 容器升级为 `overflow-x-auto scrollbar-none flex-nowrap shrink-0`，使「已归档」等所有标签在小屏下能够平滑自适应横向滚动查看，绝不再被右侧视口边缘截断；
+    - **全系统触屏适配（解决原来只有鼠标 hover 才能看到的按钮）**：
+      - 在 `src/index.css` 中增加全局 `@media (hover: none) and (pointer: coarse)` 适配规则，触屏设备上原本依赖 hover 的操作按钮（如快速开启专注、删除、拖拽排序、状态切换）自动常驻显示为半透明/可用状态；
+      - 在 `DailyFocusSection`、`NextUpSection`、`InboxPage`、`TimelineView` 等关键卡片上统一切换为 `sm:opacity-0 sm:group-hover:opacity-100 opacity-80`，手机端触手可及。
+
 ## 3. TypeScript / ESLint / tests / build
 
 - **TypeScript** (`npm run typecheck`): Passed (0 errors)
 - **ESLint** (`npm run lint`): Passed (0 errors)
-- **Tests** (`npm run test`): Passed (43/43 test files passing, 7/7 in widgetFeatures)
+- **Tests** (`npm run test`): Passed (43/43 test files passing, 130/130 tests passing)
 - **Vite Web Build** (`npm run build`): Passed (0 errors)
-- **Tauri Desktop Build** (`npm run tauri:build`): **Passed (Exit code 0)**，成功生成 `Tilo_1.2.0_x64-setup.exe` 与最新绿色免安装 `app.exe`。
+- **Android Gradle Build** (`npm run android:debug`): **Passed (Exit code 0, 57s)**，生成最新 `android/app/build/outputs/apk/debug/app-debug.apk` (6.22 MB)
+- **Tauri Desktop Build** (`npm run tauri:build`): **Passed (Exit code 0, 1m53s)**，更新 `Tilo_1.2.0_x64-setup.exe` (2.40 MB) 与绿色免安装 `app.exe` (9.69 MB)
 
 ## 4. Known issues
 
@@ -245,4 +350,4 @@
 
 ## 5. Next task
 
-- 执行 `git add`、`git commit` 并推送至远程仓库 `origin/master`。
+- 用户实机体验移动端全新今日聚焦卡片、清晰时间轴、可滑动收集箱标签以及丝滑的局域网/扫码同步。

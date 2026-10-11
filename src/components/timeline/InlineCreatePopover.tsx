@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/storage/db';
 import { useI18n } from '@/core/i18n';
@@ -192,19 +193,22 @@ export const InlineCreatePopover: React.FC<InlineCreatePopoverProps> = ({
     }
   };
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-label="Create Planned Block"
-        className="w-full max-w-md max-h-[88vh] flex flex-col bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-98 duration-150 select-none text-left"
+        className="w-full sm:max-w-md max-h-[86vh] sm:max-h-[88vh] flex flex-col bg-white dark:bg-slate-900 border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom-6 sm:zoom-in-98 duration-200 select-none text-left"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Mobile drag handle bar */}
+        <div className="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
+
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-slate-100 dark:border-slate-800 shrink-0">
           <div className="flex items-center gap-2">
             <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 font-mono">
@@ -561,7 +565,7 @@ export const InlineCreatePopover: React.FC<InlineCreatePopoverProps> = ({
           </div>
 
           {/* Sticky Footer */}
-          <div className="flex items-center justify-end gap-2 px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+          <div className="flex items-center justify-end gap-2 px-5 py-3.5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-3.5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xs shrink-0">
             <Button size="sm" variant="ghost" type="button" onClick={onClose} className="cursor-pointer">
               {language === 'zh-CN' ? '取消' : 'Cancel'}
             </Button>
@@ -574,4 +578,6 @@ export const InlineCreatePopover: React.FC<InlineCreatePopoverProps> = ({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

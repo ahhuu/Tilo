@@ -64,13 +64,13 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
   return (
     <aside
       aria-label="Planning Drawer"
-      className="w-80 shrink-0 border-l border-slate-200/90 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs flex flex-col h-full z-20 select-none animate-in slide-in-from-right-4 duration-200"
+      className="fixed inset-0 z-50 md:relative md:inset-auto md:z-20 w-full md:w-80 shrink-0 border-l border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 backdrop-blur-md flex flex-col h-full select-none animate-in slide-in-from-right duration-200"
     >
       {/* Drawer Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200/70 dark:border-slate-800">
+      <div className="flex items-center justify-between px-4 py-3 pt-[calc(0.75rem+env(safe-area-inset-top,0px))] md:pt-3 border-b border-slate-200/70 dark:border-slate-800 shrink-0">
         <div className="flex items-center gap-2">
           <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-          <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+          <span className="text-xs font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300">
             {language === 'zh-CN' ? '排期抽屉' : 'Planning Drawer'}
           </span>
         </div>
@@ -152,7 +152,7 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
       </div>
 
       {/* Task List */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 pb-[calc(env(safe-area-inset-bottom,0px)+2rem)]">
         {filteredTasks.length === 0 ? (
           <div className="py-12 text-center text-xs text-slate-400">
             {language === 'zh-CN' ? '暂无可排期的待办任务' : 'No matching tasks to plan.'}

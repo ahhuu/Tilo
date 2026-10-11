@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useI18n } from '@/core/i18n';
 import { timeService } from '@/core/time/timeService';
 import { useUIStore } from '@/stores/uiStore';
@@ -172,15 +173,16 @@ export const AutoPackModal: React.FC<AutoPackModalProps> = ({ isOpen, onClose, d
 
   const totalPackedMinutes = proposals.reduce((acc, p) => acc + p.estimateMinutes, 0);
 
-  return (
+  const modalContent = (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150 select-none"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150 select-none"
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh] animate-in zoom-in-95 duration-150"
+        className="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border border-slate-200/90 dark:border-slate-800 w-full max-w-xl overflow-hidden flex flex-col max-h-[86vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
         {/* Header */}
         <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -451,7 +453,7 @@ export const AutoPackModal: React.FC<AutoPackModalProps> = ({ isOpen, onClose, d
         </div>
 
         {/* Footer */}
-        <div className="p-4 px-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between">
+        <div className="p-4 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between shrink-0">
           <Button variant="ghost" size="sm" onClick={onClose} className="cursor-pointer">
             {language === 'zh-CN' ? '取消' : 'Cancel'}
           </Button>
@@ -470,4 +472,6 @@ export const AutoPackModal: React.FC<AutoPackModalProps> = ({ isOpen, onClose, d
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

@@ -127,9 +127,11 @@ export const NextUpSection: React.FC<NextUpSectionProps> = ({
                   </Badge>
                 )}
 
-                <span className="text-xs font-mono text-slate-400 min-w-12 text-right">
-                  {formatDateLabel(task.dueDate || task.scheduledDate)}
-                </span>
+                {(task.dueDate || task.scheduledDate) && (
+                  <span className="text-xs font-mono text-slate-400 text-right">
+                    {formatDateLabel(task.dueDate || task.scheduledDate)}
+                  </span>
+                )}
 
                 <button
                   type="button"
@@ -137,7 +139,7 @@ export const NextUpSection: React.FC<NextUpSectionProps> = ({
                     e.stopPropagation();
                     onStartSession(task);
                   }}
-                  className="opacity-0 group-hover:opacity-100 p-1 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-md transition-all cursor-pointer"
+                  className="sm:opacity-0 sm:group-hover:opacity-100 opacity-80 hover:opacity-100 p-1 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-md transition-all cursor-pointer"
                   title={language === 'zh-CN' ? '开启专注会话' : 'Start Focus Session'}
                 >
                   <Play className="w-3.5 h-3.5 fill-indigo-600" />

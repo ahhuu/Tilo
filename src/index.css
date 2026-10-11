@@ -43,6 +43,12 @@
     --motion-fast: 160ms;
     --motion-normal: 220ms;
     --motion-slow: 280ms;
+
+    /* Mobile Safe Area insets */
+    --sat: env(safe-area-inset-top, 0px);
+    --sab: env(safe-area-inset-bottom, 0px);
+    --sal: env(safe-area-inset-left, 0px);
+    --sar: env(safe-area-inset-right, 0px);
   }
 
   .dark {
@@ -184,8 +190,15 @@
     font-size: var(--density-font-size);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
   }
 }
+
+/* Safe area utilities */
+.pt-safe { padding-top: var(--sat); }
+.pb-safe { padding-bottom: var(--sab); }
+.pl-safe { padding-left: var(--sal); }
+.pr-safe { padding-right: var(--sar); }
 
 /* Custom utility classes */
 .bg-app { background-color: var(--bg-app); }
@@ -278,4 +291,17 @@ html, body, * {
   width: 4px;
   height: 4px;
 }
+
+/* =========================================================================
+   Android & Touch Devices Adaptation: Make hover-only actions visible
+   ========================================================================= */
+@media (hover: none) and (pointer: coarse) {
+  /* 当处于触控屏（无鼠标光标）环境下时，将依赖 hover 的操作按钮优雅呈现 */
+  .group-hover\:opacity-100,
+  .group-hover\/item\:opacity-100,
+  .group-hover\/btn\:opacity-100 {
+    opacity: 0.85 !important;
+  }
+}
+
 
