@@ -280,8 +280,8 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
       const msg = err instanceof Error ? err.message : String(err);
       setErrorMessage(
         language === 'zh-CN'
-          ? `连接电脑端失败 (${msg})。请确保：1. 电脑端已启动并打开 Tilo；2. 手机与电脑已连在同一 WiFi 下。`
-          : `Sync failed: ${msg}. Make sure both devices are on the same Wi-Fi and desktop Tilo is running.`
+          ? `连接电脑端失败 (${msg})。请确保：1. 电脑端已启动并打开 Tilo；2. 手机与电脑已连在同一 WiFi 下；3. Windows 防火墙已允许 Tilo（首次启动时选择"允许访问"，或勾选"专用网络"）；4. 路由器未开启 AP 隔离。`
+          : `Sync failed: ${msg}. Make sure both devices are on the same Wi-Fi, desktop Tilo is running, and the Windows Firewall allows Tilo on private networks.`
       );
     } finally {
       setSyncing(false);

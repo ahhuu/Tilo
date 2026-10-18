@@ -42,34 +42,38 @@
 
 ## 1. Files changed
 
+- `capacitor.config.ts` — **[FIXED]** 修复局域网同步 `Failed to fetch` 根因：手机端 WebView 源为 `https://localhost`（`androidScheme: 'https'`），向 `http://<PC-IP>:27123` 发起 fetch 属于混合内容（Mixed Content），在 `allowMixedContent: false` 下被 Android WebView 直接拦截、请求根本未发出。改为 `allowMixedContent: true`（MIXED_CONTENT_COMPATIBILITY_MODE）。注意不可改回 `androidScheme: 'http'`，否则 WebView 源变更会导致手机端 IndexedDB/Dexie 数据丢失。
+- `src/components/sync/LanSyncModal.tsx` — **[UPDATED]** 手机端连接失败提示补充 Windows 防火墙（专用网络放行）与路由器 AP 隔离排查项。
 - `src-tauri/src/lib.rs` — **[UPDATED]** 彻底修复局域网 IP 识别被代理工具 TUN 虚拟网卡劫持的 Bug：
   1. 新增网卡过滤与评分机制，彻底剔除 `28.*`（如 Clash Meta TUN 模式）、`198.18.*`、`169.254.*`、`127.*` 等虚拟/非物理 IP；
   2. 优先匹配加权 `192.168.*`（典型 Wi-Fi 物理局域网）、`10.*` 等真实局域网私有网段；
   3. 新增 `get_all_local_ips` 命令，支持返回所有可用物理网卡供前端自由切换。
-- `src/components/sync/LanSyncModal.tsx` — **[UPDATED]** 电脑端支持多网卡识别与切换标签；手机端清空过期代理虚拟 IP 缓存，增加对 `28.*` 虚拟网卡的阻断警示提示；优化手动填入推荐 IP 逻辑。
 - `src/App.tsx` — **[UPDATED]** 在 Tauri 桌面端后台就绪时自动准备局域网同步 Payload 并持续监听手机端数据合并事件，手机扫码即可随时自动双向合并。
 
 ## 2. Features completed
 
-- 彻底根除局域网二维码识别到 `28.0.0.1` 导致手机端 `Failed to fetch` 的连通性故障。
-- 手机端相机扫码与手动同步全面连通，支持无缝双向增量合并。
-- 重新验证并通过 TypeScript 类型检查与全量 130 个单元测试。
-- 重新编译打包最新的 Android APK (`app-debug.apk`) 与 Windows 桌面端应用 (`app.exe` 和安装包)。
+- 修复手机端局域网/扫码同步 `Failed to fetch`：根因为 HTTPS 源请求 HTTP 局域网地址被 WebView 混合内容策略拦截（与此前 `usesCleartextTraffic` 修复相互独立），开启 `allowMixedContent` 后恢复连通。
+- 错误提示覆盖防火墙 / AP 隔离等真实网络排查路径。
+- 重新验证 TypeScript 类型检查与 ESLint。
 
 ## 3. TypeScript / ESLint / tests / build
 
 - `npm run typecheck` — Passed (0 errors).
-- `npm run test` — Passed (130/130 unit tests passed).
-- `npm run cap:build; npm run android:debug` — Build successful (Android Debug APK generated).
-- `npm run tauri:build` — Build successful (Windows x64 app.exe and installer generated).
+- `npm run lint` — Passed (0 errors).
+- `npm run test` — Not run（本次仅修改 Capacitor 配置与一条错误文案，未触及被测逻辑）。
+- `npm run build` (Vite web) — Passed，产出 `dist/assets/index-FkjRS7Pr.js`。
+- **Android APK** — **Passed**：`android/app/build/outputs/apk/debug/app-debug.apk` (4.85 MB, 2026-10-19 00:29)。已校验包内 `assets/capacitor.config.json` 含 `allowMixedContent: true`，且 `assets/public/assets/index-FkjRS7Pr.js` 为最新产物（含新增防火墙/AP 隔离文案）。
+  - 注：`npm run android:debug` 中的 `cap sync android` 步骤因工具批量删除保护（`capacitor-cordova-android-plugins` 57 个文件）中断，改为校验 web 资源与配置已拷贝后直接执行 `gradlew.bat assembleDebug` 完成编译；Capacitor 插件未变更，无需重生成。
+- Tauri 桌面端 build — Not run（本次未改 Rust 代码，桌面端无需重编）。
 
 ## 4. Known issues
 
-- 无阻碍性问题。
+- 手机端需重新打 APK 安装后修复才生效（`capacitor.config.ts` 属于原生配置，热更新不生效）。
+- 若修复后仍连不上，下一嫌疑是 Windows 防火墙拦截 Tilo 入站 27123 端口（未签名 exe 在"公用网络"配置文件下默认禁止入站）。
 
 ## 5. Next task
 
-- 请用户使用最新打包的双端安装包体验扫码配对与秒级双向数据同步。
+- 重新执行 `npm run cap:build` + `npm run android:debug` 打包新 APK，真机验证扫码与手动 IP 同步。
 - `src/pages/SingleWidgetPage.tsx` — **[UPDATED]** Enforced pure transparency by purging `bg-surface-app` from `body` and setting transparent style properties on `html`, `body`, and `#root`.
 - `src/components/widget/StandaloneWidgetShell.tsx` — **[UPDATED]** Eliminated outer padding and bright white border to remove outer framing artifacts; added a dedicated "⚙️ 自定义" button in the header; added per-grid custom preference drawer with opacity slider and quick tab/filter/duration switches.
 - `src/test/desktopWidget.test.ts` — **[UPDATED]** Added automated unit test coverage for standalone widget metadata and multi-window service capabilities.

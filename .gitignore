@@ -46,3 +46,6 @@ android/captures/
 # Tauri build artifacts
 src-tauri/target/
 src-tauri/gen/
+
+# Agent workspace data
+.workbuddy/
