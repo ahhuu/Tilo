@@ -9,8 +9,9 @@
 
 ## 发行状态 (Release Status)
 
-**当前正式版本**: `Tilo v1.2.1`  
-**状态**: `Production Ready`（桌面 Web 端、Tauri 原生桌面端、PWA 独立客户端与 Android APK 移动端全量验证通过）
+**当前正式版本**: `Tilo v1.3.0`  
+**状态**: `Production Ready`（桌面 Web 端、Tauri 原生桌面端、PWA 独立客户端与 Android APK 移动端全量验证通过）  
+**本版亮点**: 移动端触控交互重构、原生能力接入（触感反馈 / 本地通知 / 系统分享 / 软键盘适配），以及双端对称的局域网同步与自动探测同步。
 
 ---
 

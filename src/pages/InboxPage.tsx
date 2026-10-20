@@ -321,7 +321,7 @@ export const InboxPage: React.FC = () => {
   }, [items, focusedIndex, tab, handleTriage, handleDelete]);
 
   return (
-    <div className="p-3.5 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6 pb-24">
+    <div className="p-3.5 sm:p-6 max-w-4xl mx-auto space-y-4 sm:space-y-6">
       {/* Header */}
       <div className="flex items-start sm:items-center justify-between gap-2 sm:gap-4">
         <div className="min-w-0 flex-1">
@@ -650,13 +650,17 @@ export const InboxPage: React.FC = () => {
                 >
                   {/* Title and metadata row */}
                   <div className="flex items-start sm:items-center gap-2.5 min-w-0 flex-1">
-                    {/* Multi-select checkbox */}
-                    <input
-                      type="checkbox"
-                      checked={isSelected}
-                      onChange={() => handleToggleSelect(item.id)}
-                      className="mt-0.5 sm:mt-0 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer shrink-0"
-                    />
+                    {/* Multi-select checkbox.
+                        视觉尺寸保持 20px（h-5 w-5），但用 label 的 padding + 负 margin
+                        把点击热区扩展到约 44px，既满足移动端触控，又不放大原生勾选框本身。 */}
+                    <label className="mt-0.5 sm:mt-0 shrink-0 flex items-center justify-center p-3 -m-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => handleToggleSelect(item.id)}
+                        className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      />
+                    </label>
 
                     {/* URL icon or point */}
                     {item.kind === 'link' ? (

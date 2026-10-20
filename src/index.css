@@ -296,12 +296,37 @@ html, body, * {
    Android & Touch Devices Adaptation: Make hover-only actions visible
    ========================================================================= */
 @media (hover: none) and (pointer: coarse) {
-  /* 当处于触控屏（无鼠标光标）环境下时，将依赖 hover 的操作按钮优雅呈现 */
-  .group-hover\:opacity-100,
-  .group-hover\/item\:opacity-100,
-  .group-hover\/btn\:opacity-100 {
+  /* 扫描式兜底：任何「默认 opacity-0、hover 才显现」的元素在触屏上常驻可见。
+     不再手写类名白名单 —— 旧白名单漏掉了 group-hover/block，导致周视图排期块的
+     删除按钮在手机上永久隐形却仍可点击，点卡片时会静默误删。 */
+  [class*="group-hover"][class*="opacity-0"],
+  [class*="hover:opacity-100"][class*="opacity-0"] {
     opacity: 0.85 !important;
   }
+
+  /* 触屏下拖拽/缩放手柄需要更大的命中区（8~14px 的手指无法命中） */
+  [class*="cursor-ns-resize"],
+  [class*="cursor-ew-resize"],
+  [class*="cursor-move"] {
+    touch-action: none;
+  }
+
+  /* 触控最小命中区 44dp。只对标注了 .touch-target 的控件生效，
+     避免无差别放大所有按钮导致密集列表里热区互相重叠误触。 */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* Android WebView：祖先节点若带 user-select: none（本项目弹窗/抽屉普遍使用 select-none），
+   会破坏中文输入法的 composition —— 表现为「输入不显示、必须删一个字符才生效」。
+   这里对可输入元素强制恢复可选中，覆盖所有被 select-none 包裹的输入框。 */
+input,
+textarea,
+[contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 

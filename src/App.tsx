@@ -11,6 +11,7 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { ProjectPage } from '@/pages/ProjectPage';
 import { SingleWidgetPage } from '@/pages/SingleWidgetPage';
 import { WindowCloseConfirmModal } from '@/components/global/WindowCloseConfirmModal';
+import { ConfirmDialogHost } from '@/components/ui/ConfirmDialogHost';
 import { ErrorBoundary } from '@/components/global/ErrorBoundary';
 import { db, ensureDefaultWorkspace } from '@/storage/db';
 import { seedDemoData } from '@/storage/seed';
@@ -51,6 +52,11 @@ export const App: React.FC = () => {
     }
     initDB();
 
+    // 启动双端局域网同步管理器（内部按平台自动适配：电脑 Tauri / 手机 Capacitor）
+    import('@/services/syncManager')
+      .then(({ syncManager }) => syncManager.init())
+      .catch(() => {});
+
     // 在 Tauri 桌面端监听主窗口关闭请求
     if (tauriWidgetService.isTauri()) {
       try {
@@ -89,30 +95,6 @@ export const App: React.FC = () => {
             }
           }, 400);
         }
-        // 在后台预加载局域网同步 Payload 并监听手机合并请求
-        import('@/services/lanSyncService').then(({ lanSyncService }) => {
-          lanSyncService.exportFullPayload('Desktop Tilo').then((payload) => {
-            import('@tauri-apps/api/core').then(({ invoke }) => {
-              invoke('update_desktop_sync_payload', { payload: JSON.stringify(payload) }).catch(() => {});
-            });
-          });
-        });
-
-        import('@tauri-apps/api/event').then(({ listen }) => {
-          listen<string>('lan-sync-received', async (event) => {
-            try {
-              const { lanSyncService } = await import('@/services/lanSyncService');
-              const remote = JSON.parse(event.payload);
-              await lanSyncService.mergeRemotePayload(remote);
-              // 同步完成后将最新本地完整数据写回 Rust
-              const updated = await lanSyncService.exportFullPayload('Desktop Tilo');
-              const { invoke } = await import('@tauri-apps/api/core');
-              await invoke('update_desktop_sync_payload', { payload: JSON.stringify(updated) });
-            } catch (err) {
-              console.warn('Auto merge error:', err);
-            }
-          });
-        });
       } catch (err) {
         console.warn('Failed to listen close request:', err);
       }
@@ -142,6 +124,8 @@ export const App: React.FC = () => {
           isOpen={showCloseModal}
           onClose={() => setShowCloseModal(false)}
         />
+        {/* 应用内确认 / 输入对话框（替代 window.confirm / window.prompt） */}
+        <ConfirmDialogHost />
       </HashRouter>
     </ErrorBoundary>
   );

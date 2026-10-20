@@ -14,6 +14,7 @@ import {
   Layers,
 } from 'lucide-react';
 import type { Goal, GoalStatus, GoalProgressMode } from '@/core/types/domain';
+import { confirmDialog } from '@/services/dialogService';
 
 const PRESET_COLORS = [
   '#4f46e5', // Indigo
@@ -163,9 +164,13 @@ export const GoalInspector: React.FC<GoalInspectorProps> = ({ goalId }) => {
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(language === 'zh-CN' ? `确定要删除目标 "${goal.title}" 吗？` : `Delete goal "${goal.title}"?`)) {
-      return;
-    }
+    const ok = await confirmDialog({
+      title: language === 'zh-CN' ? '删除目标' : 'Delete goal',
+      message: language === 'zh-CN' ? `确定要删除目标 "${goal.title}" 吗？此操作不可撤销。` : `Delete goal "${goal.title}"? This cannot be undone.`,
+      destructive: true,
+      confirmLabel: language === 'zh-CN' ? '删除' : 'Delete',
+    });
+    if (!ok) return;
     await deleteGoal(goal.id);
     addToast({
       message: language === 'zh-CN' ? '目标已删除' : 'Goal deleted',

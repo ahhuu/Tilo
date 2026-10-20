@@ -235,13 +235,13 @@ export const CreatePlannedBlockModal: React.FC<CreatePlannedBlockModalProps> = (
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
         role="dialog"
         aria-label="Create Planned Block"
-        className="w-full max-w-md max-h-[88vh] flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-98 duration-150 select-none text-left"
+        className="w-full max-w-md max-h-[88vh] flex flex-col bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-98 duration-150 select-none text-left"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

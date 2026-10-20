@@ -1,12 +1,20 @@
 import { db, type TiloDB } from '@/storage/db';
 import { timeService } from '@/core/time/timeService';
+import { nativeService } from '@/services/nativeService';
 import type { Review, ReviewRevision, Task } from '@/core/types/domain';
 
 /**
- * Trigger browser file download for text/csv/markdown content
+ * Trigger browser file download for text/csv/markdown content.
+ * 原生端（Android/iOS）WebView 下载目录对用户不可见，改为走系统分享面板。
  */
 export function downloadFile(filename: string, content: string, mimeType: string): void {
   if (typeof window === 'undefined') return;
+
+  if (nativeService.isNative()) {
+    nativeService.shareText(filename, content);
+    return;
+  }
+
   const blob = new Blob([content], { type: mimeType });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

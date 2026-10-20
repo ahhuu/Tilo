@@ -560,7 +560,7 @@ export const ContinuousProcessingModal: React.FC<ContinuousProcessingModalProps>
         </div>
 
         {/* Footer Navigation */}
-        <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:pb-3">
           <div className="flex items-center gap-3">
             <button
               type="button"

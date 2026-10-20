@@ -189,6 +189,15 @@ fn handle_sync_http_client(
       let _ = app_handle.emit("lan-sync-received", body);
     }
 
+    // 记录对方（通常是手机端）的源 IP，供前端记住为已知对端，实现电脑主动/自动回连
+    let peer_ip = stream
+      .peer_addr()
+      .map(|addr| addr.ip().to_string())
+      .unwrap_or_default();
+    if !peer_ip.is_empty() {
+      let _ = app_handle.emit("lan-sync-peer", peer_ip);
+    }
+
     let desktop_payload = {
       let lock = state.desktop_payload.lock().unwrap();
       lock.clone().unwrap_or_else(|| "{}".to_string())

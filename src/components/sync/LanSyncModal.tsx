@@ -8,6 +8,7 @@ import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
 import { lanSyncService } from '@/services/lanSyncService';
 import { nativeService } from '@/services/nativeService';
+import { syncManager } from '@/services/syncManager';
 import {
   RefreshCw,
   CheckCircle2,
@@ -58,6 +59,24 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  // 双端自动同步状态（订阅 SyncManager 实时刷新）
+  const [autoOn, setAutoOn] = useState(syncManager.isAuto());
+  const [peerInput, setPeerInput] = useState('');
+  const [, forceRender] = useState(0);
+  const [phoneQrUrl, setPhoneQrUrl] = useState('');
+  const peers = syncManager.getPeers();
+  const toggleAuto = () => {
+    const next = !autoOn;
+    syncManager.setAuto(next);
+    setAutoOn(next);
+  };
+
+  useEffect(() => {
+    const unsub = syncManager.subscribe(() => forceRender((n) => n + 1));
+    if (isOpen) syncManager.refreshOwnPayload();
+    return unsub;
+  }, [isOpen]);
+
   // 电脑端真实局域网物理 IP
   const [localSuggestedIp, setLocalSuggestedIp] = useState<string>(() => {
     const cached = localStorage.getItem(STORAGE_KEY_DESKTOP_CUSTOM_IP);
@@ -77,6 +96,20 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
   const [isScanning, setIsScanning] = useState(false);
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
 
+  // 手机端生成「本机同步地址」二维码，供电脑扫码主动连接
+  useEffect(() => {
+    if (isMobile && isOpen && localSuggestedIp && !isBogusIp(localSuggestedIp)) {
+      const url = `http://${localSuggestedIp}:${lanSyncService.DEFAULT_PORT}`;
+      QRCode.toDataURL(url, {
+        width: 200,
+        margin: 1,
+        color: { dark: '#1e1b4b', light: '#ffffff' },
+      })
+        .then(setPhoneQrUrl)
+        .catch(() => {});
+    }
+  }, [isMobile, isOpen, localSuggestedIp]);
+
   useEffect(() => {
     if (isOpen) {
       setSyncResult(null);
@@ -93,25 +126,8 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
           }
         });
 
-        // 监听来自手机端发起的合并通知
-        if ('__TAURI_INTERNALS__' in window) {
-          import('@tauri-apps/api/event').then(({ listen }) => {
-            listen<string>('lan-sync-received', async (event) => {
-              try {
-                const remote = JSON.parse(event.payload);
-                const res = await lanSyncService.mergeRemotePayload(remote);
-                addToast({
-                  message: language === 'zh-CN'
-                    ? `已收到手机端数据并自动合并！(更新: ${res.updatedCount}项, 新增: ${res.addedCount}项)`
-                    : `Merged mobile data! (Updated: ${res.updatedCount}, Added: ${res.addedCount})`,
-                  type: 'success',
-                });
-              } catch (err) {
-                console.warn('Merge remote payload error:', err);
-              }
-            });
-          });
-        }
+        // 注意：对端推送的合并统一由 syncManager 全局处理（单例、有清理），
+        // 此处不再重复注册监听，否则每打开一次弹窗就会多叠一个监听器导致提示刷屏。
 
         // 获取电脑端物理网卡真实 IP
         if ('__TAURI_INTERNALS__' in window) {
@@ -269,6 +285,9 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
     try {
       localStorage.setItem(STORAGE_KEY_LAST_HOST_IP, trimmed);
       const res = await lanSyncService.syncWithHost(trimmed, isMobile ? 'Android Mobile' : 'Client Device');
+      // 关键：把本次同步过的对端登记进自动同步列表，
+      // 否则手机端对端列表为空，自动同步只会单向（电脑→手机）
+      syncManager.rememberPeer(trimmed);
       setSyncResult({ updated: res.updatedCount, added: res.addedCount });
       addToast({
         message: language === 'zh-CN'
@@ -302,7 +321,7 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
 
   const modalContent = (
     <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150 select-none"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
       onClick={() => {
         stopScanner();
         onClose();
@@ -534,6 +553,143 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
             </div>
           )}
 
+          {/* ===== 双端互通：自动同步 + 对端管理（电脑/手机通用） ===== */}
+          <div className="space-y-3 pt-1">
+            {/* 自动同步开关 */}
+            <div className="flex items-center justify-between rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 px-3 py-2.5">
+              <div>
+                <div className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                  {language === 'zh-CN' ? '自动同步' : 'Auto Sync'}
+                  <span className={autoOn ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}>
+                    {' '}
+                    {autoOn ? (language === 'zh-CN' ? '（开启）' : '(on)') : (language === 'zh-CN' ? '（关闭）' : '(off)')}
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {language === 'zh-CN'
+                    ? '检测到对端设备后自动双向合并，无需手动操作'
+                    : 'Automatically merge with peer devices when detected on LAN'}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={toggleAuto}
+                className={`relative w-11 h-6 rounded-full transition-colors cursor-pointer shrink-0 ${
+                  autoOn ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-700'
+                }`}
+                aria-pressed={autoOn}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform ${
+                    autoOn ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </button>
+            </div>
+
+            {/* 电脑端：输入手机地址主动连接 */}
+            {!isMobile && (
+              <div>
+                <label className="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  {language === 'zh-CN' ? '手机端地址（对方 IP，电脑主动连接）' : 'Mobile address (peer IP, desktop initiates)'}
+                </label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="text"
+                    placeholder="例如: 192.168.0.105:27123"
+                    value={peerInput}
+                    onChange={(e) => setPeerInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && peerInput.trim()) syncManager.addPeer(peerInput);
+                    }}
+                    className="text-xs font-mono font-medium text-slate-900 dark:text-slate-100"
+                  />
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    disabled={syncing}
+                    onClick={() => {
+                      if (peerInput.trim()) syncManager.addPeer(peerInput);
+                    }}
+                    className="cursor-pointer shrink-0"
+                  >
+                    {language === 'zh-CN' ? '连接并同步' : 'Connect'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* 手机端：展示本机地址二维码，供电脑扫码主动连接 */}
+            {isMobile && localSuggestedIp && !isBogusIp(localSuggestedIp) && (
+              <div className="p-4 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 flex flex-col items-center text-center">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 mb-3 block">
+                  {language === 'zh-CN' ? '本机同步地址（电脑可扫码主动连接手机）' : 'This device address (desktop can scan to connect)'}
+                </span>
+                {phoneQrUrl ? (
+                  <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-200">
+                    <img src={phoneQrUrl} alt="Device QR" className="w-36 h-36 mx-auto" />
+                  </div>
+                ) : (
+                  <div className="w-36 h-36 bg-slate-100 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-xs text-slate-400">
+                    {language === 'zh-CN' ? '生成中...' : 'Generating...'}
+                  </div>
+                )}
+                <p className="text-xs font-mono text-slate-500 dark:text-slate-400 mt-2">
+                  {localSuggestedIp}:{lanSyncService.DEFAULT_PORT}
+                </p>
+              </div>
+            )}
+
+            {/* 已知对端设备列表 */}
+            {peers.length > 0 && (
+              <div>
+                <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 mb-1.5">
+                  {language === 'zh-CN' ? '已配对设备' : 'Paired devices'}
+                </div>
+                <div className="space-y-1.5">
+                  {peers.map((ip) => {
+                    const st = syncManager.getStatus(ip);
+                    const dot =
+                      st === 'online'
+                        ? 'bg-emerald-500'
+                        : st === 'offline'
+                        ? 'bg-rose-500'
+                        : 'bg-slate-400';
+                    return (
+                      <div
+                        key={ip}
+                        className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-3 py-2"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+                          <span className="text-xs font-mono text-slate-700 dark:text-slate-300 truncate">{ip}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            disabled={syncing}
+                            onClick={() => syncManager.syncPeer(ip)}
+                            className="cursor-pointer px-2"
+                          >
+                            {language === 'zh-CN' ? '同步' : 'Sync'}
+                          </Button>
+                          <button
+                            type="button"
+                            onClick={() => syncManager.removePeer(ip)}
+                            className="text-slate-400 hover:text-rose-500 cursor-pointer px-1 text-xs"
+                          >
+                            {language === 'zh-CN' ? '移除' : 'Remove'}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* 错误提示 */}
           {errorMessage && (
             <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 flex items-start gap-2 text-rose-700 dark:text-rose-300 text-xs animate-in fade-in">
@@ -579,6 +735,24 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
             >
               <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
               <span>{syncing ? (language === 'zh-CN' ? '正在合并...' : 'Syncing...') : (language === 'zh-CN' ? '手动同步' : 'Sync')}</span>
+            </Button>
+          )}
+
+          {!isMobile && (
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={syncing}
+              onClick={() => {
+                setSyncing(true);
+                syncManager
+                  .syncAll()
+                  .finally(() => setSyncing(false));
+              }}
+              className="cursor-pointer gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              <span>{syncing ? (language === 'zh-CN' ? '正在同步...' : 'Syncing...') : (language === 'zh-CN' ? '立即同步所有设备' : 'Sync All Devices')}</span>
             </Button>
           )}
         </div>

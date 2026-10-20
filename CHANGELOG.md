@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.3.0] — 2026-10-21
+
+### Summary
+Mobile-first interaction rebuild paired with symmetric LAN sync: the Android app now hosts its own sync endpoint so the **desktop can initiate syncs too**, and both ends discover each other and merge automatically.
+
+### Added
+- **Touch-first mobile interactions**: tap-to-schedule button on unscheduled tasks, always-visible ↑/↓ reorder controls plus `TouchSensor` drag for Daily Focus, 250 ms long-press time-block creation on the timeline (scroll-safe with `pointercancel` handling), and a Projects entry in the mobile bottom navigation.
+- **Native mobile capabilities** (`@capacitor/haptics`, `keyboard`, `local-notifications`, `share`): haptic feedback, focus-end system notifications, native share sheet for exports, and `adjustResize` soft-keyboard handling.
+- **Symmetric LAN sync**: a lightweight native Android sync server mirrors the desktop Rust service, so the desktop can connect to the phone directly instead of relying on phone-initiated syncs only.
+- **Automatic peer discovery & sync**: `SyncManager` refreshes the local payload every 15 s, probes known peers and merges in both directions; peers are remembered on manual/scan sync and via the desktop's peer callback.
+- **Mobile UX review document** (`docs/mobile-ux-review.md`) recording the audit and remediation plan.
+
+### Fixed
+- Focus timer kept playing ambient audio after a session was discarded or finished.
+- Back navigation on the Calendar page returned to the Review Hub instead of closing the topmost overlay.
+- Inbox checkboxes rendered oversized on touch devices.
+- LAN sync flooded the screen with toasts: duplicate `lan-sync-received` listeners were registered without cleanup. Merges are now handled once and stay silent unless data actually changed.
+- Reverse sync (phone → desktop) never ran because the phone never registered the desktop as a sync peer.
+
+---
+
 ## [1.0.0] — 2026-08-22
 
 ### Summary

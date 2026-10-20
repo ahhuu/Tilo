@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import type { Session, Goal, Project, InboxItem } from '@/core/types/domain';
 import type { ReviewReflectionTemplatePayload } from '@/services/templateCommands';
+import { confirmDialog } from '@/services/dialogService';
 
 interface WeeklyReviewModalProps {
   sessions: Session[];
@@ -117,11 +118,14 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
   };
 
   const handleSkipReview = async () => {
-    const confirmed = window.confirm(
-      language === 'zh-CN'
-        ? '确定要跳过本周复盘吗？数据分析仍将保留，但不会生成本周反思快照。'
-        : 'Skip weekly review for this week? Analytics will remain intact, but no reflection snapshot will be saved.'
-    );
+    const confirmed = await confirmDialog({
+      title: language === 'zh-CN' ? '跳过本周复盘' : 'Skip weekly review',
+      message: language === 'zh-CN'
+        ? '数据分析仍将保留，但不会生成本周反思快照。'
+        : 'Analytics will remain intact, but no reflection snapshot will be saved.',
+      destructive: true,
+      confirmLabel: language === 'zh-CN' ? '跳过' : 'Skip',
+    });
     if (!confirmed) return;
 
     const now = Date.now();
@@ -179,11 +183,11 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-5 animate-in zoom-in-98 duration-150"
+        className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-5 max-h-[88vh] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-6 animate-in zoom-in-98 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

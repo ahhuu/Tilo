@@ -108,7 +108,7 @@ export const AnalyticsPage: React.FC = () => {
   const visible = layoutConfig.visibleWidgets;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-6 pb-20">
+    <div className="p-6 max-w-5xl mx-auto space-y-6">
       {/* Header & Period Switcher & Customizer Button */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">

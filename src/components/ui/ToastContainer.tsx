@@ -12,7 +12,7 @@ export const ToastContainer: React.FC = () => {
   return (
     <aside
       aria-label="Notifications"
-      className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none select-none"
+      className="fixed inset-x-3 md:inset-x-auto md:right-4 bottom-[calc(env(safe-area-inset-bottom,0px)+4.25rem)] md:bottom-4 z-[60] flex flex-col gap-2 md:max-w-sm md:w-full pointer-events-none select-none"
     >
       {toasts.map((toast) => (
         <ToastCard key={toast.id} toast={toast} onDismiss={() => removeToast(toast.id)} />

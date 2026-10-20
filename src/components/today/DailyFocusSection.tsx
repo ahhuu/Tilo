@@ -3,7 +3,8 @@ import {
   DndContext,
   closestCenter,
   KeyboardSensor,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -17,6 +18,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useI18n } from '@/core/i18n';
+import { nativeService } from '@/services/nativeService';
 import { timeService } from '@/core/time/timeService';
 import {
   GripVertical,
@@ -28,29 +30,37 @@ import {
   Plus,
   Info,
   Crosshair,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import type { Task, Project, PlannedBlock } from '@/core/types/domain';
 
 interface SortableFocusItemProps {
   task: Task;
   rank: number;
+  index: number;
+  total: number;
   project?: Project;
   plannedBlock?: PlannedBlock;
   onInspect: (task: Task) => void;
   onToggleComplete: (task: Task) => void;
   onStartSession: (task: Task) => void;
   onRemoveFromFocus: (task: Task) => void;
+  onMove: (from: number, to: number) => void;
 }
 
 const SortableFocusItem: React.FC<SortableFocusItemProps> = ({
   task,
   rank,
+  index,
+  total,
   project,
   plannedBlock,
   onInspect,
   onToggleComplete,
   onStartSession,
   onRemoveFromFocus,
+  onMove,
 }) => {
   const { language } = useI18n();
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
@@ -166,6 +176,36 @@ const SortableFocusItem: React.FC<SortableFocusItemProps> = ({
 
         {/* Right side: Action buttons always accessible on mobile, no hover barrier */}
         <div className="flex items-center gap-1 shrink-0 pl-1 mt-0.5">
+          {/* ↑/↓ 非拖拽排序替代（触屏与无障碍通用） */}
+          {index > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove(index, index - 1);
+              }}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-full active:bg-slate-100 dark:active:bg-slate-800 cursor-pointer"
+              title={language === 'zh-CN' ? '上移优先级' : 'Move up'}
+              aria-label={language === 'zh-CN' ? '上移优先级' : 'Move up'}
+            >
+              <ArrowUp className="w-4 h-4" />
+            </button>
+          )}
+          {index < total - 1 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onMove(index, index + 1);
+              }}
+              className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-full active:bg-slate-100 dark:active:bg-slate-800 cursor-pointer"
+              title={language === 'zh-CN' ? '下移优先级' : 'Move down'}
+              aria-label={language === 'zh-CN' ? '下移优先级' : 'Move down'}
+            >
+              <ArrowDown className="w-4 h-4" />
+            </button>
+          )}
+
           <button
             type="button"
             onClick={(e) => {
@@ -223,15 +263,30 @@ export const DailyFocusSection: React.FC<DailyFocusSectionProps> = ({
 }) => {
   const { t, language } = useI18n();
   const sensors = useSensors(
-    useSensor(PointerSensor, {
+    // 鼠标：轻移即触发拖拽
+    useSensor(MouseSensor, {
       activationConstraint: {
         distance: 4,
+      },
+    }),
+    // 触屏：长按 250ms 后再触发，避免与页面纵向滚动冲突
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 8,
       },
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  const handleMove = async (from: number, to: number) => {
+    if (to < 0 || to >= focusTasks.length) return;
+    nativeService.hapticImpact('light');
+    const reordered = arrayMove(focusTasks, from, to);
+    await onReorder(reordered.map((t) => t.id));
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -241,6 +296,7 @@ export const DailyFocusSection: React.FC<DailyFocusSectionProps> = ({
     const newIndex = focusTasks.findIndex((t) => t.id === over.id);
 
     if (oldIndex !== -1 && newIndex !== -1) {
+      nativeService.hapticImpact('light');
       const reordered = arrayMove(focusTasks, oldIndex, newIndex);
       await onReorder(reordered.map((t) => t.id));
     }
@@ -262,7 +318,7 @@ export const DailyFocusSection: React.FC<DailyFocusSectionProps> = ({
           </span>
         </div>
         <span className="text-[11px] font-normal text-slate-400 lowercase">
-          {language === 'zh-CN' ? '拖拽调整优先级' : 'drag to reorder rank'}
+          {language === 'zh-CN' ? '拖拽手柄或 ↑↓ 调整顺序' : 'drag handle or ↑↓ to reorder'}
         </span>
       </div>
 
@@ -295,12 +351,15 @@ export const DailyFocusSection: React.FC<DailyFocusSectionProps> = ({
                   key={task.id}
                   task={task}
                   rank={index + 1}
+                  index={index}
+                  total={focusTasks.length}
                   project={task.projectId ? projectMap.get(task.projectId) : undefined}
                   plannedBlock={plannedBlockMap.get(task.id)}
                   onInspect={onInspect}
                   onToggleComplete={onToggleComplete}
                   onStartSession={onStartSession}
                   onRemoveFromFocus={onRemoveFromFocus}
+                  onMove={handleMove}
                 />
               ))}
             </SortableContext>

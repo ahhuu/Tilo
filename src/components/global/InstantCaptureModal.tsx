@@ -3,8 +3,9 @@ import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
 import { Button } from '@/components/ui/Button';
 import { Kbd } from '@/components/ui/Kbd';
-import { Sparkles, CornerDownLeft, X } from 'lucide-react';
+import { Sparkles, CornerDownLeft } from 'lucide-react';
 import { captureInboxItem } from '@/services/inboxCommands';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 
 export const InstantCaptureModal: React.FC = () => {
   const { language } = useI18n();
@@ -15,6 +16,8 @@ export const InstantCaptureModal: React.FC = () => {
   useEffect(() => {
     if (instantCaptureOpen) {
       setContent('');
+      // 输入框为非受控（IME 友好），重置时需同步写回 DOM
+      if (textareaRef.current) textareaRef.current.value = '';
       setTimeout(() => textareaRef.current?.focus(), 50);
     }
   }, [instantCaptureOpen]);
@@ -33,6 +36,7 @@ export const InstantCaptureModal: React.FC = () => {
         type: 'success',
       });
       setContent('');
+      if (textareaRef.current) textareaRef.current.value = '';
       closeInstantCapture();
     } catch (err) {
       console.error('Failed to capture:', err);
@@ -51,49 +55,43 @@ export const InstantCaptureModal: React.FC = () => {
   if (!instantCaptureOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-28 bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150"
-      onClick={closeInstantCapture}
+    <BottomSheet
+      isOpen={true}
+      onClose={closeInstantCapture}
+      ariaLabel={language === 'zh-CN' ? '闪念快速收集' : 'Instant Capture'}
+      maxWidthClass="sm:max-w-lg"
+      scrollable={false}
+      title={
+        <span className="flex items-center gap-2">
+          <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          <span>{language === 'zh-CN' ? '闪念快速收集' : 'Instant Capture'}</span>
+        </span>
+      }
     >
-      <div
-        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden flex flex-col animate-in zoom-in-98 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2 text-xs font-semibold text-slate-800 dark:text-slate-200">
-            <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <span>{language === 'zh-CN' ? '闪念快速收集' : 'Instant Capture'}</span>
-          </div>
-          <button
-            type="button"
-            onClick={closeInstantCapture}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-4 space-y-3">
+      <div className="pb-3">
+        <form onSubmit={handleSubmit} className="space-y-3">
           <textarea
             ref={textareaRef}
             rows={3}
-            value={content}
+            defaultValue={content}
             onChange={(e) => setContent(e.target.value)}
+            onCompositionEnd={(e) => setContent(e.currentTarget.value)}
             onKeyDown={handleKeyDown}
             placeholder={language === 'zh-CN' ? '零阻力记录闪念、碎片想法或临时事项（保存后进入收集箱待后续统一分流整理）...' : 'Dump a raw idea, snippet, or thought (saved to Inbox for later triage)...'}
             className="w-full bg-transparent text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 resize-none focus:outline-hidden"
           />
 
           <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-            <div className="flex items-center gap-2 text-xs text-slate-400">
+            {/* 手机端没有物理键盘，隐藏快捷键提示 */}
+            <div className="hidden sm:flex items-center gap-2 text-xs text-slate-400">
               <span>{language === 'zh-CN' ? '保存' : 'Save'}: <Kbd>↵ Enter</Kbd></span>
               <span>{language === 'zh-CN' ? '取消' : 'Cancel'}: <Kbd>ESC</Kbd></span>
             </div>
             <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" onClick={closeInstantCapture} className="cursor-pointer">
+              <Button size="md" variant="ghost" onClick={closeInstantCapture} className="min-h-11 cursor-pointer">
                 {language === 'zh-CN' ? '取消' : 'Cancel'}
               </Button>
-              <Button size="sm" variant="primary" type="submit" disabled={!content.trim()} className="cursor-pointer">
+              <Button size="md" variant="primary" type="submit" disabled={!content.trim()} className="min-h-11 cursor-pointer">
                 <CornerDownLeft className="w-3.5 h-3.5 mr-1" />
                 {language === 'zh-CN' ? '收集' : 'Capture'}
               </Button>
@@ -101,6 +99,6 @@ export const InstantCaptureModal: React.FC = () => {
           </div>
         </form>
       </div>
-    </div>
+    </BottomSheet>
   );
 };

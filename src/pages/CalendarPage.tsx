@@ -310,8 +310,9 @@ export const CalendarPage: React.FC = () => {
             </h2>
           </div>
 
-          {/* View Mode & Planning Drawer Switcher */}
-          <div className="flex items-center gap-2">
+          {/* View Mode & Planning Drawer Switcher
+              窄屏下 5 组控件合计约 540px，必须换行，否则横向溢出且主操作被挤出屏幕 */}
+          <div className="flex flex-wrap items-center gap-2">
             {/* 5 / 7 Days Toggle for Week View */}
             {calendarViewMode === 'week' && (
               <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 text-xs font-medium">

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
+import { nativeService } from '@/services/nativeService';
 
 export const GlobalKeyboardShortcuts: React.FC = () => {
   const { language } = useI18n();
@@ -15,6 +16,10 @@ export const GlobalKeyboardShortcuts: React.FC = () => {
   } = useUIStore();
 
   useEffect(() => {
+    // 手机端没有物理键盘：禁用全部快捷键逻辑，避免单键 c / [ 抢字符输入、
+    // 以及全局 paste 拦截在触屏上误触发速记面板
+    if (nativeService.isNative()) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const isInput =
         document.activeElement instanceof HTMLInputElement ||

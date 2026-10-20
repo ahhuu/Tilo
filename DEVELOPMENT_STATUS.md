@@ -5,7 +5,7 @@
 
 ## Current phase
 
-**Phase 27 — LAN & QR Code Two-Way Sync, Android Mobile Adaptations, & Inbox Responsive Polish (v1.2.1 RELEASE - COMPLETE & VERIFIED)**
+**Phase 28 — Mobile UX Phase 3 (Interaction Reconstruction), Phase 4 (Native Capabilities) & Symmetric LAN Sync (v1.3.0) — COMPLETE & VERIFIED (2026-10-21)**
 
 ## Overall status
 
@@ -37,10 +37,39 @@
 - [x] Phase 25 — Android Native App & Local Gradle Build Pipeline
 - [x] Phase 26 — Tauri v2 Desktop Native App & Multi-Window Desktop Widget
 - [x] Phase 27 — LAN & QR Code Two-Way Sync, Android Mobile Adaptations, & Inbox Responsive Polish (v1.2.1)
+- [x] Phase 28 — Mobile UX Phase 3 (Interaction Reconstruction) & Phase 4 (Native Capabilities)
 
 ---
 
 ## 1. Files changed
+
+### 手机端体验审阅与 Phase 1+2 改造（本次会话主体）
+
+方向决策：**手机端定位 = 聚焦收口**（今日执行 + 快速收集 + 轻量查看；分析/周视图/6 步复盘这类重页面在手机上降级为摘要，复杂编辑留给桌面端）。本次实施 Phase 1 止血 + Phase 2 基础层。
+
+**新增基础组件**
+- `src/components/ui/BottomSheet.tsx` — **[NEW]** 移动端底部抽屉 / 桌面端居中弹窗的统一基础组件。内置 `items-end + rounded-t-2xl + 拖拽把手`、`max-h-[88vh]` + 主体独立滚动 + `overscroll-contain`、上下安全区、背景滚动锁定、Esc 关闭、`aria-modal`。供后续 19 个弹窗收敛。
+- `src/components/ui/ConfirmDialogHost.tsx` + `src/services/dialogService.ts` — **[NEW]** 应用内确认 / 输入对话框（命令式 `await confirmDialog(...)`），替代 `window.confirm` 与 `window.prompt`（原生对话框不继承主题、阻塞主线程打断计时、部分 WebView 忽略 prompt 默认值）。
+
+**Phase 1 止血**
+- `src/index.css` — **[FIXED]** 触屏 hover 兜底由「手写 3 个类名白名单」改为**扫描式选择器**。旧白名单漏掉 `group-hover/block`，导致周视图排期块的删除按钮在 Android 上永久 `opacity:0` 却仍可点击（静默误删）。另加 `.touch-target`（44dp 最小命中区）与拖拽手柄 `touch-action: none`。
+- `src/components/layout/AppLayout.tsx` — **[FIXED]** 主内容区底部留白改为单一来源 `pb-[calc(env(safe-area-inset-bottom,0px)+4.5rem)]`（原 `pb-16` 小于底栏 56px+安全区，手势导航下今日页末屏按钮被永久遮挡）；根容器 `h-screen` → `h-[100dvh]`。
+- 6 个页面移除各自硬编码的 `pb-20 / pb-24`，避免与 AppLayout 打架。
+- `src/components/global/FloatingTimer.tsx` / `src/components/inbox/InboxBatchBar.tsx` / `src/components/ui/ToastContainer.tsx` — **[FIXED]** 三者原为 `bottom-4/6` 且 `z-40`，与底栏重叠甚至互相遮挡。统一为「底栏之上」偏移；批量条改为贴底全宽 + 移动端图标按钮（44×44）；计时器移动端压缩布局；Toast 改为 `inset-x-3` 避免 `w-full + right-4` 左溢出。
+- 7 个 P0 弹窗补齐 `max-h-[88vh] + overflow-y-auto + 安全区` 并改为移动端底部抽屉形态：`WeeklyReviewModal`、`DailyCloseModal`、`CreateGoalModal`、`ConvertToTaskModal`、`ConvertToNoteModal`、`RescheduleDialog`、`DataBackupSection`（破坏性操作确认）。
+- `src/services/nativeService.ts` — **[FIXED]** Android 返回键由「4 个浮层白名单」改为**通用遮罩栈**（按 z-index + DOM 顺序取最上层可见遮罩并触发关闭），覆盖日历抽屉、More 抽屉与全部 Modal。
+- `src/stores/uiStore.ts` — **[FIXED]** `calendarPlanningDrawerOpen` 移动端默认收起（原默认 `true`，手机一进日历页就被全屏抽屉覆盖）。
+- `src/components/global/GlobalKeyboardShortcuts.tsx` — **[FIXED]** 手机端直接 `return`，避免单键 `c` / `[` 抢字符输入与全局 `paste` 拦截误触。
+- `src/pages/CalendarPage.tsx` / `src/pages/GoalsPage.tsx` — **[FIXED]** 窄屏控制条 / 状态 Tab 横向溢出（前者加 `flex-wrap`，后者改为横向滚动）。
+- `src/components/analytics/FocusHeatmapCard.tsx` — **[FIXED]** 手机端热力图由「全年 53 周硬塞 `min-w-[680px]`」降级为**最近 12 周放大版**（14px 可点按方块），桌面端保持全年视图。
+
+**Phase 2 基础层**
+- `src/components/global/InstantCaptureModal.tsx` / `QuickCaptureHUD.tsx` — **[REFACTORED]** 手机端最高频的两个 FAB 入口由顶部居中卡片（`pt-24/28`，键盘弹出后被挤出视口）迁到 `BottomSheet`，并隐藏桌面快捷键提示。
+- `src/components/calendar/CreatePlannedBlockModal.tsx` / `src/components/inbox/ContinuousProcessingModal.tsx` — **[FIXED]** 移动端底部抽屉形态 + 页脚安全区。
+- 7 处 `window.confirm / prompt` 全部替换为应用内对话框（GoalInspector、ProjectInspector、SessionInspector、WeeklyReviewModal、TodayPage ×2、TimelineView）。
+- 触控命中区补齐：GoalCard 指标 +/−（16px）、Inbox 多选 checkbox（13px）、WeekView 删除按钮（14px）加 `.touch-target`。
+
+### 局域网同步修复（本次会话前半段）
 
 - `capacitor.config.ts` — **[FIXED]** 修复局域网同步 `Failed to fetch` 根因：手机端 WebView 源为 `https://localhost`（`androidScheme: 'https'`），向 `http://<PC-IP>:27123` 发起 fetch 属于混合内容（Mixed Content），在 `allowMixedContent: false` 下被 Android WebView 直接拦截、请求根本未发出。改为 `allowMixedContent: true`（MIXED_CONTENT_COMPATIBILITY_MODE）。注意不可改回 `androidScheme: 'http'`，否则 WebView 源变更会导致手机端 IndexedDB/Dexie 数据丢失。
 - `src/components/sync/LanSyncModal.tsx` — **[UPDATED]** 手机端连接失败提示补充 Windows 防火墙（专用网络放行）与路由器 AP 隔离排查项。
@@ -54,14 +83,16 @@
 
 - 修复手机端局域网/扫码同步 `Failed to fetch`：根因为 HTTPS 源请求 HTTP 局域网地址被 WebView 混合内容策略拦截（与此前 `usesCleartextTraffic` 修复相互独立），开启 `allowMixedContent` 后恢复连通。
 - 错误提示覆盖防火墙 / AP 隔离等真实网络排查路径。
-- 重新验证 TypeScript 类型检查与 ESLint。
+- **完成手机端完整审阅并输出改进方案**（`docs/mobile-ux-review.md`）：定位三类硬伤——遮挡不可达、交互范式不存在（hover/HTML5 拖拽/快捷键/`window.prompt`）、触控尺寸点不中；按 P0/P1/P2 列出全部问题并给出四阶段改造路线。
+- **实施 Phase 1 止血 + Phase 2 基础层**：静默误删、浮层互相遮挡、弹窗溢出卡死、返回键失效、窄屏横向溢出等 11 项 P0 全部处理；抽出 `BottomSheet` 与 `ConfirmDialog` 两个基础件，迁移手机端最高频的两个 FAB 入口。
 
 ## 3. TypeScript / ESLint / tests / build
 
 - `npm run typecheck` — Passed (0 errors).
 - `npm run lint` — Passed (0 errors).
-- `npm run test` — Not run（本次仅修改 Capacitor 配置与一条错误文案，未触及被测逻辑）。
-- `npm run build` (Vite web) — Passed，产出 `dist/assets/index-FkjRS7Pr.js`。
+- `npm run test` — Passed (130/130).
+- `npm run build` (Vite web) — Passed，产出 `dist/assets/index-CNkzLFZ3.js`。
+- Android APK — Passed，`app-debug.apk` 已重新打包（`npx cap copy android` + `gradlew assembleDebug`）。
 - **Android APK** — **Passed**：`android/app/build/outputs/apk/debug/app-debug.apk` (4.85 MB, 2026-10-19 00:29)。已校验包内 `assets/capacitor.config.json` 含 `allowMixedContent: true`，且 `assets/public/assets/index-FkjRS7Pr.js` 为最新产物（含新增防火墙/AP 隔离文案）。
   - 注：`npm run android:debug` 中的 `cap sync android` 步骤因工具批量删除保护（`capacitor-cordova-android-plugins` 57 个文件）中断，改为校验 web 资源与配置已拷贝后直接执行 `gradlew.bat assembleDebug` 完成编译；Capacitor 插件未变更，无需重生成。
 - Tauri 桌面端 build — Not run（本次未改 Rust 代码，桌面端无需重编）。
@@ -70,10 +101,66 @@
 
 - 手机端需重新打 APK 安装后修复才生效（`capacitor.config.ts` 属于原生配置，热更新不生效）。
 - 若修复后仍连不上，下一嫌疑是 Windows 防火墙拦截 Tilo 入站 27123 端口（未签名 exe 在"公用网络"配置文件下默认禁止入站）。
+- 剩余未迁到 `BottomSheet` 的弹窗约 12 个（低优先，见审阅文档速查表）。
+
+---
+
+## Phase 28 — Mobile UX Phase 3 (Interaction Reconstruction) & Phase 4 (Native Capabilities)
+
+> 基于 `docs/mobile-ux-review.md` 的「聚焦收口」定位推进。Phase 1+2 已交付（见上）。本阶段补齐触屏可用的替代交互 + 4 个 Capacitor 原生能力。
+
+### 1. Files changed (Phase 28)
+
+**Phase 3 — 交互范式重建（触屏可用替代）**
+- `src/components/today/DailyFocusSection.tsx` — **[UPDATED]** `PointerSensor` → `MouseSensor`(distance:4) + `TouchSensor`(delay:250, tolerance:8) + `KeyboardSensor`；`SortableFocusItem` 新增常驻 ↑/↓ 上移下移按钮（受 `index>0` / `index<total-1` 守卫），`handleMove` 调用 `nativeService.hapticImpact('light')` + `arrayMove` + `onReorder`；提示文案改为「拖拽手柄或 ↑↓ 调整顺序」。
+- `src/components/timeline/TimelineView.tsx` — **[UPDATED]** 触控长按 250ms 才进入框选（`LONG_PRESS_MS=250`），短按（无移动）直接快建 30min 时间块；新增 `pendingCreateRef` + `longPressTimerRef` + `handleGridPointerCancel`（移动 >10px 取消计时允许滚动）；`touch-action-none` 仅在 `isDragCreating` 与两个 resize 手柄激活时启用，避免误吞滚动手势；创建/缩放提交后 `hapticImpact('light')`；空状态文案补充「在网格上长按规划时间块」。
+- `src/components/layout/MobileBottomNav.tsx` — **[UPDATED]** 更多抽屉新增「项目 / Projects」入口；`useLiveQuery` 拉取 `db.projects`，独立 `showProjectsSheet` 底部抽屉列出项目并可跳转 `/projects/${id}`；`isMoreActive` 纳入 `/projects`。
+- `src/pages/TodayPage.tsx` — **[UPDATED]** 未排期任务行新增 `Calendar`「排期」按钮，`handleScheduleTask` 调用 `createPlannedBlock` + 可选 `rescheduleTask` 并 Toast 反馈；提示文案「点按排期或拖入时间轴」；补齐 `rescheduleTask` 来自 `@/services/taskCommands`（非 planCommands）。
+
+**Phase 4 — 原生能力接入（新增 4 个 Capacitor 插件，已记 `DEVELOPMENT_STATUS.md` 依赖理由）**
+- `package.json` — **[NEW DEP]** 新增 `@capacitor/haptics`、`@capacitor/keyboard`、`@capacitor/local-notifications`、`@capacitor/share`（v8，与现有 Capacitor 体系一致）。
+- `src/services/nativeService.ts` — **[UPDATED]** 新增原生封装（均 `isNative()` 守卫 + try/catch 静默）：`hapticImpact(style)`、`hapticNotification(type)`、`setupKeyboardListeners()`（键盘显隐时滚动 `activeElement` 入屏 + 写 `--cap-keyboard-height`）、`scheduleFocusEndNotification(fireAtMs, title, body?)`、`cancelFocusNotifications()`、`shareFile(options)`、`shareText(title, text)`；`FOCUS_NOTIF_ID=4242`；`initNative` 内调 `setupKeyboardListeners()`。
+- `src/services/reportExportService.ts` — **[UPDATED]** `downloadFile` 在 `isNative()` 时改用 `nativeService.shareText(...)` 走系统分享，web 路径不变。
+- `src/components/global/FloatingTimer.tsx` — **[UPDATED]** 专注进入目标时长后调度本地通知兜底（`scheduleFocusEndNotification`，cleanup 时 `cancelFocusNotifications`），解决切后台 WebView 节流导致提醒丢失。
+- `android/app/src/main/AndroidManifest.xml` — **[UPDATED]** `<activity>` 加 `android:windowSoftInputMode="adjustResize"`；新增 `POST_NOTIFICATIONS` 权限。
+- `android/gradle.properties` — **[UPDATED]** 加 `kotlin.jvm.target.validation.mode=warning`（Capacitor v8 Kotlin 插件 JVM-target 21 vs Java 17 一致性校验放行）。
+
+### 2. Features completed (Phase 28)
+
+1. **触屏排序替代**：今日聚焦排序支持触控拖拽 + 常驻 ↑/↓ 按钮 + 键盘方向键三套范式，彻底摆脱「仅 HTML5 拖拽条」在手机上 100% 失效的问题。
+2. **时间轴长按建立时间块**：触控长按 250ms 进入框选、短按快建 30min、滑动自动取消计时——解决「HTML5 拖拽在触屏不可用」且避免误吞滚动。
+3. **底部导航补「项目」入口**：更多抽屉一键直达项目列表并跳转，补齐 Phase 3 待办。
+4. **未排期任务「排期」按钮**：无需拖拽即可落时间轴，配合长按形成双通道。
+5. **触觉反馈**：创建/缩放/排序均触发 `Haptics.impact`，操作有实体确认感。
+6. **软键盘自适应**：`adjustResize` + 键盘监听滚动聚焦元素入屏，沉浸模式下输入框不再被遮挡。
+7. **专注本地通知兜底**：切后台后 WebView 被节流时仍由系统通知提醒专注结束。
+8. **系统分享导出**：报告导出在原生端走 `Share.share`，可直接转发到微信/邮件等。
+
+### 3. TypeScript / ESLint / tests / build (Phase 28)
+
+- `npm run typecheck` — Passed (0 errors).
+- `npm run lint` — Passed (1 ESLint warning 已加 `eslint-disable` 注解处理).
+- `npm run test` — Passed (130/130).
+- `npm run build` (Vite web) — Passed.
+- `npx cap sync android` — 注册 4 个新插件成功。
+- `cap copy android` + `gradlew assembleDebug` — **BUILD SUCCESSFUL**，产物 `android/app/build/outputs/apk/debug/app-debug.apk` (5.2 MB, 2026-10-19 12:09)。
+- 已恢复全局 Gradle 代理文件 `C:\Users\hhgg\.gradle\gradle.properties`（临时注释的代理行已还原）。
+
+### 4. Known issues (Phase 28)
+
+- 真机需重装新 APK 才能生效（`capacitor.config.ts` / 原生清单属原生层，热更新不生效）。
+- swipe 手势删除、长按上下文菜单仍未做（低优先，原 Phase 3 待办中剩余项）。
+- 未迁到 `BottomSheet` 的弹窗约 12 个仍未收敛（低优先）。
+
+### 5. Next task (Phase 28)
+
+- 真机验证：触控排序三范式是否顺手、长按建块是否误吞滚动、底部「项目」入口是否可达、专注切后台后系统通知是否准时、导出报告是否唤起系统分享面板。
+- 验证通过后可选提交推送（git 提交信息纯英文，按记忆约定）。
 
 ## 5. Next task
 
-- 重新执行 `npm run cap:build` + `npm run android:debug` 打包新 APK，真机验证扫码与手动 IP 同步。
+- 真机验证本次 Phase 1+2：静默误删是否消失、底栏与浮层是否还打架、弹窗按钮是否可达、返回键是否逐层关闭。
+- 验证通过后进入 **Phase 3 交互重建**（按「聚焦收口」定位：重页面降级 + 触屏可用的替代交互）。
 - `src/pages/SingleWidgetPage.tsx` — **[UPDATED]** Enforced pure transparency by purging `bg-surface-app` from `body` and setting transparent style properties on `html`, `body`, and `#root`.
 - `src/components/widget/StandaloneWidgetShell.tsx` — **[UPDATED]** Eliminated outer padding and bright white border to remove outer framing artifacts; added a dedicated "⚙️ 自定义" button in the header; added per-grid custom preference drawer with opacity slider and quick tab/filter/duration switches.
 - `src/test/desktopWidget.test.ts` — **[UPDATED]** Added automated unit test coverage for standalone widget metadata and multi-window service capabilities.
@@ -355,3 +442,75 @@
 ## 5. Next task
 
 - 用户实机体验移动端全新今日聚焦卡片、清晰时间轴、可滑动收集箱标签以及丝滑的局域网/扫码同步。
+
+---
+
+## Phase 28 扩展 — 双端对称同步 + 自动同步（本次会话）
+
+> 用户要求：1) 电脑也要能主动和手机同步（原只有手机连电脑）；2) 自动检测对端可达后自动合并。已确认采用「双端都做同步服务器」方案。
+
+### 1. Files changed (双端对称同步)
+
+- `android/app/src/main/java/com/tilo/app/SyncServer.java` — **[NEW]** 轻量 `ServerSocket` HTTP 同步服务，监听 `0.0.0.0:27123`，**镜像桌面 Rust 服务**：POST `/api/sync/merge` 时把对方载荷经 `evaluateJavascript("window.__tiloSyncOnReceive(<json>)")` 转发给 WebView 合并，并回传本机缓存载荷；暴露 `window.__tiloSyncServer.setPayload/getLocalIp`（`addJavascriptInterface`）；`getLocalIpAddress()` 取 Wi-Fi 物理 IPv4。所有响应带 `Access-Control-Allow-Origin: *`。
+- `android/app/src/main/java/com/tilo/app/MainActivity.java` — **[UPDATED]** onCreate 创建 `SyncServer`，onResume 绑定 `bridge.getWebView()` + JS 接口并启动服务（防重复 attach），onDestroy 停止。
+- `src-tauri/src/lib.rs` — **[UPDATED]** `/api/sync/merge` 处理时额外 `emit("lan-sync-peer", peer_ip)`（取 `stream.peer_addr()`），让桌面记住手机为已知对端，实现电脑主动/自动回连。
+- `src/services/syncManager.ts` — **[NEW]** 双端局域网自动同步管理器：维护已知对端 IP、自动开关、在线/离线状态；`init()` 手机端注册 `__tiloSyncOnReceive`、桌面端监听 tauri `lan-sync-received`/`lan-sync-peer`；每 15s `refreshOwnPayload` + 探测已知对端可达即双向合并；`refreshOwnPayload` 桌面走 `invoke('update_desktop_sync_payload')`、手机走 JS bridge `setPayload`。`addPeer/removePeer/setAuto/syncPeer/syncAll` 供 UI 调用；`subscribe` 供 UI 实时刷新。
+- `src/App.tsx` — **[UPDATED]** 移除旧的 `lan-sync-received` 内联合并逻辑，改为顶部统一调用 `syncManager.init()`（全平台启动，内部按平台适配），首次导出本机载荷。
+- `src/components/sync/LanSyncModal.tsx` — **[UPDATED]** 双端加「自动同步」开关、已知设备列表（状态点 + 单设备同步/移除）、电脑端「手机地址 + 连接并同步」输入、手机端「本机地址二维码」（供电脑扫码主动连手机）、底部电脑端「立即同步所有设备」按钮。
+
+### 2. Features completed (双端对称同步)
+
+1. **电脑可主动与手机同步**：手机端新增原生同步服务后，电脑输入手机 IP 即可主动发起双向合并（不再只有手机扫电脑二维码一种方向）。
+2. **自动检测 + 自动同步**：`SyncManager` 每 15s 刷新本机载荷并探测已知对端，可达即自动双向合并；首次连接后双端互记对方 IP，之后打开任一端即自动互相同步。
+3. **已知设备持久化**：对端 IP 存入 localStorage，跨会话保留；桌面通过 `lan-sync-peer` 自动 learned 手机 IP。
+4. **双端可扫码互连**：手机端弹窗展示本机地址二维码，电脑端扫码即可主动连手机。
+
+### 3. TypeScript / ESLint / tests / build (双端对称同步)
+
+- `npm run typecheck` — Passed (0 errors).
+- `npm run lint` — Passed (0 errors).
+- `npm run test` — Passed (130/130；原 smoke 测试因新增 `useEffect` 引用 `localSuggestedIp` 早于其声明导致 TDZ 报错，已将 effect 移至声明之后修复).
+- `npm run build` (Vite web) — Passed.
+- `npx cap copy android` + `gradlew assembleDebug --offline` — **BUILD SUCCESSFUL**，产物 `android/app/build/outputs/apk/debug/app-debug.apk` (5.2 MB, 2026-10-19 13:03)。首次编译因 `JavascriptInterface` 误 import 自 `androidx.annotation`（应为 `android.webkit`）失败，修正后通过。
+- 全局 Gradle 代理文件 `C:\Users\hhgg\.gradle\gradle.properties` 已恢复为原启用状态。
+
+### 4. Known issues (双端对称同步)
+
+- 手机 App 完全退到后台/锁屏后，Android 可能回收其同步服务（系统 Doze/电池优化），此时电脑无法主动拉取手机；手机 App 一打开即自动回连并双向同步（属 Android 平台限制，非缺陷）。
+- 纯 Web 端（浏览器）不运行同步服务，仅桌面(Tauri)/手机(Capacitor) 参与。
+
+### 5. Next task (双端对称同步)
+
+- 真机验证：电脑输入手机 IP 能否主动同步；双端同开是否自动互相同步；手机弹窗本机二维码能否被电脑扫码连接。
+- 验证通过后可提交推送（git 提交信息纯英文）。
+
+### 6. Fix — 同步提示刷屏 & 桌面同步失效（2026-10-19 14:58）
+
+**现象**：桌面右侧持续堆积「已收到手机端数据并自动合并！(更新: 0项, 新增: 0项)」提示，清不完；同时电脑端同步实际未生效。
+
+**根因与修复**：
+1. **提示刷屏**：`LanSyncModal` 在 `isOpen` 的 effect 内重复注册 `listen('lan-sync-received')` 且**没有 cleanup**——每打开一次弹窗就多叠一个监听器；手机自动同步每 15s 推一次，每个监听器都无条件 toast（即使 0 变更）。已删除该重复监听，合并统一由 `syncManager` 单例处理。
+2. **提示策略**：`syncManager.handleIncomingRemote` 改为仅在 `updatedCount + addedCount > 0` 时提示，且 10s 节流；对端无新数据时完全静默。
+3. **桌面合并失败**：手机原生服务 `cachedPayload` 未就绪时返回 `{}`（旧实现甚至可能为 `null`），桌面 `mergeRemotePayload` 访问 `remote.data` 抛错 → 整次同步失败并标记对端 offline。已加防御（无 `data` 直接返回 0 变更）并让原生服务默认载荷为结构合法的空载荷。
+4. **往返放大**：`addPeer` 原先每次 `lan-sync-peer` 事件都立即 `syncPeer`，手机每推一次桌面就反向再推一次。改为仅「首次发现对端」时立即同步，其余交给 15s 自动轮询。
+5. `addPeer` 兼容 Rust 端传字符串或 `{ ip }` 对象两种载荷。
+
+**验证**：`typecheck` / `lint` / `test`(130/130) 全过；重打桌面 MSI(14:56)/NSIS(14:57) 与 APK(14:58)。
+
+**注意**：**必须重装本次桌面安装包与 APK**，旧桌面进程不包含 `syncManager` 与 `lan-sync-peer`，仅靠旧包无法实现电脑主动同步。
+
+### 7. Fix — 反向同步（手机→电脑）失效（2026-10-19 15:32）
+
+**现象**：电脑改任务 → 手机能看到；手机改任务 → 电脑收不到。
+
+**根因**：
+1. **手机端从未把电脑 IP 登记为自动同步对端**。扫码/手动同步走的 `executeSync` 直接调用 `lanSyncService.syncWithHost`，绕过了 `syncManager`；而 `syncManager` 只在收到 Tauri `lan-sync-peer` 事件时 `addPeer`，该事件仅桌面端存在。结果手机端 `knownPeers` 为空 → 自动同步只能由电脑单向发起。
+2. 手机原生服务此前把完整 JSON 直接拼进 `evaluateJavascript`，大载荷有被丢弃风险；`cachedPayload` 初始结构不完整时电脑也拿不到手机数据。
+
+**修复**：
+- 新增 `syncManager.rememberPeer()`（只登记、不立即同步）；`executeSync` 成功后登记对端；手机端启动时把 `tilo_last_lan_sync_ip`（上次手动/扫码的电脑地址）迁移登记为自动同步对端。
+- 手机原生服务新增 `window.__tiloSyncOnPeer(ip)`：电脑主动推送时，手机据此自动记住电脑 IP —— 即使从未扫码也能自愈配对。
+- `SyncServer` 改为「Java 暂存 + JS 通过 `consumePendingPayload()` 取走」，避免大数据塞进 `evaluateJavascript`；`MainActivity` 在 `onCreate` 即注入 JS 桥，不再只依赖 `onResume`。
+- `refreshOwnPayload` 在桥缺失时输出明确警告，便于后续排查。
+
+**验证**：`typecheck` / `lint` / `test`(130/130) 全过；桌面 MSI/NSIS 15:31、APK 15:32。

@@ -8,6 +8,7 @@ import { parseQuickCaptureInput, type QuickCaptureParsedResult } from '@/service
 import { createTask } from '@/services/taskCommands';
 import { createPlannedBlock } from '@/services/planCommands';
 import { Badge } from '@/components/ui/Badge';
+import { BottomSheet } from '@/components/ui/BottomSheet';
 import {
   Sparkles,
   CornerDownLeft,
@@ -39,6 +40,8 @@ export const QuickCaptureHUD: React.FC<QuickCaptureHUDProps> = ({ isOpen, onClos
     if (isOpen) {
       const initial = quickTaskInitialValue || '';
       setInput(initial);
+      // 输入框为非受控（IME 友好），初始化时需同步写回 DOM
+      if (inputRef.current) inputRef.current.value = initial;
       if (initial.trim()) {
         setParsed(parseQuickCaptureInput(initial, projects));
       } else {
@@ -122,29 +125,34 @@ export const QuickCaptureHUD: React.FC<QuickCaptureHUDProps> = ({ isOpen, onClos
   };
 
   const appendHint = (hint: string) => {
-    setInput((prev) => `${prev.trim()} ${hint}`.trim() + ' ');
+    // 以 DOM 实际值为准（组字期间 state 可能落后一拍），并同步写回 DOM
+    const current = inputRef.current?.value ?? input;
+    const next = `${current.trim()} ${hint}`.trim() + ' ';
+    if (inputRef.current) inputRef.current.value = next;
+    setInput(next);
     inputRef.current?.focus();
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center pt-24 bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150 select-none"
-      onClick={onClose}
+    <BottomSheet
+      isOpen={true}
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '极速速记' : 'Quick capture'}
+      maxWidthClass="sm:max-w-xl"
+      scrollable={false}
     >
-      <div
-        className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="pb-3">
         {/* Input Bar */}
-        <div className="flex items-center gap-3 p-4 px-5 border-b border-slate-100 dark:border-slate-800">
+        <div className="flex items-center gap-3 py-3 border-b border-slate-100 dark:border-slate-800">
           <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
             <Sparkles className="w-4 h-4" />
           </div>
           <input
             ref={inputRef}
             type="text"
-            value={input}
+            defaultValue={input}
             onChange={(e) => setInput(e.target.value)}
+            onCompositionEnd={(e) => setInput(e.currentTarget.value)}
             onKeyDown={handleKeyDown}
             placeholder={
               language === 'zh-CN'
@@ -153,7 +161,7 @@ export const QuickCaptureHUD: React.FC<QuickCaptureHUDProps> = ({ isOpen, onClos
             }
             className="flex-1 text-sm bg-transparent border-0 focus:outline-hidden text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
           />
-          <div className="flex items-center gap-1 text-[11px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg shrink-0">
+          <div className="hidden sm:flex items-center gap-1 text-[11px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-lg shrink-0">
             <span>Enter</span>
             <CornerDownLeft className="w-3 h-3" />
           </div>
@@ -252,6 +260,6 @@ export const QuickCaptureHUD: React.FC<QuickCaptureHUDProps> = ({ isOpen, onClos
           </div>
         </div>
       </div>
-    </div>
+    </BottomSheet>
   );
 };

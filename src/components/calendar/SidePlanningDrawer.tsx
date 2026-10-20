@@ -64,6 +64,11 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
   return (
     <aside
       aria-label="Planning Drawer"
+      onClick={(e) => {
+        // 返回键会向本元素派发一次 click；只有直接点在本元素自身（而非子内容）时才关闭，
+        // 避免误触任务卡片 / 搜索框等内部元素时也关掉抽屉。
+        if (e.target === e.currentTarget) onClose();
+      }}
       className="fixed inset-0 z-50 md:relative md:inset-auto md:z-20 w-full md:w-80 shrink-0 border-l border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 backdrop-blur-md flex flex-col h-full select-none animate-in slide-in-from-right duration-200"
     >
       {/* Drawer Header */}

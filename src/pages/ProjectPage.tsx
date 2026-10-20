@@ -208,7 +208,7 @@ export const ProjectPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="p-6 max-w-5xl mx-auto space-y-8">
       {/* Back button & Navigation */}
       <button
         type="button"

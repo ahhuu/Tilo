@@ -98,6 +98,12 @@ class LanSyncService {
     let updatedCount = 0;
     let addedCount = 0;
 
+    // 防御：对端缓存尚未就绪时可能返回 {}（手机原生服务初始值）或残缺结构，
+    // 此时视为「无数据可合并」，避免 remote.data 为 undefined 抛错导致整次同步失败。
+    if (!remote || typeof remote !== 'object' || !remote.data) {
+      return { updatedCount: 0, addedCount: 0, timestamp: Date.now() };
+    }
+
     await db.transaction('rw', [
       db.tasks,
       db.projects,

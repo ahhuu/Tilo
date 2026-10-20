@@ -15,6 +15,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import type { Task } from '@/core/types/domain';
+import { confirmDialog } from '@/services/dialogService';
 
 interface SessionInspectorProps {
   sessionId: string;
@@ -83,12 +84,15 @@ export const SessionInspector: React.FC<SessionInspectorProps> = ({
   };
 
   const handleDelete = async () => {
-    const confirm = window.confirm(
-      language === 'zh-CN'
-        ? `确定要删除此实际专注记录 "${session.title}" 吗？`
-        : `Delete this focus session "${session.title}"?`
-    );
-    if (!confirm) return;
+    const ok = await confirmDialog({
+      title: language === 'zh-CN' ? '删除专注记录' : 'Delete session',
+      message: language === 'zh-CN'
+        ? `确定要删除此实际专注记录 "${session.title}" 吗？此操作不可撤销。`
+        : `Delete this focus session "${session.title}"? This cannot be undone.`,
+      destructive: true,
+      confirmLabel: language === 'zh-CN' ? '删除' : 'Delete',
+    });
+    if (!ok) return;
 
     await deleteSession(session.id);
     addToast({

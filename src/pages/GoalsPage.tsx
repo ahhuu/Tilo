@@ -165,7 +165,7 @@ export const GoalsPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-8 pb-20">
+    <div className="p-6 max-w-5xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-3">
@@ -225,8 +225,9 @@ export const GoalsPage: React.FC = () => {
             </button>
           </div>
 
-          {/* 4 Canonical Status Tabs: 进行中 | 已完成 | 已暂停 | 已归档 */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 text-xs font-medium">
+          {/* 4 Canonical Status Tabs: 进行中 | 已完成 | 已暂停 | 已归档
+              窄屏下四个带计数的 Tab 合计约 390px 放不下，改为横向平滑滚动（不换行破坏分段控件外观） */}
+          <div className="flex items-center bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5 text-xs font-medium max-w-full overflow-x-auto scrollbar-none [&>button]:shrink-0 [&>button]:whitespace-nowrap">
             <button
               type="button"
               onClick={() => setTab('active')}

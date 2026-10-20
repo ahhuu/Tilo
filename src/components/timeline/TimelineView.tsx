@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { db } from '@/storage/db';
 import { useI18n } from '@/core/i18n';
 import { timeService } from '@/core/time/timeService';
+import { nativeService } from '@/services/nativeService';
 import { Badge } from '@/components/ui/Badge';
 import {
   calculateTimelineLayout,
@@ -15,6 +16,7 @@ import type {
   DailyCapacityConfig,
 } from '@/core/timeline/types';
 import type { PlannedBlock, Session, Task, Project, PlannedBlockType } from '@/core/types/domain';
+import { confirmDialog } from '@/services/dialogService';
 import {
   Clock,
   Layers,
@@ -108,6 +110,10 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const [dragCreateCurrentMs, setDragCreateCurrentMs] = useState<number | null>(null);
   const pointerDownYRef = useRef<number>(0);
   const pointerDownTimeRef = useRef<number>(0);
+  // 触屏长按框选：延迟触发与待定态
+  const longPressTimerRef = useRef<number | null>(null);
+  const pendingCreateRef = useRef<{ startMs: number } | null>(null);
+  const LONG_PRESS_MS = 250;
 
   // Drag Move & Resize state
   const [activeResizeBlock, setActiveResizeBlock] = useState<{
@@ -195,12 +201,41 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     pointerDownYRef.current = e.clientY;
     pointerDownTimeRef.current = Date.now();
     const snappedMs = getTimeFromPointerY(e.clientY);
+
+    // 触屏：先长按 250ms 再进入框选创建，避免与纵向滚动冲突；
+    // 期间手指移动超过阈值则取消（视为滚动页面）。
+    if (e.pointerType === 'touch') {
+      pendingCreateRef.current = { startMs: snappedMs };
+      longPressTimerRef.current = window.setTimeout(() => {
+        if (pendingCreateRef.current) {
+          setIsDragCreating(true);
+          setDragCreateStartMs(snappedMs);
+          setDragCreateCurrentMs(snappedMs + 1800000); // 30 min draft default
+          pendingCreateRef.current = null;
+        }
+      }, LONG_PRESS_MS);
+      return;
+    }
+
+    // 鼠标 / 触控笔：保持即时框选（桌面体验一致）
     setIsDragCreating(true);
     setDragCreateStartMs(snappedMs);
-    setDragCreateCurrentMs(snappedMs + 1800000); // 30 min draft default
+    setDragCreateCurrentMs(snappedMs + 1800000);
   };
 
   const handleGridPointerMove = (e: React.PointerEvent) => {
+    // 触屏待定态：移动超阈值即取消长按（放行滚动）
+    if (pendingCreateRef.current && !isDragCreating) {
+      const dy = Math.abs(e.clientY - pointerDownYRef.current);
+      if (dy > 10) {
+        if (longPressTimerRef.current !== null) {
+          window.clearTimeout(longPressTimerRef.current);
+          longPressTimerRef.current = null;
+        }
+        pendingCreateRef.current = null;
+      }
+      return;
+    }
     if (isDragCreating && dragCreateStartMs !== null) {
       const snappedMs = getTimeFromPointerY(e.clientY);
       setDragCreateCurrentMs(snappedMs);
@@ -221,7 +256,31 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
     }
   };
 
+  // 触屏中断（浏览器判定为滚动/被其它手势抢占）时复位所有交互态，避免幽灵选区
+  const handleGridPointerCancel = () => {
+    if (longPressTimerRef.current !== null) {
+      window.clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    pendingCreateRef.current = null;
+    setIsDragCreating(false);
+    setActiveResizeBlock(null);
+    setDragCreateStartMs(null);
+    setDragCreateCurrentMs(null);
+  };
+
   const handleGridPointerUp = (e: React.PointerEvent) => {
+    // 触屏轻点（长按计时器尚未触发）：视为在该时刻快速创建 30 分钟时间块
+    if (pendingCreateRef.current && !isDragCreating) {
+      const startMs = pendingCreateRef.current.startMs;
+      if (longPressTimerRef.current !== null) {
+        window.clearTimeout(longPressTimerRef.current);
+        longPressTimerRef.current = null;
+      }
+      pendingCreateRef.current = null;
+      setCreateDraftRange({ startAt: startMs, endAt: startMs + 1800000 });
+      return;
+    }
     if (isDragCreating && dragCreateStartMs !== null) {
       const deltaY = Math.abs(e.clientY - pointerDownYRef.current);
       const deltaTime = Date.now() - pointerDownTimeRef.current;
@@ -243,6 +302,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       setIsDragCreating(false);
       setDragCreateStartMs(null);
       setDragCreateCurrentMs(null);
+      nativeService.hapticImpact('light');
     } else if (activeResizeBlock) {
       if (onUpdatePlannedBlock) {
         onUpdatePlannedBlock(activeResizeBlock.blockId, {
@@ -251,6 +311,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
         });
       }
       setActiveResizeBlock(null);
+      nativeService.hapticImpact('light');
     }
   };
 
@@ -301,6 +362,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
       className={`bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 flex flex-col overflow-hidden shadow-xs select-none h-full flex-1 ${className}`}
       onPointerMove={handleGridPointerMove}
       onPointerUp={handleGridPointerUp}
+      onPointerCancel={handleGridPointerCancel}
       onDragOver={handleDragOver}
       onDragEnter={handleDragOver}
     >
@@ -356,14 +418,17 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           {/* Daily Capacity indicator */}
           <button
             type="button"
-            onClick={() => {
-              const input = window.prompt(
-                language === 'zh-CN'
-                  ? '设置今日容量上限 (小时，如 6 或 8)：'
-                  : 'Set daily capacity in hours (e.g. 6 or 8):',
-                (capacityInfo.capacityMinutes / 60).toString()
-              );
-              if (input && !isNaN(Number(input))) {
+            onClick={async () => {
+              const input = await confirmDialog({
+                title: language === 'zh-CN' ? '今日容量上限' : 'Daily capacity',
+                message: language === 'zh-CN' ? '单位：小时（如 6 或 8）' : 'In hours (e.g. 6 or 8)',
+                input: {
+                  inputMode: 'numeric',
+                  defaultValue: (capacityInfo.capacityMinutes / 60).toString(),
+                  placeholder: '8',
+                },
+              });
+              if (typeof input === 'string' && input.trim() && !isNaN(Number(input))) {
                 onUpdateCapacityOverride?.(dateStr, Math.round(Number(input) * 60));
               }
             }}
@@ -420,7 +485,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           onDragEnter={handleDragOver}
           onDrop={handleDrop}
           style={{ height: `${hours.length * HOUR_HEIGHT}px` }}
-          className="flex-1 relative bg-white dark:bg-slate-900 cursor-crosshair group select-none"
+          className={`flex-1 relative bg-white dark:bg-slate-900 cursor-crosshair group select-none ${isDragCreating ? 'touch-action-none' : ''}`}
         >
           {/* Horizontal Hour Lines & Half-hour Guide Lines */}
           <div className="absolute inset-0 flex flex-col pointer-events-none">
@@ -572,7 +637,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         currentEndAt: item.endAt,
                       });
                     }}
-                    className="absolute -top-1 left-2 right-2 h-2 cursor-ns-resize z-20 opacity-0 group-hover/item:opacity-100 flex items-center justify-center"
+                    className="absolute -top-1 left-2 right-2 h-2 cursor-ns-resize z-20 opacity-0 group-hover/item:opacity-100 flex items-center justify-center touch-action-none"
                     title="Drag to adjust start time"
                   >
                     <div className="w-8 h-1 bg-indigo-500 rounded-full" />
@@ -804,7 +869,7 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
                         currentEndAt: item.endAt,
                       });
                     }}
-                    className="absolute -bottom-1 left-2 right-2 h-2 cursor-ns-resize z-20 opacity-0 group-hover/item:opacity-100 flex items-center justify-center"
+                    className="absolute -bottom-1 left-2 right-2 h-2 cursor-ns-resize z-20 opacity-0 group-hover/item:opacity-100 flex items-center justify-center touch-action-none"
                     title="Drag to adjust end time"
                   >
                     <div className="w-8 h-1 bg-indigo-500 rounded-full" />
@@ -847,8 +912,8 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
               <Plus className="w-6 h-6 stroke-1" />
               <span>
                 {language === 'zh-CN'
-                  ? '拖拽待办至此，或在网格上按住鼠标框选规划时间块'
-                  : 'Drag tasks here or click & drag on grid to plan time blocks'}
+                  ? '拖拽待办至此，或在网格上长按规划时间块'
+                  : 'Drag tasks here or long-press on grid to plan time blocks'}
               </span>
             </div>
           )}

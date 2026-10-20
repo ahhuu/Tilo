@@ -165,7 +165,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                   e.stopPropagation();
                                   onDeleteBlock(block.id);
                                 }}
-                                className="opacity-0 group-hover/block:opacity-100 text-slate-400 hover:text-red-500 p-0.5"
+                                className="touch-target opacity-0 group-hover/block:opacity-100 text-slate-400 hover:text-red-500 p-0.5"
                               >
                                 <Trash2 className="w-2.5 h-2.5" />
                               </button>

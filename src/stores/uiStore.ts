@@ -316,7 +316,10 @@ export const useUIStore = create<UIState>((set, get) => {
 
     calendarViewMode: initialCalView,
     calendarDaysCount: initialCalDays,
-    calendarPlanningDrawerOpen: true,
+    // 移动端该抽屉是全屏覆盖层，默认展开会让用户一进日历页就被遮住，
+    // 且返回键需要先关它。手机端默认收起。
+    calendarPlanningDrawerOpen:
+      typeof window !== 'undefined' ? window.innerWidth >= 768 : true,
 
     commandMenuOpen: false,
     instantCaptureOpen: false,

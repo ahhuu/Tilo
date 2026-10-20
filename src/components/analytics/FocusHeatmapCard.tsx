@@ -38,6 +38,9 @@ export const FocusHeatmapCard: React.FC = () => {
 
   const totalHours = Math.round((data.totalMinutes / 60) * 10) / 10;
 
+  // 手机端只呈现最近 12 周，避免 53 周硬塞窄屏
+  const MOBILE_WEEKS = 12;
+
   return (
     <Card className="p-5 space-y-5 border border-slate-200/80 dark:border-slate-800 shadow-2xs">
       {/* Header */}
@@ -46,7 +49,12 @@ export const FocusHeatmapCard: React.FC = () => {
           <div className="flex items-center gap-2">
             <Flame className="w-4 h-4 text-amber-500" />
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {language === 'zh-CN' ? '年度专注热力矩阵 (365 Days Heatmap)' : 'Annual Focus Activity Heatmap'}
+              <span className="md:hidden">
+                {language === 'zh-CN' ? `最近 ${MOBILE_WEEKS} 周专注热力` : `Last ${MOBILE_WEEKS} Weeks Heatmap`}
+              </span>
+              <span className="hidden md:inline">
+                {language === 'zh-CN' ? '年度专注热力矩阵 (365 Days Heatmap)' : 'Annual Focus Activity Heatmap'}
+              </span>
             </h3>
           </div>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -76,21 +84,44 @@ export const FocusHeatmapCard: React.FC = () => {
         </div>
       </div>
 
-      {/* Heatmap Matrix Grid */}
-      <div className="overflow-x-auto pb-2">
-        <div className="min-w-[680px]">
+      {/* Heatmap Matrix Grid
+          手机端（聚焦收口）：全年 53 周 × 14px 至少需要 740px，塞不进 375px 屏，
+          因此降级为「最近 12 周」放大版（14px 方块，可点按查看详情）。
+          桌面端保持完整全年视图。 */}
+      <div className="pb-2">
+        {/* 移动端：最近 12 周 */}
+        <div className="md:hidden">
           <div className="grid grid-flow-col grid-rows-7 gap-1">
-            {weeks.flatMap((week, wIdx) =>
+            {weeks.slice(-MOBILE_WEEKS).flatMap((week, wIdx) =>
               week.map((day, dIdx) => (
-                <div
-                  key={`${wIdx}-${dIdx}-${day.dateKey}`}
-                  onMouseEnter={() => setHoveredDay(day)}
-                  onMouseLeave={() => setHoveredDay(null)}
-                  className={`w-2.5 h-2.5 rounded-2xs transition-all cursor-pointer hover:scale-125 ${getLevelClass(day.level)}`}
-                  title={`${day.dateKey}: ${day.totalMinutes}m (${day.sessionCount} sessions)`}
+                <button
+                  type="button"
+                  key={`m-${wIdx}-${dIdx}-${day.dateKey}`}
+                  onClick={() => setHoveredDay(day)}
+                  className={`w-3.5 h-3.5 rounded-2xs transition-transform active:scale-125 cursor-pointer ${getLevelClass(day.level)}`}
+                  aria-label={`${day.dateKey}: ${day.totalMinutes}m`}
                 />
               ))
             )}
+          </div>
+        </div>
+
+        {/* 桌面端：完整全年 */}
+        <div className="hidden md:block overflow-x-auto">
+          <div className="min-w-[680px]">
+            <div className="grid grid-flow-col grid-rows-7 gap-1">
+              {weeks.flatMap((week, wIdx) =>
+                week.map((day, dIdx) => (
+                  <div
+                    key={`${wIdx}-${dIdx}-${day.dateKey}`}
+                    onMouseEnter={() => setHoveredDay(day)}
+                    onMouseLeave={() => setHoveredDay(null)}
+                    className={`w-2.5 h-2.5 rounded-2xs transition-all cursor-pointer hover:scale-125 ${getLevelClass(day.level)}`}
+                    title={`${day.dateKey}: ${day.totalMinutes}m (${day.sessionCount} sessions)`}
+                  />
+                ))
+              )}
+            </div>
           </div>
         </div>
       </div>

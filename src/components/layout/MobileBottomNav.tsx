@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
 import { useInboxItems } from '@/storage/hooks/useLiveQuery';
+import { db } from '@/storage/db';
+import type { Project } from '@/core/types/domain';
 import {
   CheckCircle2,
   Inbox,
@@ -17,6 +20,7 @@ import {
   Sparkles,
   ListTodo,
   Wifi,
+  FolderKanban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { LanSyncModal } from '@/components/sync/LanSyncModal';
@@ -29,10 +33,14 @@ export const MobileBottomNav: React.FC = () => {
   const unsortedItems = useInboxItems('unsorted');
   const unsortedCount = unsortedItems?.length ?? 0;
 
+  // 项目列表（用于「更多 → 项目」选择抽屉，解决手机端无法进入项目页）
+  const projects = useLiveQuery(() => db.projects.toArray(), []) ?? [];
+
   // 更多抽屉与快捷创建弹层状态
   const [showMoreDrawer, setShowMoreDrawer] = useState(false);
   const [showQuickSheet, setShowQuickSheet] = useState(false);
   const [showLanSyncModal, setShowLanSyncModal] = useState(false);
+  const [showProjectsSheet, setShowProjectsSheet] = useState(false);
 
   const moreItems = [
     { to: '/goals', label: t('nav.goals'), icon: Target, desc: language === 'zh-CN' ? '长期愿景与阶段成果' : 'Long-term Goals & Outcomes' },
@@ -41,7 +49,7 @@ export const MobileBottomNav: React.FC = () => {
     { to: '/settings', label: t('nav.settings'), icon: Settings, desc: language === 'zh-CN' ? '通用偏好、备份与数据' : 'Preferences & Backup' },
   ];
 
-  const isMoreActive = ['/goals', '/analytics', '/review', '/settings'].some((path) =>
+  const isMoreActive = ['/goals', '/analytics', '/review', '/settings', '/projects'].some((path) =>
     location.pathname.startsWith(path)
   );
 
@@ -268,6 +276,23 @@ export const MobileBottomNav: React.FC = () => {
                 );
               })}
 
+              {/* 项目入口：打开项目选择抽屉 */}
+              <button
+                type="button"
+                onClick={() => setShowProjectsSheet(true)}
+                className="w-full flex items-center gap-3.5 p-3 rounded-xl transition-colors text-left cursor-pointer border border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-800/30 text-slate-800 dark:text-slate-200 active:bg-slate-100 dark:active:bg-slate-800"
+              >
+                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                  <FolderKanban className="w-4 h-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-xs font-semibold">{language === 'zh-CN' ? '项目' : 'Projects'}</div>
+                  <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
+                    {language === 'zh-CN' ? '进入项目详情页' : 'Open a project'}
+                  </div>
+                </div>
+              </button>
+
               {/* 局域网 WiFi 一键同步专属入口 */}
               <button
                 type="button"
@@ -289,6 +314,56 @@ export const MobileBottomNav: React.FC = () => {
                   </div>
                 </div>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 项目选择抽屉：手机端进入项目详情页的唯一入口 */}
+      {showProjectsSheet && (
+        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
+          <div
+            className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in"
+            onClick={() => setShowProjectsSheet(false)}
+          />
+          <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl p-5 shadow-2xl border-t border-slate-200 dark:border-slate-800 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] animate-in slide-in-from-bottom duration-200 max-h-[70vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4 px-1">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {language === 'zh-CN' ? '选择项目' : 'Choose a project'}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowProjectsSheet(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              {projects.length === 0 ? (
+                <div className="p-4 text-center text-xs text-slate-400">
+                  {language === 'zh-CN' ? '暂无项目' : 'No projects'}
+                </div>
+              ) : (
+                projects.map((p: Project) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => {
+                      setShowProjectsSheet(false);
+                      navigate(`/projects/${p.id}`);
+                    }}
+                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 text-slate-800 dark:text-slate-200 active:bg-slate-100 dark:active:bg-slate-800 transition-colors cursor-pointer"
+                  >
+                    <span
+                      className="w-3 h-3 rounded-full shrink-0"
+                      style={{ backgroundColor: p.color || '#6366f1' }}
+                    />
+                    <span className="text-xs font-semibold truncate">{p.name}</span>
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </div>

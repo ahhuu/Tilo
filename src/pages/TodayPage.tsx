@@ -14,8 +14,8 @@ import {
   usePlannedBlocks,
   useSessions,
 } from '@/storage/hooks/useLiveQuery';
-import { completeTask, reopenTask, createTask } from '@/services/taskCommands';
-import { setDailyFocusTasks } from '@/services/planCommands';
+import { completeTask, reopenTask, createTask, rescheduleTask } from '@/services/taskCommands';
+import { setDailyFocusTasks, createPlannedBlock } from '@/services/planCommands';
 import { startSession } from '@/services/sessionCommands';
 import { timeService } from '@/core/time/timeService';
 import { computeNextUpCandidates } from '@/core/timeline/nextUpAlgorithm';
@@ -36,8 +36,10 @@ import {
   SlidersHorizontal,
   GripVertical,
   ListTodo,
+  Calendar,
 } from 'lucide-react';
 import type { Task, Goal } from '@/core/types/domain';
+import { confirmDialog } from '@/services/dialogService';
 
 const STORAGE_KEY_TODAY_LAYOUT = 'tilo_today_layout';
 
@@ -82,6 +84,38 @@ export const TodayPage: React.FC = () => {
   };
 
   const { openInspector, setRunningSession, addToast } = useUIStore();
+
+  // 未排期任务「排期」：在手机端用按钮替代失效的 HTML5 拖拽（触屏不派发 drag 事件）
+  const handleScheduleTask = async (task: Task) => {
+    try {
+      const targetDate = task.scheduledDate || logicalDate;
+      const isTargetToday = targetDate === logicalDate;
+      const startAt = isTargetToday
+        ? Date.now()
+        : new Date(`${targetDate}T09:00:00`).getTime();
+      const endAt = startAt + (task.estimateMinutes || 60) * 60000;
+      await createPlannedBlock({
+        taskId: task.id,
+        projectId: task.projectId,
+        type: 'task',
+        title: task.title,
+        startAt,
+        endAt,
+      });
+      if (!task.scheduledDate) {
+        await rescheduleTask(task.id, targetDate);
+      }
+      addToast({
+        message: language === 'zh-CN' ? '已为任务添加具体时间段并排入时间轴' : 'Scheduled time slot on timeline',
+        type: 'success',
+      });
+    } catch {
+      addToast({
+        message: language === 'zh-CN' ? '排期失败' : 'Scheduling failed',
+        type: 'error',
+      });
+    }
+  };
 
   const logicalDate = timeService.getLogicalDate();
   const weekKey = timeService.getWeekKey();
@@ -186,10 +220,15 @@ export const TodayPage: React.FC = () => {
   };
 
   const handleCreateTask = async () => {
-    const title = window.prompt(
-      language === 'zh-CN' ? '请输入今日新任务标题：' : 'Enter task title for Today:'
-    );
-    if (!title?.trim()) return;
+    const title = await confirmDialog({
+      title: language === 'zh-CN' ? '新建今日任务' : 'New task for Today',
+      input: {
+        label: language === 'zh-CN' ? '任务标题' : 'Task title',
+        placeholder: language === 'zh-CN' ? '例如：完成周报初稿' : 'e.g. Draft the weekly report',
+      },
+      confirmLabel: language === 'zh-CN' ? '创建' : 'Create',
+    });
+    if (typeof title !== 'string' || !title.trim()) return;
 
     await createTask({
       title: title.trim(),
@@ -199,10 +238,15 @@ export const TodayPage: React.FC = () => {
   };
 
   const handleCreateUnscheduledTask = async () => {
-    const title = window.prompt(
-      language === 'zh-CN' ? '请输入未排期任务标题：' : 'Enter unscheduled task title:'
-    );
-    if (!title?.trim()) return;
+    const title = await confirmDialog({
+      title: language === 'zh-CN' ? '新建未排期任务' : 'New unscheduled task',
+      input: {
+        label: language === 'zh-CN' ? '任务标题' : 'Task title',
+        placeholder: language === 'zh-CN' ? '例如：整理项目资料' : 'e.g. Sort out project files',
+      },
+      confirmLabel: language === 'zh-CN' ? '创建' : 'Create',
+    });
+    if (typeof title !== 'string' || !title.trim()) return;
 
     await createTask({
       title: title.trim(),
@@ -444,7 +488,7 @@ export const TodayPage: React.FC = () => {
                   </span>
                 </div>
                 <span className="text-[11px] font-normal text-slate-400 lowercase">
-                  {language === 'zh-CN' ? '可拖拽至时间轴' : 'drag to timeline'}
+                  {language === 'zh-CN' ? '点按排期或拖入时间轴' : 'schedule or drag to timeline'}
                 </span>
               </div>
 
@@ -491,6 +535,20 @@ export const TodayPage: React.FC = () => {
                         </div>
 
                         <div className="flex items-center gap-2 shrink-0">
+                          {/* 排期：触屏下替代拖拽的可靠入口 */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleScheduleTask(task);
+                            }}
+                            className="text-slate-400 hover:text-indigo-600 transition-colors shrink-0 p-1"
+                            title={language === 'zh-CN' ? '排期到时间轴' : 'Schedule on timeline'}
+                            aria-label={language === 'zh-CN' ? '排期到时间轴' : 'Schedule on timeline'}
+                          >
+                            <Calendar className="w-4 h-4" />
+                          </button>
+
                           {task.priority && task.priority !== 'none' && (
                             <Badge variant={task.priority} className="text-[10px] px-1.5 py-0.5">
                               {language === 'zh-CN'

@@ -12,6 +12,7 @@ import {
   ChevronDown,
 } from 'lucide-react';
 import type { ProjectStatus } from '@/core/types/domain';
+import { confirmDialog } from '@/services/dialogService';
 
 const PRESET_COLORS = [
   '#4f46e5', // Indigo
@@ -159,9 +160,13 @@ export const ProjectInspector: React.FC<ProjectInspectorProps> = ({ projectId })
   };
 
   const handleDelete = async () => {
-    if (!window.confirm(language === 'zh-CN' ? `确定要删除项目 "${project.name}" 吗？` : `Delete project "${project.name}"?`)) {
-      return;
-    }
+    const ok = await confirmDialog({
+      title: language === 'zh-CN' ? '删除项目' : 'Delete project',
+      message: language === 'zh-CN' ? `确定要删除项目 "${project.name}" 吗？此操作不可撤销。` : `Delete project "${project.name}"? This cannot be undone.`,
+      destructive: true,
+      confirmLabel: language === 'zh-CN' ? '删除' : 'Delete',
+    });
+    if (!ok) return;
     await deleteProject(project.id);
     addToast({
       message: language === 'zh-CN' ? '项目已删除' : 'Project deleted',

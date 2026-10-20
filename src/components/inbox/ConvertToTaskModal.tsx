@@ -54,11 +54,11 @@ export const ConvertToTaskModal: React.FC<ConvertToTaskModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 animate-in zoom-in-98 duration-150"
+        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 max-h-[88vh] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-5 animate-in zoom-in-98 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between">

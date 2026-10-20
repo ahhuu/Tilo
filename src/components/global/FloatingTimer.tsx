@@ -5,6 +5,7 @@ import { finishSession, pauseSession, resumeSession } from '@/services/sessionCo
 import { completeTask } from '@/services/taskCommands';
 import { FocusZenModal } from '@/components/sessions/FocusZenModal';
 import { ambientAudioService } from '@/core/audio/ambientAudioService';
+import { nativeService } from '@/services/nativeService';
 import {
   Play,
   Pause,
@@ -45,6 +46,28 @@ export const FloatingTimer: React.FC = () => {
 
     return () => clearInterval(interval);
   }, [runningSession, tickSession]);
+
+  // 专注计时后台兜底：切到后台后 WebView 会节流 setInterval 导致计时漂移，
+  // 因此在原生端排程一条「计时结束」本地通知（无目标时长则不排程）。
+  useEffect(() => {
+    if (!runningSession) return;
+    const target = runningSession.targetDurationMinutes;
+    if (!target) {
+      nativeService.cancelFocusNotifications();
+      return;
+    }
+    const remainingMs = Math.max(0, target * 60 - (runningSession.elapsedSeconds || 0)) * 1000;
+    nativeService.scheduleFocusEndNotification(
+      Date.now() + remainingMs,
+      language === 'zh-CN' ? '专注计时结束' : 'Focus session ended',
+      runningSession.title
+    );
+    return () => {
+      nativeService.cancelFocusNotifications();
+    };
+  // 仅依赖会话与目标时长：elapsedSeconds 每秒递增，不应触发重新排程
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [runningSession?.sessionId, runningSession?.targetDurationMinutes]);
 
   // Click outside to close menu
   useEffect(() => {
@@ -111,6 +134,8 @@ export const FloatingTimer: React.FC = () => {
    */
   const handleFinishAndComplete = async () => {
     try {
+      // 任何结束会话的路径都要确保环境音/白噪音停止，避免“放弃”后仍播放
+      ambientAudioService.stop();
       await finishSession(runningSession.sessionId);
       if (runningSession.taskId) {
         await completeTask(runningSession.taskId);
@@ -137,6 +162,7 @@ export const FloatingTimer: React.FC = () => {
    */
   const handleEndWithoutComplete = async () => {
     try {
+      ambientAudioService.stop();
       await finishSession(runningSession.sessionId);
       addToast({
         message: language === 'zh-CN'
@@ -156,6 +182,7 @@ export const FloatingTimer: React.FC = () => {
    * Discard timer.
    */
   const handleDiscard = () => {
+    ambientAudioService.stop();
     setRunningSession(null);
     setShowMenu(false);
     addToast({
@@ -165,7 +192,7 @@ export const FloatingTimer: React.FC = () => {
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 animate-in slide-in-from-bottom-5 duration-200 select-none">
+    <div className="fixed inset-x-3 md:inset-x-auto md:left-1/2 md:-translate-x-1/2 bottom-[calc(env(safe-area-inset-bottom,0px)+4.25rem)] md:bottom-6 z-40 flex flex-col bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-900 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200/90 dark:border-slate-800 animate-in slide-in-from-bottom-5 duration-200 select-none">
       <div className="flex items-center gap-3 px-4 py-3">
         {/* Mode Icon & Interactive Switcher */}
         <button
@@ -186,7 +213,7 @@ export const FloatingTimer: React.FC = () => {
         </button>
 
         {/* Timer & Task Title */}
-        <div className="flex flex-col min-w-32 max-w-56">
+        <div className="flex flex-col min-w-0 flex-1 md:min-w-32 md:max-w-56">
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -224,7 +251,7 @@ export const FloatingTimer: React.FC = () => {
           <button
             type="button"
             onClick={handleTogglePause}
-            className="p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 flex items-center justify-center p-1.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title={runningSession.isPaused ? (language === 'zh-CN' ? '继续专注' : 'Resume') : (language === 'zh-CN' ? '暂停' : 'Pause')}
           >
             {runningSession.isPaused ? (
@@ -238,18 +265,19 @@ export const FloatingTimer: React.FC = () => {
           <button
             type="button"
             onClick={handleFinishAndComplete}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
+            className="flex items-center justify-center gap-1.5 min-h-11 md:min-h-0 px-3 md:px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white rounded-lg text-xs font-semibold shadow-xs transition-colors cursor-pointer"
             title={language === 'zh-CN' ? '一键完成任务并结束会话' : 'Finish session and mark task done'}
+            aria-label={language === 'zh-CN' ? '一键完成任务并结束会话' : 'Finish session and mark task done'}
           >
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>{language === 'zh-CN' ? '一键完成' : 'Finish session'}</span>
+            <span className="hidden md:inline">{language === 'zh-CN' ? '一键完成' : 'Finish session'}</span>
           </button>
 
           {/* Maximize to Zen Focus Mode */}
           <button
             type="button"
             onClick={() => setShowZenModal(true)}
-            className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 flex items-center justify-center p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             title={language === 'zh-CN' ? '全屏沉浸专注 (番茄钟 & 白噪音)' : 'Full-screen Zen Mode (Pomodoro & Ambient Audio)'}
           >
             <Maximize2 className="w-4 h-4" />
@@ -260,7 +288,7 @@ export const FloatingTimer: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowMenu((prev) => !prev)}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="min-h-11 min-w-11 md:min-h-0 md:min-w-0 flex items-center justify-center p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <MoreHorizontal className="w-4 h-4" />
             </button>
