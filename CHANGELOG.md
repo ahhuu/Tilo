@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.1] — 2026-10-22
+
+### Summary
+"Guard rails." Tilo 1.5.1 pays back the three debts that v1.5.0 left behind: the JSX/import class of bugs is now caught by a permanent check instead of a throw-away script, and the two focus-management defects the unified shell still had are fixed and locked down by regression tests.
+
+### Added
+- **`npm run check:jsx`** (`scripts/check-jsx.mjs`) — transform every `.tsx`/`.ts` file with esbuild to catch tag-imbalance errors `tsc` silently tolerates, and audit that every file using `<Modal>` actually imports it. This is exactly the class of defect that produced six v1.5.0 crashes/build failures.
+- **`npm run verify`** — one command running `typecheck` + `lint` + `check:jsx` + `test` in sequence.
+- **Modal regression suite** (`src/test/modalShell.test.tsx`, 11 cases) — covers focus trapping, nested-dialog Escape isolation, focus restore, and the Android back button on `dismissable={false}` dialogs. Each test was proven to fail against the pre-fix code.
+
+### Fixed
+- **Modal focus trap could be escaped** — the `keydown` handler was bound to the card, so once focus fell to `<body>` (clicking the scrim, or a removed focused element) Tab left the dialog. Keyboard handling now lives on `document` in capture phase, with a `focusin` safety net that pulls stray focus back inside.
+- **Nested dialogs both closed on one Escape** — with the handler moved to `document`, an outer dialog could also receive the event. Modals now propagate their nesting depth via React context and only the deepest open dialog responds to `Escape` / `Tab`.
+- **Android back button silently did nothing on `dismissable={false}` dialogs** — `ContinuousProcessingModal` passes `dismissable={false}`, so its scrim had no `onClick`; `nativeService.dismissTopOverlay()` dispatched a synthetic click, the handler swallowed the event, and nothing happened. `Modal` now takes an `onBack` callback invoked on scrim clicks when non-dismissable, and only when the click target is the scrim itself (not a child).
+- **Scrim clicks inside dialog content closed the modal** — the overlay is now guarded by `e.target === e.currentTarget`.
+
+---
+
 ## [1.5.0] — 2026-10-21
 
 ### Summary

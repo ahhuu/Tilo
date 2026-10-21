@@ -270,6 +270,42 @@
 - 用户验收：桌面安装包与 Android APK 实测（弹窗形态/滚动锁/Esc/焦点、时间轴与周视图方向键改期、toast 播报）。
 - 验收通过后：压成单条 `release: Tilo v1.5.0` 提交并推送（纯英文提交信息，绕过本机 Clash 代理）。
 
+## Phase 31 — v1.5.1 护栏（静态检查固化 + Modal 焦点/返回键修复）
+
+> 定位：只还 v1.5.0 的技术债，不加功能。三条都是「会重复咬人」或「用户可感知」的缺陷。
+
+### 1. Files changed (Phase 31)
+
+- `scripts/check-jsx.mjs` — **[NEW]** 对每个 `.tsx`/`.ts` 用 esbuild `transform` 抓标签不平衡（`tsc` 不报的那类），并审计所有使用 `<Modal` 的文件是否已 `import Modal`。对多余 `</div>` 类错误追加一句人话提示。
+- `package.json` — **[UPDATED]** 新增 `check:jsx` 与 `verify`（`typecheck && lint && check:jsx && test`）。
+- `src/components/ui/Modal.tsx` — **[UPDATED]** 焦点管理从卡片 `keydown` 改为 `document` 捕获阶段监听 + `focusin` 兜底；新增 React 上下文传递嵌套深度，只有最深一层响应 `Escape`/`Tab`；新增 `onBack`（`dismissable=false` 时遮罩 click 的明确动作）；遮罩 click 增加 `e.target === e.currentTarget` 判定。
+- `src/components/inbox/ContinuousProcessingModal.tsx` — **[UPDATED]** 传 `onBack={onClose}`，Android 返回键等同右上角关闭。
+- `src/test/modalShell.test.tsx` — **[NEW]** 11 条回归测试：焦点陷阱、嵌套 Esc 隔离、焦点归还、`dismissable=false` 返回键、遮罩内点击不误关。
+
+### 2. Features completed (Phase 31)
+
+1. **JSX/import 类缺陷有常设护栏**：v1.5.0 修的 6 个崩溃/构建错误`tsc` 全程沉默，当时靠一次性脚本发现后删除。现已固化为 `npm run check:jsx`，并入 `npm run verify`；已用两个故意写错的探针验证**确实会失败**。
+2. **焦点陷阱不再可脱离**：移到 `document` 捕获阶段后，即使焦点落到 `<body>` 也会被 `focusin` 拉回弹窗。
+3. **嵌套弹窗一次 Esc 只关一层**：通过上下文传深度而非挂载栈（React effect 子先父后会判反），只让最深一层响应。
+4. **Android 返回键不再静默无响应**：`ContinuousProcessingModal`（`dismissable=false`）此前返回键被吞但弹窗不关，现走 `onBack` 关闭。
+5. **Modal 有了回归测试**：此前的状态是「零测试覆盖」，这也是上述缺陷能进发布版本的根本原因。每条测试都用「把修复改回去 → 测试失败」验证过。
+
+### 3. TypeScript / ESLint / tests / build (Phase 31)
+
+- `npm run verify` — Passed：typecheck 0 error、lint 0 error（6 条既有 warning）、check:jsx 通过（198 文件）、vitest **44 文件 / 141 用例**。
+- `npm run build`（Vite web）— Passed（首包 1860 kB / gzip 510 kB）。
+- 版本号：`package.json` / `package-lock.json` / `src-tauri/tauri.conf.json` = 1.5.1；`android/app/build.gradle` = versionName 1.5.1 / versionCode 9。
+
+### 4. Known issues (Phase 31)
+
+- Android 返回键机制本身仍靠 `div.fixed.inset-0` class + computed z-index + 合成 click 探测，任何浮层改 class 都可能失效（未改为显式栈式管理）。
+- 周视图键盘改期仍按整点粒度（沿用 `onMoveBlock` 的 hour 参数），分钟级微调仅时间轴支持。
+- widget 模块仍有 484 处硬编码中文（属 v1.6「轻快」范围，未在本版处理）。
+
+### 5. Next task (Phase 31)
+
+- 进入 **v1.6「轻快」**：路由级 code splitting（首包 1860 kB）、查询日期范围化（`AnalyticsPage`/`CalendarPage` 全表 `toArray`）、widget i18n、巨型组件拆分。
+
 ## 5. Next task
 
 - 真机验证本次 Phase 1+2：静默误删是否消失、底栏与浮层是否还打架、弹窗按钮是否可达、返回键是否逐层关闭。

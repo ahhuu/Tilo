@@ -251,6 +251,7 @@ export const ContinuousProcessingModal: React.FC<ContinuousProcessingModalProps>
       onClose={onClose}
       ariaLabel={language === 'zh-CN' ? '连续整理模式' : 'Process Inbox Mode'}
       dismissable={false}
+      onBack={onClose}
       maxWidthClass="sm:max-w-2xl"
       bodyClassName="flex-1 overflow-y-auto overscroll-contain px-6 pb-6"
       header={

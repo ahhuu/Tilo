@@ -1,13 +1,15 @@
 {
   "name": "tilo",
   "private": true,
-  "version": "1.5.0",
+  "version": "1.5.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && powershell -Command \"Copy-Item -Path dist/assets/index-D*.js -Destination dist/assets/index-pEmd0YVI.js -Force -ErrorAction SilentlyContinue\"",
     "preview": "vite preview",
     "typecheck": "tsc -b --force",
+    "check:jsx": "node scripts/check-jsx.mjs",
+    "verify": "npm run check:jsx && npm run typecheck && npm run lint && npm run test",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx,css,json}\"",

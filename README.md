@@ -9,9 +9,9 @@ English Documentation | [简体中文文档](README_CN.md)
 
 ## Release Status
 
-**Current Release**: `Tilo v1.5.0`  
+**Current Release**: `Tilo v1.5.1`  
 **Status**: `Production Ready` (Desktop Web, Tauri Desktop Native, PWA Standalone & Android APK Validated)  
-**Highlights**: Unified `Modal` shell (20 card dialogs consolidated, fixing the Android Chinese IME composition break), keyboard alternatives for every drag (timeline / week-view block move via arrow keys + focusable planning drawer), and an accessibility baseline (toasts announced via live regions, all feedback converged onto a single `addToast` channel).
+**Highlights**: v1.5 unified 20 card dialogs onto one `Modal` shell (fixing the Android Chinese IME composition break) with keyboard alternatives for every drag and an accessibility baseline. v1.5.1 adds guard rails: a permanent `check:jsx` static check (catches the tag-imbalance / missing-import class of bugs `tsc` silently tolerates), plus focus-trap and Android-back-button fixes locked down by an 11-case Modal regression suite.
 
 ---
 
