@@ -7,6 +7,7 @@
 
 **Phase 28 — Mobile UX Phase 3 (Interaction Reconstruction), Phase 4 (Native Capabilities) & Symmetric LAN Sync (v1.3.0) — COMPLETE & VERIFIED (2026-10-21)**
 **Phase 29 — v1.4「让差异被看见」P0（首启引导 + 分析页说人话 + 任务/项目索引路由）— VERSION BUMPED 1.4.0, PACKAGING (2026-10-21)**
+**Phase 30 — v1.5 一致性收口（统一 Modal 外壳 + 拖拽键盘替代 + 无障碍基线 + 反馈收敛）— VERSION BUMPED 1.5.0, 文档就绪，待验收后单条 release 提交 (2026-10-21)**
 
 ## Overall status
 
@@ -210,6 +211,64 @@
 
 - 用户确认后：版本号升 1.4.0 + 同步文档 + 单一 `release: Tilo v1.4.0` 提交推送（git 提交纯英文，绕过本机 Clash 代理）。
 - 视验证情况继续 v1.4 余下项或转入 v1.5（一致性收口：统一 Modal 外壳、拖拽键盘替代、a11y 基线、反馈收敛）。
+
+---
+
+## Phase 30 — v1.5 一致性收口（统一 Modal 外壳 + 拖拽键盘替代 + 无障碍基线 + 反馈收敛）
+
+> 定位：不是加功能，而是把此前「每个页面各写一套」的浮层 / 拖拽 / 反馈三件事收敛成一套。版本号已 bump 到 1.5.0（按记忆约定，发布提交时压成单条 `release: Tilo v1.5.0`）。
+
+### 1. Files changed (Phase 30)
+
+**统一 Modal 外壳（新的唯一浮层基座）**
+- `src/components/ui/Modal.tsx` — **[NEW]** 全站唯一弹窗壳。统一 `z-[9999]` 层级 + `--modal-overlay` 遮罩 token + `backdrop-blur-xs`；移动端底部抽屉 / 桌面端居中卡片；背景滚动锁；`Esc` 关闭（`dismissable` 可关）；焦点陷阱 + 关闭后焦点归还；`role="dialog"` + `aria-modal` + `aria-label`；顶部/底部安全区；`header` / `footer` / `bodyClassName` / `scrollable` / `maxWidthClass` 插槽。**容器一律不加 `select-none`**（Android WebView 中文 IME composition 红线）。
+- `src/components/ui/BottomSheet.tsx` — **[REWRITTEN]** 从独立实现改为 `Modal` 的别名再导出（仅兼容旧调用方，零逻辑重复）。
+- `src/index.css` — **[UPDATED]** 新增 `--modal-overlay`（明/暗两套）；新增全局 `:focus-visible` 键盘焦点环基线（含 `[role="button"]` / `.focusable`），并豁免 `[role="dialog"]` 自身。
+- 迁入 `Modal` 的弹窗（20 处）：`TaskDetailModal`、`RescheduleDialog`、`RevisionHistoryModal`、`WeeklyReviewModal`、`DailyCloseModal`、`LanSyncModal`、`AutoPackModal`、`FocusFullModal`、`WidgetSettingsModal`、`EditNoteModal`、`ConvertToNoteModal`、`ConvertToTaskModal`、`ContinuousProcessingModal`、`AnalyticsCustomizerModal`、`WindowCloseConfirmModal`、`CreatePlannedBlockModal`、`CreateGoalModal`、`CreateProjectModal`、`TodayPage`（Focus Picker）、`DataBackupSection`（清空重置确认）。内部 JSX 1:1 保留，仅替换外层遮罩 + 卡片 + 手写 header/✕。
+- 刻意不收口（交互模型不同）：`FocusZenModal`（全屏沉浸专注）、`InspectorShell` / `AllocationDrawer` / `SidePlanningDrawer`（侧抽屉）、`CommandMenu`（⌘K 命令面板）、`InlineCreatePopover`（锚定气泡）。
+
+**拖拽的键盘替代**
+- `src/components/timeline/TimelineView.tsx` — **[UPDATED]** 计划时间块可聚焦（`tabIndex=0` + `role="button"` + `aria-label`/`aria-roledescription`）；`↑/↓` ±15min、`Shift+↑/↓` ±1h、`Enter`/`Space` 检视、`Delete`/`Backspace` 删除；复用既有 `onUpdatePlannedBlock` 落库；`aria-live="polite"` 播报。**连按修复**：新增 `kbPendingTimesRef` 记录按键后的最新时间（原先每次都基于旧 `block.startAt`，快速连按只位移一步），并限制在当天时间轴范围内，触边播报。
+- `src/components/calendar/WeekView.tsx` — **[UPDATED]** 周视图排期块同样可聚焦；`←/→` 改日、`↑/↓` 改时（限 08:00–20:00）、`Enter` 检视、`Delete` 删除；`aria-live` 播报；块内删除按钮补 `aria-label` + `focus-visible:opacity-100`；新增 `pendingMoveRef` 解决连按基准陈旧。
+- `src/pages/CalendarPage.tsx` — **[UPDATED]** 新增 `handleMoveBlockOnGrid(blockId, dateStr, hour)`，经 `updatePlannedBlock` 保留原时长改期 + Toast 反馈；以 `onMoveBlock` 传入 `WeekView`。
+- `src/components/calendar/SidePlanningDrawer.tsx` — **[UPDATED]** 任务卡可聚焦（`role="button"` + `tabIndex=0` + `Enter`/`Space` 检视）；`Plan` / `Today` 操作按钮改为 `group-hover` + `group-focus-within` + `focus-within` 显示（此前仅 hover，键盘用户看不到按钮）。
+- `DailyFocusSection` — 已具备 `@dnd-kit` `sortableKeyboardCoordinates` + 常驻 ↑/↓ 按钮（Phase 28 交付），本轮仅确认无需改动。
+
+**反馈收敛与无障碍**
+- `src/components/ui/ToastContainer.tsx` — **[UPDATED]** 容器常驻 `role="region"`；单条 toast 按类型分流 `role="status"` + `aria-live="polite"`（info/success/warning）与 `role="alert"` + `aria-live="assertive"`（error）。
+- 审计结论：全站反馈已统一走 `uiStore.addToast`（info/success/warning/error + undo），无 `window.alert`、无自建 banner / 并行 toast 通道。
+- 图标关闭按钮补可访问名称：`RevisionHistoryModal`、`WeeklyReviewModal`、`LanSyncModal`、`TaskDetailModal`、`AutoPackModal`、`FocusFullModal`、`WidgetSettingsModal`、`MobileBottomNav`、`AllocationDrawer`、`InlineCreatePopover`、`TodayLayoutCustomizer`、`TodayTimeline`、`InAppWidgetShell`、`TodayPage` Focus Picker。
+
+### 2. Features completed (Phase 30)
+
+1. **一套弹窗**：20 个卡片弹窗共用同一外壳——层级、遮罩明度、移动端抽屉形态、滚动锁、Esc、焦点陷阱与归还、`aria-modal` 语义、安全区全部一致，不再逐页各写一套。
+2. **Android 中文输入法回归根治**：旧遮罩容器上的 `select-none` 会破坏 IME composition（表现为"输入不显示、删一个字才生效"），统一壳从源头不再添加，并保留 `index.css` 的 `user-select: text` 兜底。
+3. **键盘可用**：时间轴 / 周视图的排期块、规划抽屉的任务卡全部可聚焦并用方向键改期，闭合「只能拖拽」的键盘死角；连按不再只位移一步。
+4. **焦点可见**：全局 `:focus-visible` 焦点环基线，键盘用户不再"找不到焦点在哪"；hover 才显示的控件在聚焦时同样显现。
+5. **反馈可被读出**：toast 具备 live-region 语义，屏幕阅读器能播报成功/失败。
+6. **类型检查陷阱修复**：`tsconfig.json` 是引用型空壳（`"files": []`），原 `npm run typecheck`（`tsc --noEmit`）**实际不检查任何文件**；改为 `tsc -b --force` 后真正生效（已用故意错误探针验证）。
+
+### 3. TypeScript / ESLint / tests / build (Phase 30)
+
+- `npm run typecheck`（修正为 `tsc -b --force`）— Passed (0 errors)。
+- `npm run lint` — Passed (0 errors, 6 条既有 `react-hooks/exhaustive-deps` warning，与 Phase 29 一致)。
+- `npm run test` — Passed (43 files, 130/130)。
+- `npm run build`（Vite web）— Passed（`dist/assets/index-5ALVJ2Ix.js` 1858.94 kB / gzip 509.16 kB）。
+- 桌面 `npm run tauri build` — **BUILD SUCCESSFUL**（3m18s）：`Tilo_1.5.0_x64_en-US.msi`（3.27 MB）、`Tilo_1.5.0_x64-setup.exe`（2.31 MB）。
+- Android `npx cap copy android` + `gradlew assembleDebug --offline` — **BUILD SUCCESSFUL**（32s）：`android/app/build/outputs/apk/debug/app-debug.apk`（4.71 MB）。
+- 版本号：`package.json` / `package-lock.json` / `src-tauri/tauri.conf.json` = 1.5.0；`android/app/build.gradle` = versionName 1.5.0 / versionCode 8；`src-tauri/Cargo.toml` 按惯例保持 0.1.0。
+
+### 4. Known issues (Phase 30)
+
+- `tsc` 不校验 JSX 标签名与组件是否已引入（本轮 4 个文件多一个 `</div>`、2 个文件漏 `import Modal`，`tsc` 均未报错）。已用 esbuild 全量扫描 + 静态审计补齐；后续新增弹窗请在构建（Vite）里验证，不要只看 `tsc`。
+- `Modal` 的焦点陷阱挂在卡片 `keydown` 上：若焦点被移到 `body`（非可聚焦区域），Tab 循环会脱离陷阱（轻微边界情况）。
+- 周视图键盘改期按「整点」对齐（沿用 `onMoveBlock` 的 hour 粒度），分钟级微调仅时间轴支持。
+- 未做真机回归：Android 中文输入法、TalkBack 播报、桌面安装包安装启动均待在验收阶段实测。
+
+### 5. Next task (Phase 30)
+
+- 用户验收：桌面安装包与 Android APK 实测（弹窗形态/滚动锁/Esc/焦点、时间轴与周视图方向键改期、toast 播报）。
+- 验收通过后：压成单条 `release: Tilo v1.5.0` 提交并推送（纯英文提交信息，绕过本机 Clash 代理）。
 
 ## 5. Next task
 

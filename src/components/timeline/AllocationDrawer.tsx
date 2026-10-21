@@ -44,6 +44,7 @@ export const AllocationDrawer: React.FC<AllocationDrawerProps> = ({
         <button
           type="button"
           onClick={onClose}
+          aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
           className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
         >
           <X className="w-4 h-4" />

@@ -1,4 +1,5 @@
 import React from 'react';
+import Modal from '@/components/ui/Modal';
 import {
   X,
   ChevronUp,
@@ -72,27 +73,55 @@ export const WidgetSettingsModal: React.FC = () => {
   const enabledSet = new Set(settings.enabledGrids);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs select-none animate-in fade-in duration-200">
-      <div className="relative w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh] overflow-hidden">
-        {/* 标题栏 */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-200 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              自定义桌面快捷格子
-            </h3>
+    <Modal
+      onClose={closeSettingsModal}
+      ariaLabel="自定义桌面快捷格子"
+      maxWidthClass="sm:max-w-md"
+      bodyClassName="p-5"
+      header={
+        <div className="w-full -mx-5 -mb-3 px-5 pb-3 border-b border-slate-200 dark:border-slate-800 sm:-mx-5 sm:-mb-3 sm:px-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                自定义桌面快捷格子
+              </h3>
+            </div>
+            <button
+              type="button"
+              onClick={closeSettingsModal}
+              aria-label="Close"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
+        </div>
+      }
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <button
+            type="button"
+            onClick={resetToDefaults}
+            className="flex items-center gap-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs transition-colors cursor-pointer"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>恢复默认</span>
+          </button>
+
           <button
             type="button"
             onClick={closeSettingsModal}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-xs transition-colors cursor-pointer"
           >
-            <X className="w-4 h-4" />
+            完成
           </button>
         </div>
+      }
+    >
 
         {/* 主体滚动区 */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-6 text-xs">
+        <div className="space-y-6 text-xs">
           {/* 1. 启用的格子与顺序 */}
           <section className="space-y-2.5">
             <div className="flex items-center justify-between">
@@ -282,26 +311,6 @@ export const WidgetSettingsModal: React.FC = () => {
           </section>
         </div>
 
-        {/* 底部按钮栏 */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-850/50">
-          <button
-            type="button"
-            onClick={resetToDefaults}
-            className="flex items-center gap-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs transition-colors cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>恢复默认</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={closeSettingsModal}
-            className="px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-xs transition-colors cursor-pointer"
-          >
-            完成
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

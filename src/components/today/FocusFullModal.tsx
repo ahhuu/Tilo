@@ -1,6 +1,6 @@
 import React from 'react';
-import { createPortal } from 'react-dom';
 import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import { useI18n } from '@/core/i18n';
 import { X, AlertCircle } from 'lucide-react';
 import type { Task } from '@/core/types/domain';
@@ -20,16 +20,14 @@ export const FocusFullModal: React.FC<FocusFullModalProps> = ({
 }) => {
   const { language } = useI18n();
 
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        className="w-full sm:max-w-md bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-5 space-y-4 animate-in slide-in-from-bottom-6 sm:zoom-in-98 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
+  return (
+    <Modal
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '已达到今日聚焦上限' : 'Daily Focus Limit Reached'}
+      maxWidthClass="sm:max-w-md"
+      bodyClassName="p-5"
+      header={
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-950/60 flex items-center justify-center">
               <AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
@@ -46,12 +44,16 @@ export const FocusFullModal: React.FC<FocusFullModalProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
             className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
+      }
+    >
 
+        <div className="space-y-4">
         <div className="p-3 bg-indigo-50/60 dark:bg-indigo-950/40 rounded-xl border border-indigo-100 dark:border-indigo-900/60">
           <span className="text-[11px] font-semibold text-indigo-700 dark:text-indigo-300 uppercase tracking-wider">
             {language === 'zh-CN' ? '待置入聚焦的任务' : 'Incoming Task'}
@@ -97,9 +99,7 @@ export const FocusFullModal: React.FC<FocusFullModalProps> = ({
             {language === 'zh-CN' ? '取消' : 'Cancel'}
           </Button>
         </div>
-      </div>
-    </div>
+        </div>
+    </Modal>
   );
-
-  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

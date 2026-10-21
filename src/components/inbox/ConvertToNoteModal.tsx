@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/core/i18n';
-import { BookOpen, X } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 import type { InboxItem, Project, Goal } from '@/core/types/domain';
 
 interface ConvertToNoteModalProps {
@@ -55,31 +56,17 @@ export const ConvertToNoteModal: React.FC<ConvertToNoteModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-      onClick={onClose}
+    <Modal
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '转化为笔记' : 'Convert to Note'}
+      title={
+        <span className="flex items-center gap-2">
+          <BookOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          {language === 'zh-CN' ? '转化为笔记' : 'Convert to Note'}
+        </span>
+      }
     >
-      <div
-        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 max-h-[88vh] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-5 animate-in zoom-in-98 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <BookOpen className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {language === 'zh-CN' ? '转化为笔记' : 'Convert to Note'}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+      <form onSubmit={handleSubmit} className="space-y-3.5">
           <div className="space-y-1">
             <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
               {language === 'zh-CN' ? '笔记标题' : 'Note Title'}
@@ -159,7 +146,6 @@ export const ConvertToNoteModal: React.FC<ConvertToNoteModalProps> = ({
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };

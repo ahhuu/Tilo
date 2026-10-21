@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useI18n } from '@/core/i18n';
+import Modal from '@/components/ui/Modal';
 import { timeService } from '@/core/time/timeService';
 import {
   History,
@@ -114,52 +115,61 @@ export const RevisionHistoryModal: React.FC<RevisionHistoryModalProps> = ({
   );
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-xl max-h-[88vh] flex flex-col bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-98 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
-              <History className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                  {isZh ? '历史版本' : 'Revision'} #{revision.revision}
-                </h3>
-                <Badge variant="secondary" className="text-[11px] font-medium">
-                  {isDaily
-                    ? isZh ? '每日复盘' : 'Daily Close'
-                    : isZh ? '每周复盘' : 'Weekly Review'}
-                </Badge>
-                {review?.periodKey && (
-                  <span className="text-xs text-slate-400 font-mono">
-                    {review.periodKey}
-                  </span>
-                )}
+    <Modal
+      onClose={onClose}
+      ariaLabel={isZh ? `历史版本 ${revision.revision}` : `Revision ${revision.revision}`}
+      maxWidthClass="sm:max-w-xl"
+      bodyClassName="px-6 py-4"
+      header={
+        <div className="w-full -mx-5 -mb-3 px-5 pb-3 border-b border-slate-100 dark:border-slate-800 sm:-mx-5 sm:-mb-3 sm:px-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400">
+                <History className="w-5 h-5" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-0.5">
-                {isZh ? `封存时间: ${formattedDate}` : `Sealed on ${formattedDate}`}
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                    {isZh ? '历史版本' : 'Revision'} #{revision.revision}
+                  </h3>
+                  <Badge variant="secondary" className="text-[11px] font-medium">
+                    {isDaily
+                      ? isZh ? '每日复盘' : 'Daily Close'
+                      : isZh ? '每周复盘' : 'Weekly Review'}
+                  </Badge>
+                  {review?.periodKey && (
+                    <span className="text-xs text-slate-400 font-mono">
+                      {review.periodKey}
+                    </span>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  {isZh ? `封存时间: ${formattedDate}` : `Sealed on ${formattedDate}`}
+                </p>
+              </div>
             </div>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label={isZh ? '关闭' : 'Close'}
+              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
+      }
+      footer={
+        <div className="flex justify-end">
+          <Button size="sm" variant="secondary" onClick={onClose} className="cursor-pointer">
+            {isZh ? '关闭' : 'Close'}
+          </Button>
+        </div>
+      }
+    >
 
         {/* Scrollable Content */}
-        <div className="px-6 py-4 space-y-5 overflow-y-auto flex-1">
+        <div className="space-y-5">
           {/* Narrative Story */}
           {revision.storyText && (
             <div className="p-3.5 bg-indigo-50/50 dark:bg-indigo-950/20 rounded-xl border border-indigo-100/60 dark:border-indigo-900/30 space-y-1">
@@ -399,12 +409,6 @@ export const RevisionHistoryModal: React.FC<RevisionHistoryModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
-          <Button size="sm" variant="secondary" onClick={onClose} className="cursor-pointer">
-            {isZh ? '关闭' : 'Close'}
-          </Button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/core/i18n';
 import {
   FileText,
@@ -153,18 +154,45 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
     );
   };
 
+  const noteFooter = (
+    <div className="flex items-center justify-between gap-2">
+      <span className="text-[11px] text-slate-400 font-mono">
+        {bodyMarkdown.length} {language === 'zh-CN' ? '字符' : 'chars'}
+      </span>
+
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="ghost"
+          type="button"
+          className="h-8 text-xs cursor-pointer"
+          onClick={onClose}
+        >
+          {language === 'zh-CN' ? '取消' : 'Cancel'}
+        </Button>
+        <Button
+          size="sm"
+          variant="primary"
+          type="button"
+          className="h-8 text-xs cursor-pointer"
+          onClick={handleSave}
+          disabled={isSubmitting}
+        >
+          <Sparkles className="w-3.5 h-3.5 mr-1" />
+          <span>{language === 'zh-CN' ? '保存笔记 (Ctrl+Enter)' : 'Save Note (Ctrl+Enter)'}</span>
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-3xl max-h-[90vh] bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-98 duration-150"
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={handleKeyDown}
-      >
-        {/* Header */}
-        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
+    <Modal
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '编辑资料与笔记' : 'Edit Note & Docs'}
+      maxWidthClass="sm:max-w-3xl"
+      bodyClassName="px-5 pb-3 pt-4"
+      header={
+        <div className="flex items-center justify-between gap-3 w-full">
           <div className="flex items-center gap-2 min-w-0">
             <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400 shrink-0">
               <FileText className="w-4 h-4" />
@@ -183,13 +211,15 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
             type="button"
             onClick={onClose}
             className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
-
-        {/* Form Body */}
-        <div className="p-5 overflow-y-auto space-y-4 flex-1">
+      }
+      footer={noteFooter}
+    >
+      <div className="space-y-4" onKeyDown={handleKeyDown}>
           {/* Note Title */}
           <div className="space-y-1">
             <label className="text-xs font-semibold text-slate-600 dark:text-slate-400">
@@ -391,37 +421,6 @@ export const EditNoteModal: React.FC<EditNoteModalProps> = ({
             </div>
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2 bg-slate-50/50 dark:bg-slate-800/40">
-          <span className="text-[11px] text-slate-400 font-mono">
-            {bodyMarkdown.length} {language === 'zh-CN' ? '字符' : 'chars'}
-          </span>
-
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              type="button"
-              className="h-8 text-xs cursor-pointer"
-              onClick={onClose}
-            >
-              {language === 'zh-CN' ? '取消' : 'Cancel'}
-            </Button>
-            <Button
-              size="sm"
-              variant="primary"
-              type="button"
-              className="h-8 text-xs cursor-pointer"
-              onClick={handleSave}
-              disabled={isSubmitting}
-            >
-              <Sparkles className="w-3.5 h-3.5 mr-1" />
-              <span>{language === 'zh-CN' ? '保存笔记 (Ctrl+Enter)' : 'Save Note (Ctrl+Enter)'}</span>
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

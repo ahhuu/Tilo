@@ -9,9 +9,9 @@ English Documentation | [简体中文文档](README_CN.md)
 
 ## Release Status
 
-**Current Release**: `Tilo v1.4.0`  
+**Current Release**: `Tilo v1.5.0`  
 **Status**: `Production Ready` (Desktop Web, Tauri Desktop Native, PWA Standalone & Android APK Validated)  
-**Highlights**: First-run onboarding guide with transparent demo-data disclosure, Analytics that "speaks human" (empty states, metric hints, a rule-based one-line summary), and new `/tasks` and `/projects` index routes.
+**Highlights**: Unified `Modal` shell (20 card dialogs consolidated, fixing the Android Chinese IME composition break), keyboard alternatives for every drag (timeline / week-view block move via arrow keys + focusable planning drawer), and an accessibility baseline (toasts announced via live regions, all feedback converged onto a single `addToast` channel).
 
 ---
 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { createPortal } from 'react-dom';
 import { useI18n } from '@/core/i18n';
+import Modal from '@/components/ui/Modal';
 import { timeService } from '@/core/time/timeService';
 import { useUIStore } from '@/stores/uiStore';
 import {
@@ -138,8 +138,6 @@ export const AutoPackModal: React.FC<AutoPackModalProps> = ({ isOpen, onClose, d
     handleCalculate(DEFAULT_PREFS);
   };
 
-  if (!isOpen) return null;
-
   const handleApply = async () => {
     if (proposals.length === 0) return;
     setLoading(true);
@@ -173,60 +171,81 @@ export const AutoPackModal: React.FC<AutoPackModalProps> = ({ isOpen, onClose, d
 
   const totalPackedMinutes = proposals.reduce((acc, p) => acc + p.estimateMinutes, 0);
 
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150 select-none"
-      onClick={onClose}
-    >
-      <div
-        className="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl shadow-2xl border-t sm:border border-slate-200/90 dark:border-slate-800 w-full max-w-xl overflow-hidden flex flex-col max-h-[86vh] sm:max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
-        {/* Header */}
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-              <Sparkles className="w-5 h-5" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                  {language === 'zh-CN' ? '智能排盒与空隙填充' : 'Smart Auto-Pack Day'}
-                </h3>
-                <Badge variant="indigo" size="sm">
-                  {targetDateKey}
-                </Badge>
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '智能排盒与空隙填充' : 'Smart Auto-Pack Day'}
+      maxWidthClass="sm:max-w-xl"
+      scrollable={false}
+      bodyClassName="flex-1 p-0 flex flex-col"
+      header={
+        <div className="w-full -mx-5 -mb-3 px-5 pb-3 border-b border-slate-100 dark:border-slate-800 sm:-mx-5 sm:-mb-3 sm:px-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <Sparkles className="w-5 h-5" />
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {language === 'zh-CN'
-                  ? '自动发现今日时间线空闲缝隙，按优先级与预估时长智能填充任务'
-                  : 'Fills free timeline gaps intelligently based on priority & duration'}
-              </p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                    {language === 'zh-CN' ? '智能排盒与空隙填充' : 'Smart Auto-Pack Day'}
+                  </h3>
+                  <Badge variant="indigo" size="sm">
+                    {targetDateKey}
+                  </Badge>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  {language === 'zh-CN'
+                    ? '自动发现今日时间线空闲缝隙，按优先级与预估时长智能填充任务'
+                    : 'Fills free timeline gaps intelligently based on priority & duration'}
+                </p>
+              </div>
             </div>
-          </div>
 
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowConfig((prev) => !prev)}
-              className={`h-8 px-2.5 text-xs gap-1.5 cursor-pointer ${
-                showConfig ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400' : ''
-              }`}
-            >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
-              <span>{language === 'zh-CN' ? '排盒规则' : 'Rules'}</span>
-              {showConfig ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-            </Button>
-            <button
-              onClick={onClose}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowConfig((prev) => !prev)}
+                className={`h-8 px-2.5 text-xs gap-1.5 cursor-pointer ${
+                  showConfig ? 'bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400' : ''
+                }`}
+              >
+                <SlidersHorizontal className="w-3.5 h-3.5" />
+                <span>{language === 'zh-CN' ? '排盒规则' : 'Rules'}</span>
+                {showConfig ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </Button>
+              <button
+                onClick={onClose}
+                aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
+      }
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <Button variant="ghost" size="sm" onClick={onClose} className="cursor-pointer">
+            {language === 'zh-CN' ? '取消' : 'Cancel'}
+          </Button>
+
+          <Button
+            variant="primary"
+            size="sm"
+            disabled={loading || proposals.length === 0}
+            onClick={handleApply}
+            className="gap-1.5 cursor-pointer"
+          >
+            <Check className="w-4 h-4" />
+            <span>{language === 'zh-CN' ? `确认并应用排期 (${proposals.length})` : `Apply Schedule (${proposals.length})`}</span>
+          </Button>
+        </div>
+      }
+    >
 
         {/* Customizable Rules Drawer */}
         {showConfig && (
@@ -452,26 +471,6 @@ export const AutoPackModal: React.FC<AutoPackModalProps> = ({ isOpen, onClose, d
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-4 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 flex items-center justify-between shrink-0">
-          <Button variant="ghost" size="sm" onClick={onClose} className="cursor-pointer">
-            {language === 'zh-CN' ? '取消' : 'Cancel'}
-          </Button>
-
-          <Button
-            variant="primary"
-            size="sm"
-            disabled={loading || proposals.length === 0}
-            onClick={handleApply}
-            className="gap-1.5 cursor-pointer"
-          >
-            <Check className="w-4 h-4" />
-            <span>{language === 'zh-CN' ? `确认并应用排期 (${proposals.length})` : `Apply Schedule (${proposals.length})`}</span>
-          </Button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
-
-  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };

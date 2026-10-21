@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { createPortal } from 'react-dom';
+import Modal from '@/components/ui/Modal';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import { useUIStore } from '@/stores/uiStore';
@@ -604,52 +604,56 @@ export const TodayPage: React.FC = () => {
       </div>
 
       {/* Focus Picker Modal (for + Add Focus button) */}
-      {showFocusPicker && typeof document !== 'undefined' && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-150"
-          onClick={() => setShowFocusPicker(false)}
-        >
-          <div
-            className="bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl max-w-md w-full p-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-5 shadow-2xl border-t sm:border border-slate-200 dark:border-slate-800 space-y-4 animate-in slide-in-from-bottom-6 sm:zoom-in-98 duration-150"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto -mt-2 mb-2" />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-                  {language === 'zh-CN' ? '选择任务加入今日聚焦' : 'Select Task for Daily Focus'}
-                </h3>
+      {showFocusPicker && (
+        <Modal
+          onClose={() => setShowFocusPicker(false)}
+          ariaLabel={language === 'zh-CN' ? '选择任务加入今日聚焦' : 'Select Task for Daily Focus'}
+          maxWidthClass="sm:max-w-md"
+          scrollable={false}
+          bodyClassName="p-5"
+          header={
+            <div className="w-full -mx-5 -mb-3 px-5 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Target className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                  <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                    {language === 'zh-CN' ? '选择任务加入今日聚焦' : 'Select Task for Daily Focus'}
+                  </h3>
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setShowFocusPicker(false)}
+                  aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
+                >
+                  ✕
+                </Button>
               </div>
-              <Button size="sm" variant="ghost" onClick={() => setShowFocusPicker(false)}>
-                ✕
-              </Button>
             </div>
-
-            <div className="space-y-2 max-h-64 overflow-y-auto">
-              {allTasks
-                ?.filter((t) => !t.deletedAt && !t.parentTaskId && t.statusId !== 'ws-task-done' && !focusTaskIds.has(t.id))
-                .map((task) => (
-                  <div
-                    key={task.id}
-                    onClick={() => {
-                      handleAddToFocus(task);
-                      setShowFocusPicker(false);
-                    }}
-                    className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all cursor-pointer flex items-center justify-between text-xs"
-                  >
-                    <span className="font-medium text-slate-900 dark:text-slate-100 truncate">
-                      {task.title}
-                    </span>
-                    <Badge variant={task.priority || 'none'} size="sm">
-                      {task.priority || 'none'}
-                    </Badge>
-                  </div>
-                ))}
-            </div>
+          }
+        >
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {allTasks
+              ?.filter((t) => !t.deletedAt && !t.parentTaskId && t.statusId !== 'ws-task-done' && !focusTaskIds.has(t.id))
+              .map((task) => (
+                <div
+                  key={task.id}
+                  onClick={() => {
+                    handleAddToFocus(task);
+                    setShowFocusPicker(false);
+                  }}
+                  className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/30 transition-all cursor-pointer flex items-center justify-between text-xs"
+                >
+                  <span className="font-medium text-slate-900 dark:text-slate-100 truncate">
+                    {task.title}
+                  </span>
+                  <Badge variant={task.priority || 'none'} size="sm">
+                    {task.priority || 'none'}
+                  </Badge>
+                </div>
+              ))}
           </div>
-        </div>,
-        document.body
+        </Modal>
       )}
 
       {/* Focus Full Replace Flow Modal */}

@@ -355,6 +355,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
                 <button
                   type="button"
                   onClick={() => setShowSettings(false)}
+                  aria-label="关闭设置"
                   className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <X className="w-3.5 h-3.5" />

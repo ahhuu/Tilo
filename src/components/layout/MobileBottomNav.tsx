@@ -226,6 +226,7 @@ export const MobileBottomNav: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowMoreDrawer(false)}
+                aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
                 className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
               >
                 <X className="w-5 h-5" />

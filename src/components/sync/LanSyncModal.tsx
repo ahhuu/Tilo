@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import QRCode from 'qrcode';
+import Modal from '@/components/ui/Modal';
 import { Html5Qrcode } from 'html5-qrcode';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -317,52 +317,89 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
     });
   };
 
-  if (!isOpen) return null;
+  const handleClose = () => {
+    stopScanner();
+    onClose();
+  };
 
-  const modalContent = (
-    <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-slate-900/60 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-      onClick={() => {
-        stopScanner();
-        onClose();
-      }}
-    >
-      <div
-        role="dialog"
-        aria-label="LAN Sync Modal"
-        className="w-full sm:max-w-lg bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-in slide-in-from-bottom-6 sm:zoom-in-95 duration-200 text-left"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Mobile handle */}
-        <div className="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
-
-        {/* Header */}
-        <div className="p-4 px-5 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-              <QrCode className="w-4 h-4" />
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      ariaLabel={language === 'zh-CN' ? '局域网与二维码同步' : 'LAN & QR Code Sync'}
+      maxWidthClass="sm:max-w-lg"
+      bodyClassName="p-5"
+      header={
+        <div className="w-full -mx-5 -mb-3 px-5 pb-3 border-b border-slate-100 dark:border-slate-800 sm:-mx-5 sm:-mb-3 sm:px-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/80 dark:border-indigo-800 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
+                <QrCode className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
+                  {language === 'zh-CN' ? '局域网与二维码同步 (方案 A)' : 'LAN & QR Code Sync'}
+                </h3>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  {language === 'zh-CN' ? '手机扫码即可秒级增量合并两端数据，无需云端' : 'Scan QR code to merge data directly'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm">
-                {language === 'zh-CN' ? '局域网与二维码同步 (方案 A)' : 'LAN & QR Code Sync'}
-              </h3>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                {language === 'zh-CN' ? '手机扫码即可秒级增量合并两端数据，无需云端' : 'Scan QR code to merge data directly'}
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={handleClose}
+              aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
+              className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              stopScanner();
-              onClose();
-            }}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
         </div>
+      }
+      footer={
+        <div className="flex items-center justify-between w-full">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
+            className="cursor-pointer"
+          >
+            {language === 'zh-CN' ? '关闭' : 'Close'}
+          </Button>
 
+          {isMobile && !isScanning && (
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={syncing}
+              onClick={() => executeSync(hostIp)}
+              className="cursor-pointer gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              <span>{syncing ? (language === 'zh-CN' ? '正在合并...' : 'Syncing...') : (language === 'zh-CN' ? '手动同步' : 'Sync')}</span>
+            </Button>
+          )}
+
+          {!isMobile && (
+            <Button
+              variant="primary"
+              size="sm"
+              disabled={syncing}
+              onClick={() => {
+                setSyncing(true);
+                syncManager
+                  .syncAll()
+                  .finally(() => setSyncing(false));
+              }}
+              className="cursor-pointer gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
+              <span>{syncing ? (language === 'zh-CN' ? '正在同步...' : 'Syncing...') : (language === 'zh-CN' ? '立即同步所有设备' : 'Sync All Devices')}</span>
+            </Button>
+          )}
+        </div>
+      }
+    >
         {/* Device Sync Status Badge */}
         <div className="mx-5 mt-4 p-3 rounded-xl border border-indigo-100 dark:border-indigo-950/60 bg-indigo-50/40 dark:bg-indigo-950/20 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -383,7 +420,7 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
         </div>
 
         {/* Body Content */}
-        <div className="p-5 space-y-4 overflow-y-auto flex-1">
+        <div className="space-y-4">
           {/* 电脑端界面：清晰展示配对二维码与局域网 IP */}
           {!isMobile ? (
             <div className="space-y-4 text-center">
@@ -711,56 +748,8 @@ export const LanSyncModal: React.FC<LanSyncModalProps> = ({ isOpen, onClose }) =
           )}
         </div>
 
-        {/* 底部按钮操作栏 */}
-        <div className="p-4 px-5 pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-950/40 flex items-center justify-between shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              stopScanner();
-              onClose();
-            }}
-            className="cursor-pointer"
-          >
-            {language === 'zh-CN' ? '关闭' : 'Close'}
-          </Button>
-
-          {isMobile && !isScanning && (
-            <Button
-              variant="primary"
-              size="sm"
-              disabled={syncing}
-              onClick={() => executeSync(hostIp)}
-              className="cursor-pointer gap-1.5"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-              <span>{syncing ? (language === 'zh-CN' ? '正在合并...' : 'Syncing...') : (language === 'zh-CN' ? '手动同步' : 'Sync')}</span>
-            </Button>
-          )}
-
-          {!isMobile && (
-            <Button
-              variant="primary"
-              size="sm"
-              disabled={syncing}
-              onClick={() => {
-                setSyncing(true);
-                syncManager
-                  .syncAll()
-                  .finally(() => setSyncing(false));
-              }}
-              className="cursor-pointer gap-1.5"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${syncing ? 'animate-spin' : ''}`} />
-              <span>{syncing ? (language === 'zh-CN' ? '正在同步...' : 'Syncing...') : (language === 'zh-CN' ? '立即同步所有设备' : 'Sync All Devices')}</span>
-            </Button>
-          )}
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
-
-  return typeof document !== 'undefined' ? createPortal(modalContent, document.body) : modalContent;
 };
 
 export default LanSyncModal;

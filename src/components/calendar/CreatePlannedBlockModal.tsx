@@ -3,12 +3,12 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/storage/db';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/core/i18n';
 import { timeService } from '@/core/time/timeService';
 import { instantiateTaskFromTemplate } from '@/services/templateCommands';
 import {
   Clock,
-  X,
   Zap,
   Target,
   Sparkles,
@@ -234,36 +234,18 @@ export const CreatePlannedBlockModal: React.FC<CreatePlannedBlockModalProps> = (
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-      onClick={onClose}
+    <Modal
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '规划时间块' : 'Plan Time Block'}
+      title={
+        <span className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          {language === 'zh-CN' ? '规划时间块' : 'Plan Time Block'}
+        </span>
+      }
     >
-      <div
-        role="dialog"
-        aria-label="Create Planned Block"
-        className="w-full max-w-md max-h-[88vh] flex flex-col bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-98 duration-150 select-none text-left"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 dark:border-slate-800 shrink-0">
-          <div className="flex items-center gap-2">
-            <Clock className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-              {language === 'zh-CN' ? '规划时间块' : 'Plan Time Block'}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Scrollable Form Content */}
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
-          <div className="p-5 space-y-4 overflow-y-auto flex-1">
+      <form onSubmit={handleSubmit} className="flex flex-col">
+        <div className="space-y-4">
             {/* Type Selector: Task | Focus Block | Activity */}
             <div className="grid grid-cols-3 gap-1.5 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl text-[11px] font-medium">
               <button
@@ -628,7 +610,6 @@ export const CreatePlannedBlockModal: React.FC<CreatePlannedBlockModalProps> = (
             </Button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };

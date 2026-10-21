@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useI18n } from '@/core/i18n';
 import { useUIStore } from '@/stores/uiStore';
+import { Modal } from '@/components/ui/Modal';
 import {
   triageInboxItem,
   convertInboxToTodayTask,
@@ -244,13 +245,16 @@ export const ContinuousProcessingModal: React.FC<ContinuousProcessingModalProps>
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, items.length, handleAction, onClose]);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '连续整理模式' : 'Process Inbox Mode'}
+      dismissable={false}
+      maxWidthClass="sm:max-w-2xl"
+      bodyClassName="flex-1 overflow-y-auto overscroll-contain px-6 pb-6"
+      header={
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400">
               <Sparkles className="w-4 h-4" />
@@ -276,14 +280,45 @@ export const ContinuousProcessingModal: React.FC<ContinuousProcessingModalProps>
               type="button"
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              aria-label="Close"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
+      }
+      footer={
+        <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              disabled={currentIndex === 0}
+              onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
+              className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span>{language === 'zh-CN' ? '上一个 (K)' : 'Prev (K)'}</span>
+            </button>
+            <button
+              type="button"
+              disabled={currentIndex >= items.length - 1}
+              onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, items.length - 1))}
+              className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+            >
+              <span>{language === 'zh-CN' ? '跳过/下一个 (J)' : 'Next (J)'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
 
-        {/* Content Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-slate-400">
+              {language === 'zh-CN' ? '按 Esc 随时退出' : 'Press Esc to exit'}
+            </span>
+          </div>
+        </div>
+      }
+    >
+      <div className="space-y-6">
           {items.length === 0 || !currentItem ? (
             /* Empty State */
             <div className="py-16 text-center space-y-3">
@@ -559,36 +594,6 @@ export const ContinuousProcessingModal: React.FC<ContinuousProcessingModalProps>
           )}
         </div>
 
-        {/* Footer Navigation */}
-        <div className="px-6 py-3 bg-slate-50 dark:bg-slate-800/80 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 pb-[calc(env(safe-area-inset-bottom,0px)+0.75rem)] sm:pb-3">
-          <div className="flex items-center gap-3">
-            <button
-              type="button"
-              disabled={currentIndex === 0}
-              onClick={() => setCurrentIndex((prev) => Math.max(prev - 1, 0))}
-              className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>{language === 'zh-CN' ? '上一个 (K)' : 'Prev (K)'}</span>
-            </button>
-            <button
-              type="button"
-              disabled={currentIndex >= items.length - 1}
-              onClick={() => setCurrentIndex((prev) => Math.min(prev + 1, items.length - 1))}
-              className="flex items-center gap-1 hover:text-slate-800 dark:hover:text-slate-200 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-            >
-              <span>{language === 'zh-CN' ? '跳过/下一个 (J)' : 'Next (J)'}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">
-              {language === 'zh-CN' ? '按 Esc 随时退出' : 'Press Esc to exit'}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

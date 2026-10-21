@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/storage/db';
 import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import { timeService } from '@/core/time/timeService';
 import { useI18n } from '@/core/i18n';
 import {
@@ -11,7 +12,6 @@ import {
   type LeftoverTaskResolution,
 } from '@/services/reviewCommands';
 import {
-  X,
   ArrowRight,
   Sparkles,
   CheckCircle2,
@@ -135,36 +135,22 @@ export const DailyCloseModal: React.FC<DailyCloseModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-      onClick={onClose}
+    <Modal
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '每日收尾与结案' : 'Daily Close & Reflection'}
+      maxWidthClass="sm:max-w-lg"
+      bodyClassName="flex-1 overflow-y-auto overscroll-contain px-6 pb-6"
+      title={
+        <span className="flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          {language === 'zh-CN' ? '每日收尾与结案' : 'Daily Close & Reflection'}
+        </span>
+      }
+      description={
+        (language === 'zh-CN' ? `步骤 ${step} / 3` : `Step ${step} of 3`) + ' — ' + todayStr
+      }
     >
-      <div
-        className="w-full max-w-lg bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-5 max-h-[88vh] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-6 animate-in zoom-in-98 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                {language === 'zh-CN' ? '每日收尾与结案' : 'Daily Close & Reflection'}
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                {language === 'zh-CN' ? `步骤 ${step} / 3` : `Step ${step} of 3`} — {todayStr}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
+      <div className="space-y-5">
         {/* Step 1: Resolve Leftovers */}
         {step === 1 && (
           <div className="space-y-4">
@@ -399,6 +385,6 @@ export const DailyCloseModal: React.FC<DailyCloseModalProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 };

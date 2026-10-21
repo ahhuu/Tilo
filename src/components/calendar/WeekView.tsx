@@ -13,6 +13,7 @@ interface WeekViewProps {
   tasks: Task[];
   onSlotClick: (dateStr: string, hour: number) => void;
   onDropTask?: (taskId: string, dateStr: string, hour: number) => Promise<void> | void;
+  onMoveBlock?: (blockId: string, dateStr: string, hour: number) => Promise<void> | void;
   onInspectTask?: (task: Task) => void;
   onDeleteBlock?: (blockId: string) => void;
 }
@@ -25,6 +26,7 @@ export const WeekView: React.FC<WeekViewProps> = ({
   tasks,
   onSlotClick,
   onDropTask,
+  onMoveBlock,
   onInspectTask,
   onDeleteBlock,
 }) => {
@@ -49,6 +51,72 @@ export const WeekView: React.FC<WeekViewProps> = ({
   });
 
   const taskMap = new Map(tasks.map((t) => [t.id, t]));
+  const [announcement, setAnnouncement] = React.useState('');
+
+  // 连续按键时以「上一次按键后的时间」为基准：异步落库尚未回流到 props 前，
+  // 若始终用 block.startAt，快速连按只会位移一步。
+  const pendingMoveRef = React.useRef<Map<string, number>>(new Map());
+  React.useEffect(() => {
+    pendingMoveRef.current.clear();
+  }, [plannedBlocks]);
+
+  // Keyboard alternative to drag-dropping a planned block: ←/→ shift the day,
+  // ↑/↓ shift the hour (08:00–20:00 grid), Enter/Space inspects, Delete removes.
+  const handleBlockKeyDown = async (e: React.KeyboardEvent, block: PlannedBlock) => {
+    const linkedTask = block.taskId ? taskMap.get(block.taskId) : undefined;
+    const startDate = new Date(pendingMoveRef.current.get(block.id) ?? block.startAt);
+    const curHour = startDate.getHours();
+    let newDateStr = format(startDate, 'yyyy-MM-dd');
+    let newHour = curHour;
+
+    switch (e.key) {
+      case 'ArrowLeft':
+        newDateStr = format(addDays(startDate, -1), 'yyyy-MM-dd');
+        break;
+      case 'ArrowRight':
+        newDateStr = format(addDays(startDate, 1), 'yyyy-MM-dd');
+        break;
+      case 'ArrowUp':
+        newHour = curHour - 1;
+        break;
+      case 'ArrowDown':
+        newHour = curHour + 1;
+        break;
+      case 'Enter':
+      case ' ':
+        e.preventDefault();
+        if (linkedTask) onInspectTask?.(linkedTask);
+        return;
+      case 'Delete':
+      case 'Backspace':
+        e.preventDefault();
+        onDeleteBlock?.(block.id);
+        return;
+      default:
+        return;
+    }
+
+    e.preventDefault();
+    if (newHour < 8 || newHour > 20) {
+      setAnnouncement(
+        language === 'zh-CN'
+          ? '已超出可排期的时间范围（08:00–20:00）'
+          : 'Out of schedulable range (08:00–20:00)'
+      );
+      return;
+    }
+    const nextStartMs = new Date(
+      `${newDateStr}T${newHour.toString().padStart(2, '0')}:00:00`
+    ).getTime();
+    pendingMoveRef.current.set(block.id, nextStartMs);
+    await onMoveBlock?.(block.id, newDateStr, newHour);
+    setAnnouncement(
+      language === 'zh-CN'
+        ? `已改期至 ${newDateStr} ${newHour.toString().padStart(2, '0')}:00`
+        : `Moved to ${newDateStr} ${newHour}:00`
+    );
+  };
+
   // Hours from 08:00 to 20:00 for compact week view
   const hours = Array.from({ length: 13 }, (_, i) => i + 8);
 
@@ -145,14 +213,23 @@ export const WeekView: React.FC<WeekViewProps> = ({
                     {/* Planned blocks */}
                     {dayPlanned.map((block) => {
                       const linkedTask = block.taskId ? taskMap.get(block.taskId) : undefined;
+                      const blockLabel = block.title || linkedTask?.title || 'Plan';
                       return (
                         <div
                           key={block.id}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={
+                            language === 'zh-CN'
+                              ? `排期块：${blockLabel}。方向键改期，Enter 检视，Delete 删除`
+                              : `Planned block: ${blockLabel}. Arrow keys to reschedule, Enter to inspect, Delete to remove`
+                          }
                           onClick={(e) => {
                             e.stopPropagation();
                             if (linkedTask) onInspectTask?.(linkedTask);
                           }}
-                          className="p-1.5 rounded-lg border-l-3 border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 shadow-2xs text-left group/block"
+                          onKeyDown={(e) => handleBlockKeyDown(e, block)}
+                          className="p-1.5 rounded-lg border-l-3 border-indigo-600 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200/60 dark:border-indigo-800/60 shadow-2xs text-left group/block cursor-pointer focus:outline-2 focus:outline-indigo-500 focus:ring-2 focus:ring-indigo-400/60"
                         >
                           <div className="flex items-center justify-between">
                             <span className="text-[11px] font-semibold text-slate-900 dark:text-slate-100 truncate">
@@ -165,7 +242,12 @@ export const WeekView: React.FC<WeekViewProps> = ({
                                   e.stopPropagation();
                                   onDeleteBlock(block.id);
                                 }}
-                                className="touch-target opacity-0 group-hover/block:opacity-100 text-slate-400 hover:text-red-500 p-0.5"
+                                aria-label={
+                                  language === 'zh-CN'
+                                    ? `删除排期块：${blockLabel}`
+                                    : `Delete planned block: ${blockLabel}`
+                                }
+                                className="touch-target opacity-0 group-hover/block:opacity-100 focus-visible:opacity-100 text-slate-400 hover:text-red-500 p-0.5"
                               >
                                 <Trash2 className="w-2.5 h-2.5" />
                               </button>
@@ -199,6 +281,11 @@ export const WeekView: React.FC<WeekViewProps> = ({
             </div>
           );
         })}
+      </div>
+
+      {/* Screen-reader announcements for keyboard-driven block moves */}
+      <div aria-live="polite" className="sr-only">
+        {announcement}
       </div>
     </div>
   );

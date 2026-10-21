@@ -7,10 +7,11 @@ import { cn } from '@/lib/utils';
 export const ToastContainer: React.FC = () => {
   const { toasts, removeToast } = useUIStore();
 
-  if (toasts.length === 0) return null;
-
+  // The live region must exist in the DOM before content is inserted so
+  // screen readers reliably announce newly-added toasts.
   return (
     <aside
+      role="region"
       aria-label="Notifications"
       className="fixed inset-x-3 md:inset-x-auto md:right-4 bottom-[calc(env(safe-area-inset-bottom,0px)+4.25rem)] md:bottom-4 z-[60] flex flex-col gap-2 md:max-w-sm md:w-full pointer-events-none select-none"
     >
@@ -35,9 +36,12 @@ const ToastCard: React.FC<ToastCardProps> = ({ toast, onDismiss }) => {
   };
 
   const type = toast.type || 'info';
+  const isAlert = type === 'error';
 
   return (
     <div
+      role={isAlert ? 'alert' : 'status'}
+      aria-live={isAlert ? 'assertive' : 'polite'}
       className={cn(
         'pointer-events-auto flex items-center justify-between gap-3 p-3.5 rounded-xl border border-slate-200/90 dark:border-slate-700 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md shadow-lg text-sm text-slate-800 dark:text-slate-100 animate-in fade-in slide-in-from-bottom-3 duration-200'
       )}

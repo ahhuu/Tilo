@@ -115,6 +115,45 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
   const pendingCreateRef = useRef<{ startMs: number } | null>(null);
   const LONG_PRESS_MS = 250;
 
+  // 键盘可达性：方向键改期 / 删除 / 打开检视，配合屏幕阅读器播报
+  const [kbAnnounce, setKbAnnounce] = useState('');
+  // 记录键盘连续调整后的最新时间：否则快速连按时每次都以旧的 block.startAt 为基准，
+  // 多次按键只会位移一次（异步落库尚未回流到 props）。
+  const kbPendingTimesRef = useRef<Map<string, { startAt: number; endAt: number }>>(new Map());
+
+  // 数据回流后清空缓存，避免下一次按键基于已被外部改动（拖拽/同步）覆盖的旧时间
+  useEffect(() => {
+    kbPendingTimesRef.current.clear();
+  }, [plannedBlocks]);
+
+  const moveBlockBy = useCallback(
+    async (block: PlannedBlock, deltaMs: number) => {
+      if (!onUpdatePlannedBlock) return;
+      const pending = kbPendingTimesRef.current.get(block.id);
+      const baseStart = pending?.startAt ?? block.startAt;
+      const baseEnd = pending?.endAt ?? block.endAt;
+      // 限制在当天时间轴范围内，避免整块被移出可视区后彻底找不到
+      const dayStart = timeService.getStartOfLogicalDay(dateStr);
+      const dayEnd = dayStart + 24 * 60 * 60 * 1000;
+      const newStart = Math.min(Math.max(baseStart + deltaMs, dayStart), dayEnd - (baseEnd - baseStart));
+      const newEnd = newStart + (baseEnd - baseStart);
+      if (newStart === baseStart) {
+        setKbAnnounce(
+          language === 'zh-CN' ? '已到当天时间轴边界' : 'Reached the edge of the day timeline'
+        );
+        return;
+      }
+      kbPendingTimesRef.current.set(block.id, { startAt: newStart, endAt: newEnd });
+      await onUpdatePlannedBlock(block.id, { startAt: newStart, endAt: newEnd });
+      setKbAnnounce(
+        language === 'zh-CN'
+          ? `已移动到 ${timeService.formatTime(newStart)}–${timeService.formatTime(newEnd)}`
+          : `Moved to ${timeService.formatTime(newStart)}–${timeService.formatTime(newEnd)}`
+      );
+    },
+    [onUpdatePlannedBlock, language, dateStr]
+  );
+
   // Drag Move & Resize state
   const [activeResizeBlock, setActiveResizeBlock] = useState<{
     blockId: string;
@@ -593,12 +632,56 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
             return (
               <div
                 key={item.id}
+                tabIndex={isPlan ? 0 : undefined}
+                role={isPlan ? 'button' : undefined}
+                aria-roledescription={
+                  isPlan
+                    ? language === 'zh-CN'
+                      ? '时间块，方向键改期'
+                      : 'Time block, arrow keys to reschedule'
+                    : undefined
+                }
+                aria-label={
+                  isPlan && originalBlock
+                    ? `${item.title || linkedTask?.title || ''} ${timeService.formatTime(effectiveStartAt)}–${timeService.formatTime(effectiveEndAt)}`
+                    : undefined
+                }
                 onClick={(e) => {
                   e.stopPropagation();
                   if (isPlan && originalBlock) {
                     onInspectBlock?.(originalBlock);
                   } else if (originalSession) {
                     onInspectSession?.(originalSession);
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.target !== e.currentTarget) return;
+                  if (!isPlan || !originalBlock) return;
+                  const STEP = 15 * 60 * 1000;
+                  const BIG = 60 * 60 * 1000;
+                  switch (e.key) {
+                    case 'ArrowUp':
+                      e.preventDefault();
+                      void moveBlockBy(originalBlock, e.shiftKey ? -BIG : -STEP);
+                      break;
+                    case 'ArrowDown':
+                      e.preventDefault();
+                      void moveBlockBy(originalBlock, e.shiftKey ? BIG : STEP);
+                      break;
+                    case 'Enter':
+                    case ' ':
+                      e.preventDefault();
+                      onInspectBlock?.(originalBlock);
+                      break;
+                    case 'Delete':
+                    case 'Backspace':
+                      if (onDeletePlannedBlock) {
+                        e.preventDefault();
+                        void onDeletePlannedBlock(item.id);
+                      }
+                      break;
+                    default:
+                      break;
                   }
                 }}
                 className={`absolute rounded-xl transition-all group/item cursor-pointer z-10 ${
@@ -964,6 +1047,11 @@ export const TimelineView: React.FC<TimelineViewProps> = ({
           }}
         />
       )}
+
+      {/* 屏幕阅读器播报：键盘改期 / 删除等操作结果 */}
+      <div className="sr-only" aria-live="polite" role="status">
+        {kbAnnounce}
+      </div>
     </div>
   );
 };

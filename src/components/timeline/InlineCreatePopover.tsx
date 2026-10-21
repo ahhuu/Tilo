@@ -218,6 +218,7 @@ export const InlineCreatePopover: React.FC<InlineCreatePopoverProps> = ({
           <button
             type="button"
             onClick={onClose}
+            aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
             className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
             <X className="w-4 h-4" />

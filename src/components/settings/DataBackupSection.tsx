@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
 import { exportWorkspaceBackupJson, importWorkspaceBackupJson } from '@/services/exportImportService';
@@ -453,28 +454,23 @@ export const DataBackupSection: React.FC = () => {
 
       {/* Reset Confirmation Dialog */}
       {showResetConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-          onClick={() => setShowResetConfirm(false)}
-        >
-          <div
-            className="w-full max-w-md bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-red-200 dark:border-red-900 shadow-2xl p-6 space-y-4 max-h-[88vh] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-6 animate-in zoom-in-98 duration-150"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
-              <AlertTriangle className="w-5 h-5" />
-              <h3 className="text-sm font-bold">
-                {language === 'zh-CN' ? '确认清空并重置工作区？' : 'Wipe & Reset Workspace?'}
-              </h3>
+        <Modal
+          onClose={() => setShowResetConfirm(false)}
+          ariaLabel={language === 'zh-CN' ? '确认清空并重置工作区' : 'Wipe & Reset Workspace'}
+          maxWidthClass="sm:max-w-md"
+          bodyClassName="p-5"
+          header={
+            <div className="w-full -mx-5 -mb-3 px-5 pb-3 border-b border-red-100 dark:border-red-900/50">
+              <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
+                <AlertTriangle className="w-5 h-5" />
+                <h3 className="text-sm font-bold">
+                  {language === 'zh-CN' ? '确认清空并重置工作区？' : 'Wipe & Reset Workspace?'}
+                </h3>
+              </div>
             </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
-              {language === 'zh-CN'
-                ? '此操作将永久删除本地浏览器 IndexedDB 数据库中存储的所有战略目标、项目、待办、专注会话及复盘记录。若未提前导出 JSON 备份，此操作将无法撤回。'
-                : 'This action will permanently delete all goals, projects, tasks, sessions, and review records stored in your local browser database. This cannot be undone unless you have exported a JSON backup.'}
-            </p>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+          }
+          footer={
+            <div className="flex items-center justify-end gap-2 w-full">
               <Button size="sm" variant="ghost" onClick={() => setShowResetConfirm(false)} className="cursor-pointer">
                 {language === 'zh-CN' ? '取消' : 'Cancel'}
               </Button>
@@ -487,8 +483,14 @@ export const DataBackupSection: React.FC = () => {
                 {language === 'zh-CN' ? '确认重置' : 'Yes, Reset Workspace'}
               </Button>
             </div>
-          </div>
-        </div>
+          }
+        >
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            {language === 'zh-CN'
+              ? '此操作将永久删除本地浏览器 IndexedDB 数据库中存储的所有战略目标、项目、待办、专注会话及复盘记录。若未提前导出 JSON 备份，此操作将无法撤回。'
+              : 'This action will permanently delete all goals, projects, tasks, sessions, and review records stored in your local browser database. This cannot be undone unless you have exported a JSON backup.'}
+          </p>
+        </Modal>
       )}
     </div>
   );

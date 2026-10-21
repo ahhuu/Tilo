@@ -14,6 +14,9 @@
     --border-default: #cbd5e1;
     --border-focus: #4f46e5;
 
+    /* 弹窗遮罩背景（统一全站 overlay 明度，替代此前 bg-slate-900/40·/50·/60 的不一致写法） */
+    --modal-overlay: rgba(15, 23, 42, 0.55);
+
     --text-primary: #0f172a;
     --text-secondary: #64748b;
     --text-muted: #94a3b8;
@@ -61,6 +64,9 @@
     --border-subtle: #1e293b;
     --border-default: #334155;
     --border-focus: #6366f1;
+
+    /* 暗色下遮罩更重，保证卡片对比度 */
+    --modal-overlay: rgba(2, 6, 23, 0.65);
 
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
@@ -191,6 +197,32 @@
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* =========================================================================
+     全局键盘焦点可视基线 (a11y)
+     所有可交互元素在键盘聚焦时显示统一的靛蓝焦点环；触屏点击不会触发。
+     未显式声明 focus 样式的原生按钮/链接/输入框、以及标注 .focusable 的
+     可点击 div 均纳入，覆盖此前仅靠 focus:ring 才可见的焦点态。
+     ========================================================================= */
+  :focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* 可点击的非原生控件（role="button" / .focusable 的 div）同样给出焦点环，
+     使用方需为这些元素加 tabIndex={0} 使其可达。 */
+  [role="button"]:focus-visible,
+  .focusable:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+
+  /* 弹窗 / Inspector 等浮层自身不应带焦点环（内部元素各自处理） */
+  [role="dialog"]:focus-visible,
+  [aria-modal="true"]:focus-visible {
+    outline: none;
   }
 }
 

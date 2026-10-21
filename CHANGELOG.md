@@ -7,6 +7,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.5.0] — 2026-10-21
+
+### Summary
+"Consistency baseline." Tilo 1.5.0 retires the last hand-written modal shells and the Android Chinese-IME break they caused, gives every drag interaction a keyboard equivalent, and converges all user feedback onto one accessible toast channel.
+
+### Added
+- **Unified `Modal` shell** (`components/ui/Modal.tsx`): one overlay/centered-card primitive owning `z-[9999]`, the `--modal-overlay` token, scroll lock, `Esc` close, focus trap + focus restore, `role="dialog"`/`aria-modal`, and safe-area padding. 20 card dialogs now render through it.
+- **Keyboard alternatives for drag**:
+  - `TimelineView` planned blocks — `↑/↓` ±15 min, `Shift+↑/↓` ±1 h, `Enter` inspect, `Delete` remove, with `aria-live` announcements.
+  - `WeekView` planned blocks — `←/→` ±1 day, `↑/↓` ±1 h (08:00–20:00 grid), `Enter` inspect, `Delete` remove, persisted via a new `onMoveBlock` prop.
+  - `SidePlanningDrawer` task cards — focusable (`role="button"`, `tabIndex=0`); `Plan`/`Today` actions reveal on `focus-within`.
+- **Toast accessibility**: `ToastContainer` is a persistent `role="region"` live region; toasts use `role="status"`/`aria-live="polite"` (info/success/warning) and `role="alert"`/`aria-live="assertive"` (error).
+- **Global keyboard focus baseline** (`index.css`): a single `:focus-visible` ring for native controls and `role="button"` elements, with `[role="dialog"]` exempted.
+- **Accessible names for icon-only close buttons** across 14 components (modals, mobile nav, drawers, widget shells).
+
+### Changed
+- `BottomSheet` is now a thin alias that re-exports `Modal` — no second dialog implementation.
+- `npm run typecheck` now runs `tsc -b --force` instead of a no-op `tsc --noEmit` (see Fixed).
+
+### Fixed
+- **Android Chinese IME composition break** on dialogs with `<textarea>` — root-caused to `select-none` on the old overlay containers; removed by the unified `Modal` shell (also removed the stray `select-none` from Auto-Pack / Widget Settings modals).
+- **Latent JSX tag imbalance** in four migrated modals (`EditNoteModal`, `AnalyticsCustomizerModal`, `WindowCloseConfirmModal`, `ContinuousProcessingModal`) — stray `</div>` before `</Modal>` that `tsc` tolerated but esbuild rejected; all 198 source files now pass a full JSX balance scan.
+- **Two modals missing their `Modal` import** (`AnalyticsCustomizerModal`, `DailyCloseModal`) — the migration dropped the import line, so opening them would have thrown at runtime while `tsc` stayed silent.
+- **Keyboard move only nudged once on rapid key repeat** — `TimelineView`/`WeekView` now chain from the last keypress instead of the stale block start, and clamp moves to the day timeline.
+- **Typecheck was a no-op**: `tsconfig.json` is a references-only shell (`"files": []`), so `tsc --noEmit` checked nothing. Switched to `tsc -b --force` and verified with a deliberate-error probe.
+- **Stale smoke test** asserting a legacy combined "目标与项目" nav entry; the sidebar now exposes separate 项目 / 目标 items.
+
+---
+
 ## [1.4.0] — 2026-10-21
 
 ### Summary

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/core/i18n';
 import { Calendar, X, Tag } from 'lucide-react';
 
@@ -65,15 +66,14 @@ export const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-sm bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl p-5 space-y-4 max-h-[88vh] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-5"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between">
+    <Modal
+      isOpen
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '重新排期任务' : 'Reschedule Task'}
+      maxWidthClass="sm:max-w-sm"
+      bodyClassName="px-0 pb-0"
+      header={
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-2">
             <Calendar className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
             <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
@@ -84,96 +84,97 @@ export const RescheduleDialog: React.FC<RescheduleDialogProps> = ({
             type="button"
             onClick={onClose}
             className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md cursor-pointer"
+            aria-label="Close"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
+      }
+    >
+      <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
+        <div className="space-y-1">
+          <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
+            {language === 'zh-CN' ? '排期日期' : 'Scheduled Date'}
+          </label>
+          <Input
+            type="date"
+            value={newDate}
+            onChange={(e) => setNewDate(e.target.value)}
+            required
+          />
+        </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          <div className="space-y-1">
-            <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-              {language === 'zh-CN' ? '排期日期' : 'Scheduled Date'}
+        <div className="space-y-1.5">
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
+              <Tag className="w-3 h-3 text-slate-400" />
+              <span>{language === 'zh-CN' ? '选择调整原因' : 'Select Reason'}</span>
             </label>
-            <Input
-              type="date"
-              value={newDate}
-              onChange={(e) => setNewDate(e.target.value)}
-              required
-            />
+            <span className="text-[11px] text-slate-400 font-normal">
+              {language === 'zh-CN' ? '一键归因' : 'One-click'}
+            </span>
           </div>
 
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-xs font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1">
-                <Tag className="w-3 h-3 text-slate-400" />
-                <span>{language === 'zh-CN' ? '选择调整原因' : 'Select Reason'}</span>
-              </label>
-              <span className="text-[11px] text-slate-400 font-normal">
-                {language === 'zh-CN' ? '一键归因' : 'One-click'}
-              </span>
-            </div>
-
-            {/* Quick Reason Chips */}
-            <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-0.5 scrollbar-thin">
-              {availableReasons.map((r, idx) => {
-                const isSelected = reason === r;
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => handleSelectReasonChip(r)}
-                    className={`px-2 py-1 rounded-md text-[11px] transition-colors cursor-pointer text-left ${
-                      isSelected
-                        ? 'bg-indigo-600 text-white font-medium shadow-2xs'
-                        : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    {r}
-                  </button>
-                );
-              })}
-            </div>
-
-            <Input
-              type="text"
-              placeholder={language === 'zh-CN' ? '或手动输入自定义原因...' : 'Or enter custom reason...'}
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="text-xs"
-            />
+          {/* Quick Reason Chips */}
+          <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-0.5 scrollbar-thin">
+            {availableReasons.map((r, idx) => {
+              const isSelected = reason === r;
+              return (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => handleSelectReasonChip(r)}
+                  className={`px-2 py-1 rounded-md text-[11px] transition-colors cursor-pointer text-left ${
+                    isSelected
+                      ? 'bg-indigo-600 text-white font-medium shadow-2xs'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  }`}
+                >
+                  {r}
+                </button>
+              );
+            })}
           </div>
 
-          <div className="flex items-center justify-between pt-2">
-            <Button
-              size="sm"
-              variant="outline"
-              type="button"
-              onClick={async () => {
-                setIsSubmitting(true);
-                try {
-                  await onReschedule('', reason.trim() || undefined);
-                  onClose();
-                } finally {
-                  setIsSubmitting(false);
-                }
-              }}
-              disabled={isSubmitting}
-              className="text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border-red-200 dark:border-red-900/60 cursor-pointer"
-            >
-              {language === 'zh-CN' ? '设为未排期' : 'Unschedule'}
+          <Input
+            type="text"
+            placeholder={language === 'zh-CN' ? '或手动输入自定义原因...' : 'Or enter custom reason...'}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="text-xs"
+          />
+        </div>
+
+        <div className="flex items-center justify-between pt-2">
+          <Button
+            size="sm"
+            variant="outline"
+            type="button"
+            onClick={async () => {
+              setIsSubmitting(true);
+              try {
+                await onReschedule('', reason.trim() || undefined);
+                onClose();
+              } finally {
+                setIsSubmitting(false);
+              }
+            }}
+            disabled={isSubmitting}
+            className="text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 border-red-200 dark:border-red-900/60 cursor-pointer"
+          >
+            {language === 'zh-CN' ? '设为未排期' : 'Unschedule'}
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="ghost" type="button" onClick={onClose} className="cursor-pointer">
+              {language === 'zh-CN' ? '取消' : 'Cancel'}
             </Button>
-
-            <div className="flex items-center gap-2">
-              <Button size="sm" variant="ghost" type="button" onClick={onClose} className="cursor-pointer">
-                {language === 'zh-CN' ? '取消' : 'Cancel'}
-              </Button>
-              <Button size="sm" variant="primary" type="submit" disabled={isSubmitting || !newDate} className="cursor-pointer">
-                {language === 'zh-CN' ? '保存' : 'Save'}
-              </Button>
-            </div>
+            <Button size="sm" variant="primary" type="submit" disabled={isSubmitting || !newDate} className="cursor-pointer">
+              {language === 'zh-CN' ? '保存' : 'Save'}
+            </Button>
           </div>
-        </form>
-      </div>
-    </div>
+        </div>
+      </form>
+    </Modal>
   );
 };

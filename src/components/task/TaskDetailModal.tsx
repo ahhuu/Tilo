@@ -5,6 +5,7 @@ import { updateTask, completeTask, reopenTask, deleteTaskToTrash } from '@/servi
 import { SubtaskList } from './SubtaskList';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import Modal from '@/components/ui/Modal';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
 import { X, CheckCircle2, Trash2, Calendar, Clock } from 'lucide-react';
@@ -65,51 +66,52 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClos
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-2xl bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col max-h-[86vh] sm:max-h-[90vh] pb-[calc(env(safe-area-inset-bottom,0px)+0.5rem)] sm:pb-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="sm:hidden w-10 h-1 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant={isDone ? 'secondary' : 'primary'}
-              onClick={handleToggleComplete}
-              className="h-7 text-xs gap-1.5 cursor-pointer"
-            >
-              <CheckCircle2 className={`w-3.5 h-3.5 ${isDone ? 'text-emerald-600' : ''}`} />
-              <span>{isDone ? (language === 'zh-CN' ? '已完成' : 'Completed') : (language === 'zh-CN' ? '标记完成' : 'Mark Complete')}</span>
-            </Button>
-            <Badge variant={task.priority}>{getPriorityLabel(task.priority)}</Badge>
-          </div>
+    <Modal
+      onClose={onClose}
+      ariaLabel={task.title}
+      maxWidthClass="sm:max-w-2xl"
+      bodyClassName="p-6"
+      header={
+        <div className="w-full -mx-5 -mb-3 px-5 pb-3 border-b border-slate-100 dark:border-slate-800 sm:-mx-5 sm:-mb-3 sm:px-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant={isDone ? 'secondary' : 'primary'}
+                onClick={handleToggleComplete}
+                className="h-7 text-xs gap-1.5 cursor-pointer"
+              >
+                <CheckCircle2 className={`w-3.5 h-3.5 ${isDone ? 'text-emerald-600' : ''}`} />
+                <span>{isDone ? (language === 'zh-CN' ? '已完成' : 'Completed') : (language === 'zh-CN' ? '标记完成' : 'Mark Complete')}</span>
+              </Button>
+              <Badge variant={task.priority}>{getPriorityLabel(task.priority)}</Badge>
+            </div>
 
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="p-1.5 text-slate-400 hover:text-red-500 rounded-md cursor-pointer"
-              title={language === 'zh-CN' ? '删除任务' : 'Delete task'}
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="p-1.5 text-slate-400 hover:text-red-500 rounded-md cursor-pointer"
+                title={language === 'zh-CN' ? '删除任务' : 'Delete task'}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
               onClick={onClose}
+              aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
               className="p-1.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
+      }
+    >
 
         {/* Modal Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="space-y-6">
           <div>
             <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
               {task.title}
@@ -153,7 +155,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({ taskId, onClos
             <SubtaskList parentTaskId={task.id} workspaceId={task.workspaceId} />
           </div>
         </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

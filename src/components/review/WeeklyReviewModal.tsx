@@ -3,6 +3,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/storage/db';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import Modal from '@/components/ui/Modal';
 import { timeService } from '@/core/time/timeService';
 import { useI18n } from '@/core/i18n';
 import {
@@ -182,47 +183,51 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-xl bg-white dark:bg-slate-900 rounded-t-2xl sm:rounded-2xl border-t sm:border border-slate-200 dark:border-slate-800 shadow-2xl p-6 space-y-5 max-h-[88vh] overflow-y-auto overscroll-contain pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-6 animate-in zoom-in-98 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
-          <div className="flex items-center gap-2">
-            <CalendarRange className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-            <div>
-              <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-                {language === 'zh-CN' ? '每周复盘' : 'Weekly Review'} — {weekKey}
-              </h3>
-              <p className="text-[11px] text-slate-400">
-                {language === 'zh-CN' ? `步骤 ${step} / 6` : `Step ${step} of 6`}
-              </p>
+    <Modal
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '每周复盘' : 'Weekly Review'}
+      maxWidthClass="sm:max-w-xl"
+      scrollable={false}
+      bodyClassName="p-0"
+      header={
+        <div className="w-full -mx-5 -mb-3 px-5 pb-3 border-b border-slate-100 dark:border-slate-800 sm:-mx-5 sm:-mb-3 sm:px-5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CalendarRange className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <div>
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
+                  {language === 'zh-CN' ? '每周复盘' : 'Weekly Review'} — {weekKey}
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  {language === 'zh-CN' ? `步骤 ${step} / 6` : `Step ${step} of 6`}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleSkipReview}
+                className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1"
+                title={language === 'zh-CN' ? '跳过本周复盘' : 'Skip Weekly Review'}
+              >
+                <SkipForward className="w-3.5 h-3.5" />
+                <span>{language === 'zh-CN' ? '跳过复盘' : 'Skip'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label={language === 'zh-CN' ? '关闭' : 'Close'}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={handleSkipReview}
-              className="text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 px-2 py-1 rounded-md transition-colors cursor-pointer flex items-center gap-1"
-              title={language === 'zh-CN' ? '跳过本周复盘' : 'Skip Weekly Review'}
-            >
-              <SkipForward className="w-3.5 h-3.5" />
-              <span>{language === 'zh-CN' ? '跳过复盘' : 'Skip'}</span>
-            </button>
-            <button
-              type="button"
-              onClick={onClose}
-              className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
         </div>
+      }
+    >
 
+        <div className="p-6 space-y-5 overflow-y-auto overscroll-contain max-h-[78vh] pb-[calc(env(safe-area-inset-bottom,0px)+1.25rem)] sm:pb-6">
         {/* Step 1: Outcomes & Metrics */}
         {step === 1 && (
           <div className="space-y-4">
@@ -650,6 +655,6 @@ export const WeeklyReviewModal: React.FC<WeeklyReviewModalProps> = ({
           </div>
         )}
       </div>
-    </div>
+    </Modal>
   );
 };

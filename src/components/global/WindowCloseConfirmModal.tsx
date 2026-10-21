@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Minimize2, Power, Check, HelpCircle } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import { useI18n } from '@/core/i18n';
 import { tauriWidgetService } from '@/services/tauriWidgetService';
 
@@ -16,8 +17,6 @@ export const WindowCloseConfirmModal: React.FC<WindowCloseConfirmModalProps> = (
   const [action, setAction] = useState<'tray' | 'exit'>('tray');
   const [remember, setRemember] = useState(true);
 
-  if (!isOpen) return null;
-
   const handleConfirm = async () => {
     if (remember) {
       tauriWidgetService.setCloseActionPreference(action);
@@ -32,33 +31,38 @@ export const WindowCloseConfirmModal: React.FC<WindowCloseConfirmModalProps> = (
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-150"
-      onClick={onClose}
-    >
-      <div
-        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-in zoom-in-98 duration-150"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* 标题 */}
-        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-            <HelpCircle className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100">
-              {language === 'zh-CN' ? '关闭 Tilo 主窗口' : 'Close Tilo Window'}
-            </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              {language === 'zh-CN'
-                ? '请选择关闭主窗口时的运行行为：'
-                : 'Choose what happens when you close the main window:'}
-            </p>
-          </div>
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '关闭 Tilo 主窗口' : 'Close Tilo Window'}
+      title={
+        <span className="flex items-center gap-2">
+          <HelpCircle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+          {language === 'zh-CN' ? '关闭 Tilo 主窗口' : 'Close Tilo Window'}
+        </span>
+      }
+      description={language === 'zh-CN' ? '请选择关闭主窗口时的运行行为：' : 'Choose what happens when you close the main window:'}
+      bodyClassName="px-5 pb-3"
+      footer={
+        <div className="flex items-center justify-end gap-2 text-xs">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-3.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors font-medium cursor-pointer"
+          >
+            {language === 'zh-CN' ? '取消' : 'Cancel'}
+          </button>
+          <button
+            type="button"
+            onClick={handleConfirm}
+            className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors shadow-2xs cursor-pointer"
+          >
+            {language === 'zh-CN' ? '确定' : 'Confirm'}
+          </button>
         </div>
-
-        {/* 选项区 */}
-        <div className="p-5 space-y-3 text-xs">
+      }
+    >
+      <div className="space-y-3 text-xs">
           {/* 选项 1: 最小化到托盘 */}
           <div
             onClick={() => setAction('tray')}
@@ -136,24 +140,6 @@ export const WindowCloseConfirmModal: React.FC<WindowCloseConfirmModalProps> = (
           </div>
         </div>
 
-        {/* 底部按钮 */}
-        <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-850/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2 text-xs">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-3.5 py-1.5 rounded-lg text-slate-600 dark:text-slate-400 hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors font-medium cursor-pointer"
-          >
-            {language === 'zh-CN' ? '取消' : 'Cancel'}
-          </button>
-          <button
-            type="button"
-            onClick={handleConfirm}
-            className="px-4 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-semibold transition-colors shadow-2xs cursor-pointer"
-          >
-            {language === 'zh-CN' ? '确定' : 'Confirm'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };

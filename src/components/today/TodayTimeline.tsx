@@ -156,6 +156,7 @@ export const TodayTimeline: React.FC<TodayTimelineProps> = ({
             <button
               type="button"
               onClick={() => setDismissedOverflow(true)}
+              aria-label={language === 'zh-CN' ? '收起溢出提示' : 'Dismiss overflow notice'}
               className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />

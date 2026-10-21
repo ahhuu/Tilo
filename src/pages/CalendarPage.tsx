@@ -6,6 +6,7 @@ import { useI18n } from '@/core/i18n';
 import { timeService } from '@/core/time/timeService';
 import {
   createPlannedBlock,
+  updatePlannedBlock,
   deletePlannedBlock,
 } from '@/services/planCommands';
 import { calculateAllocationBreakdown } from '@/core/timeline/timelineEngine';
@@ -148,6 +149,23 @@ export const CalendarPage: React.FC = () => {
         ? `已将「${task.title}」排期至 ${dateStr} ${hour.toString().padStart(2, '0')}:00`
         : `Scheduled "${task.title}" for ${dateStr} ${hour}:00`,
       type: 'success',
+    });
+  };
+
+  // Keyboard alternative to drag-dropping a planned block on the week grid:
+  // move it by ±1 day (←/→) or ±1 hour (↑/↓) and keep its original duration.
+  const handleMoveBlockOnGrid = async (blockId: string, dateStr: string, hour: number) => {
+    const block = plannedBlocks.find((b) => b.id === blockId);
+    if (!block) return;
+    const durationMs = block.endAt - block.startAt;
+    const startAt = new Date(`${dateStr}T${hour.toString().padStart(2, '0')}:00:00`).getTime();
+    const endAt = startAt + durationMs;
+    await updatePlannedBlock(blockId, { startAt, endAt });
+    addToast({
+      message: language === 'zh-CN'
+        ? `已将时间块改期至 ${dateStr} ${hour.toString().padStart(2, '0')}:00`
+        : `Moved block to ${dateStr} ${hour}:00`,
+      type: 'info',
     });
   };
 
@@ -460,6 +478,7 @@ export const CalendarPage: React.FC = () => {
               tasks={allTasks}
               onSlotClick={(dateStr, hour) => setModalSlot({ dateStr, hour })}
               onDropTask={handleDropTaskOnSlot}
+              onMoveBlock={handleMoveBlockOnGrid}
               onInspectTask={handleInspectTask}
               onDeleteBlock={handleDeleteBlock}
             />

@@ -148,7 +148,7 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
           <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5 pointer-events-none" />
           <input
             type="text"
-            placeholder={language === 'zh-CN' ? '过滤任务或按住卡片拖拽排期...' : 'Filter tasks or drag to plan...'}
+            placeholder={language === 'zh-CN' ? '过滤任务，或聚焦卡片后按 Plan 排期...' : 'Filter tasks, or focus a card and press Plan...'}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full h-8 pl-8 pr-3 text-xs bg-slate-50 dark:bg-slate-800/60 rounded-lg border border-slate-200/80 dark:border-slate-700 focus:outline-hidden focus:ring-1 focus:ring-indigo-500 text-slate-900 dark:text-slate-100"
@@ -172,8 +172,17 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
                 draggable={true}
                 onDragStart={(e) => handleDragStart(e, task.id)}
                 onClick={() => onInspectTask(task)}
-                className="p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-grab active:cursor-grabbing group shadow-2xs space-y-1.5"
-                title={language === 'zh-CN' ? '按住可直接拖拽至日历网格排期' : 'Drag onto calendar to plan'}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onInspectTask(task);
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`${task.title}${language === 'zh-CN' ? '，待办。回车查看详情，或使用 Plan 按钮排期' : ', task. Press Enter to inspect, or use the Plan button to schedule'}`}
+                className="p-2.5 rounded-xl border border-slate-200/80 dark:border-slate-700/80 bg-white dark:bg-slate-800/80 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all cursor-grab active:cursor-grabbing group shadow-2xs space-y-1.5 focus:outline-2 focus:outline-indigo-500 focus:ring-2 focus:ring-indigo-400/60"
+                title={language === 'zh-CN' ? '拖拽至日历网格排期，或聚焦后按 Plan 排期' : 'Drag onto calendar, or focus and use Plan to schedule'}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5 min-w-0">
@@ -206,7 +215,7 @@ export const SidePlanningDrawer: React.FC<SidePlanningDrawerProps> = ({
                     )}
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 focus-within:opacity-100 group-focus-within:opacity-100 transition-opacity">
                     {!task.scheduledDate && (
                       <Button
                         size="sm"

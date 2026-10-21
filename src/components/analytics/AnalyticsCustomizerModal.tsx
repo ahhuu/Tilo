@@ -1,12 +1,13 @@
 import React from 'react';
 import { Button } from '@/components/ui/Button';
+import Modal from '@/components/ui/Modal';
 import { useI18n } from '@/core/i18n';
 import {
   type AnalyticsLayoutConfig,
   type AnalyticsWidgetId,
   DEFAULT_ANALYTICS_LAYOUT_CONFIG,
 } from './analyticsLayoutTypes';
-import { X, RotateCcw, Eye, EyeOff, LayoutGrid } from 'lucide-react';
+import { RotateCcw, Eye, EyeOff, LayoutGrid } from 'lucide-react';
 
 interface AnalyticsCustomizerModalProps {
   isOpen: boolean;
@@ -22,8 +23,6 @@ export const AnalyticsCustomizerModal: React.FC<AnalyticsCustomizerModalProps> =
   onChange,
 }) => {
   const { language } = useI18n();
-
-  if (!isOpen) return null;
 
   const widgetsList: { id: AnalyticsWidgetId; title: string; desc: string }[] = [
     {
@@ -88,27 +87,36 @@ export const AnalyticsCustomizerModal: React.FC<AnalyticsCustomizerModalProps> =
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-      <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 w-full max-w-md overflow-hidden flex flex-col max-h-[85vh]">
-        {/* Modal Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <LayoutGrid className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-            <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100">
-              {language === 'zh-CN' ? '自定义数据分析模块' : 'Customize Analytics Widgets'}
-            </h3>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-lg cursor-pointer"
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      ariaLabel={language === 'zh-CN' ? '自定义数据分析模块' : 'Customize Analytics Widgets'}
+      title={
+        <span className="flex items-center gap-2">
+          <LayoutGrid className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+          {language === 'zh-CN' ? '自定义数据分析模块' : 'Customize Analytics Widgets'}
+        </span>
+      }
+      bodyClassName="px-5 pb-3 pt-4"
+      footer={
+        <div className="flex items-center justify-between">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={handleReset}
+            className="text-xs gap-1.5 cursor-pointer"
           >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>{language === 'zh-CN' ? '重置为默认' : 'Reset to Default'}</span>
+          </Button>
 
-        {/* Modal Body: Widgets toggles */}
-        <div className="p-5 overflow-y-auto space-y-3">
+          <Button size="sm" variant="primary" onClick={onClose} className="text-xs cursor-pointer">
+            {language === 'zh-CN' ? '完成' : 'Done'}
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-3">
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {language === 'zh-CN'
               ? '勾选或取消勾选以自定义在数据分析看板中显示的模块：'
@@ -151,23 +159,6 @@ export const AnalyticsCustomizerModal: React.FC<AnalyticsCustomizerModalProps> =
           </div>
         </div>
 
-        {/* Modal Footer */}
-        <div className="flex items-center justify-between px-5 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={handleReset}
-            className="text-xs gap-1.5 cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
-            <span>{language === 'zh-CN' ? '重置为默认' : 'Reset to Default'}</span>
-          </Button>
-
-          <Button size="sm" variant="primary" onClick={onClose} className="text-xs cursor-pointer">
-            {language === 'zh-CN' ? '完成' : 'Done'}
-          </Button>
-        </div>
-      </div>
-    </div>
+    </Modal>
   );
 };
