@@ -6,6 +6,7 @@
 ## Current phase
 
 **Phase 28 — Mobile UX Phase 3 (Interaction Reconstruction), Phase 4 (Native Capabilities) & Symmetric LAN Sync (v1.3.0) — COMPLETE & VERIFIED (2026-10-21)**
+**Phase 29 — v1.4「让差异被看见」P0（首启引导 + 分析页说人话 + 任务/项目索引路由）— VERSION BUMPED 1.4.0, PACKAGING (2026-10-21)**
 
 ## Overall status
 
@@ -156,6 +157,59 @@
 
 - 真机验证：触控排序三范式是否顺手、长按建块是否误吞滚动、底部「项目」入口是否可达、专注切后台后系统通知是否准时、导出报告是否唤起系统分享面板。
 - 验证通过后可选提交推送（git 提交信息纯英文，按记忆约定）。
+
+---
+
+## Phase 29 — v1.4「让差异被看见」P0（首启引导 + 分析页说人话 + 任务/项目索引路由）
+
+> 依据 `docs/audit/PRODUCT_UX_AUDIT_2026-10.md`，v1.4 目标为「让差异被看见」，本轮交付 P0 三件套。版本号尚未 bump（按记忆约定，版本号在发布提交时统一升到 1.4.0）。
+
+### 1. Files changed (Phase 29)
+
+**P0-1 首启引导 + 示例数据告知**
+- `src/components/onboarding/FirstRunGuide.tsx` — **[NEW]** 首次启动 3 步引导（规划→执行→复盘闭环 / 手机记录电脑规划 / 示例数据说明），复用 `BottomSheet` 收口 a11y（Esc、滚动锁定、`role=dialog`、焦点管理）。通过 `localStorage['tilo_has_seen_onboarding']` 去重；`DEMO_DATA_SEEDED_KEY` 导出供设置页联动。
+- `src/App.tsx` — **[UPDATED]** 首次启动（含老用户升级）判定并弹出 `FirstRunGuide`；自动注入示例数据后写 `DEMO_DATA_SEEDED_KEY` 并弹「已载入示例数据，可在设置→数据一键清空」toast。
+- `src/components/settings/DataBackupSection.tsx` — **[UPDATED]** 维护区新增常驻「示例数据」琥珀色提示条 + 「清空示例数据」按钮（仅示例数据存在时显示），点击走既有清空确认流；注入/重置时同步该 flag。
+
+**P0-2 分析页说人话**
+- `src/components/analytics/MetricCard.tsx` — **[UPDATED]** 新增 `hint` 属性；标题右侧加 `Info` 按钮（hover/focus 显示「怎么看」说明，`aria-label`+`title`+focus-visible 收口）。
+- `src/components/analytics/InsightSummary.tsx` — **[NEW]** 纯规则生成「一句话结论」（不依赖任何 AI），按固定优先级取前 3 条洞察（专注体量 / 计划吻合度 / 计划外占比 / 启动延迟 / 完成率 / 超容量），并回链到 `/today`、`/review`。
+- `src/components/analytics/AnalyticsEmptyState.tsx` — **[NEW]** 两态空状态：`none`（彻底无数据，给去今日/复盘的行动入口）与 `insufficient`（数据偏少时的温和提示，不阻断其余模块）。
+- `src/pages/AnalyticsPage.tsx` — **[UPDATED]** 头条 4 张指标卡加 `hint`；插入 `InsightSummary`；用 `hasAnyData`/`showEmptyNone` 切换空状态，无数据时整体隐藏指标与洞察。
+
+**P0-3 任务 / 项目索引路由**
+- `src/pages/TasksPage.tsx` — **[NEW]** 跨项目任务视图：筛选（默认「未完成·已承诺」= `planningBucket!=='someday'` 且未完成；另含全部/已承诺/Someday/已逾期/已完成）、排序（优先级/截止日/计划日/项目/标题）、分组（不分组/按项目）。任务行支持快速完成/重开（走 `completeTask`/`reopenTask` 领域命令）与点击开 Inspector。
+- `src/pages/ProjectsPage.tsx` — **[NEW]** 项目索引：列出全部项目（含任务计数、完成进度条、固定标记），点击跳转 `/projects/:id`。
+- `src/App.tsx` — **[UPDATED]** 新增 `/tasks`、`/projects` 路由（`<ProjectsPage>` + `<TasksPage>`）。
+- `src/components/layout/Sidebar.tsx` — **[UPDATED]** 主导航新增「任务」「项目」两项（图标 `ListTodo` / `FolderKanban`）。
+- `src/components/layout/MobileBottomNav.tsx` — **[UPDATED]** 「更多」抽屉新增「任务」「项目」入口；移除原项目选择抽屉（由新的 `/projects` 索引路由取代），同步清理 `useLiveQuery`/`Project`/`showProjectsSheet` 等不再使用的引入与状态。
+- `src/core/i18n/translations.ts` — **[UPDATED]** 新增 `nav.tasks` 中英词条。
+
+### 2. Features completed (Phase 29)
+
+1. **首启引导**：新用户（及升级老用户）首次进入即看到 3 步引导，理解 Tilo「规划→执行→复盘」闭环与双端角色分工。
+2. **示例数据透明化**：首次自动注入示例数据后明确告知，并在设置→数据提供常驻「清空示例数据」入口，消除"凭空出现数据"的困惑。
+3. **分析页说人话**：头条指标均有「怎么看」说明；纯规则生成的一句话结论把数字翻成行动建议，并可直接跳转今日/复盘；彻底无数据与数据偏少两态空状态。
+4. **任务 / 项目索引**：新增 `/tasks` 跨项目筛选排序分组视图（默认聚焦"未完成且已承诺"）与 `/projects` 项目总览，补齐信息架构缺口；侧边栏与移动端「更多」均可直达。
+
+### 3. TypeScript / ESLint / tests / build (Phase 29)
+
+- `npm run typecheck` — Passed (0 errors)。
+- `npm run lint` — Passed（仅 6 条 `react-hooks/exhaustive-deps` warning，均为可选依赖提示，与既有代码风格一致，非 error）。
+- `npm run test` — Passed (130/130)。
+- `npm run build` (Vite web) — Passed（42.5s，产物 `dist/assets/index-B64kVbNL.js`；末尾 dynamic-import chunk 提示为既有模块既有告警，与本次无关）。
+- 桌面 Tauri / 手机 APK 重打包 — Not run（本轮未改 Rust 与 Android 原生代码）。
+
+### 4. Known issues (Phase 29)
+
+- 版本号尚未 bump 到 1.4.0（按约定在发布提交时统一升，并同步 README/CHANGELOG/RELEASE_NOTES 等）。
+- "已承诺" 语义采用 `planningBucket !== 'someday'` 作为可解释实现，若后续产品上希望区分"已排入某天"与"已认领但未排期"，需再细化。
+- 移动端「更多」抽屉新增两项后，小屏需确认不溢出（已用现有抽屉布局，未单独真机验证）。
+
+### 5. Next task (Phase 29)
+
+- 用户确认后：版本号升 1.4.0 + 同步文档 + 单一 `release: Tilo v1.4.0` 提交推送（git 提交纯英文，绕过本机 Clash 代理）。
+- 视验证情况继续 v1.4 余下项或转入 v1.5（一致性收口：统一 Modal 外壳、拖拽键盘替代、a11y 基线、反馈收敛）。
 
 ## 5. Next task
 
@@ -514,3 +568,14 @@
 - `refreshOwnPayload` 在桥缺失时输出明确警告，便于后续排查。
 
 **验证**：`typecheck` / `lint` / `test`(130/130) 全过；桌面 MSI/NSIS 15:31、APK 15:32。
+
+### 8. 产品与体验审计（2026-10-21，仅文档，无代码改动）
+
+- 产出 `docs/audit/PRODUCT_UX_AUDIT_2026-10.md`：市场对照（Sunsama / Motion / Reclaim / Structured / Akiflow / Morgen）、差异化评估、UX 审计（IA / 旅程 / 一致性 / 可访问性 / 性能 / 首启）、P0–P2 改动方案、版本节奏建议、明确不做清单。
+- 关键结论（供下一会话直接接手）：
+  1. 最高杠杆问题是** Analytics 页无空态、无指标解读、无入口引导**——新用户感知不到「计划 vs 实际」这一核心差异。
+  2. **一致性债务到临界点**：28 个手写弹窗壳、3 套并行反馈机制、z-index 四种取值、约 30 个 div+onClick 缺 role/tabIndex，全局 `:focus-visible` 缺失（违反 AGENTS.md 第 10 条）。
+  3. **IA 缺 `/tasks` 与 `/projects` 索引路由**，削弱「审查自己的承诺」这一核心动作。
+  4. **零 onboarding**，且演示数据首次启动静默注入、空态无 CTA。
+  5. 差异化护城河：计划准确度复合指标、不可变复盘修订、本地优先（可对标 Clockwise 2026-03 关停事件）、强约束领域模型。
+- 建议下一步（v1.4 主题「让差异被看见」）：首启引导 + 演示数据明示 → Analytics 页讲人话 → 补 `/tasks` 与 `/projects`。

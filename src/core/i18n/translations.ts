@@ -6,11 +6,12 @@ export const translations = {
     'nav.today': '今日',
     'nav.inbox': '收集箱',
     'nav.calendar': '日历',
-    'nav.goals': '目标与项目',
+    'nav.goals': '目标',
     'nav.analytics': '统计分析',
     'nav.review': '复盘中心',
     'nav.settings': '系统设置',
     'nav.projects': '项目',
+    'nav.tasks': '任务',
     'nav.collapseSidebar': '收起侧边栏',
     'nav.expandSidebar': '展开侧边栏',
 
@@ -69,7 +70,7 @@ export const translations = {
     'inbox.batchDelete': '批量删除',
 
     // Goals & Projects
-    'goals.title': '战略目标与项目',
+    'goals.title': '目标',
     'goals.newGoal': '新建目标',
     'goals.newProject': '新建项目',
     'goals.activeGoals': '进行中目标',
@@ -116,11 +117,12 @@ export const translations = {
     'nav.today': 'Today',
     'nav.inbox': 'Inbox',
     'nav.calendar': 'Calendar',
-    'nav.goals': 'Goals & Projects',
+    'nav.goals': 'Goals',
     'nav.analytics': 'Analytics',
     'nav.review': 'Review Hub',
     'nav.settings': 'Settings',
     'nav.projects': 'Projects',
+    'nav.tasks': 'Tasks',
     'nav.collapseSidebar': 'Collapse sidebar',
     'nav.expandSidebar': 'Expand sidebar',
 
@@ -179,7 +181,7 @@ export const translations = {
     'inbox.batchDelete': 'Delete Selected',
 
     // Goals & Projects
-    'goals.title': 'Goals & Projects',
+    'goals.title': 'Goals',
     'goals.newGoal': 'New Goal',
     'goals.newProject': 'New Project',
     'goals.activeGoals': 'Active Goals',

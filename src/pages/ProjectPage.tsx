@@ -79,8 +79,8 @@ export const ProjectPage: React.FC = () => {
     return (
       <div className="p-12 text-center text-xs text-slate-400 space-y-2">
         <p>{language === 'zh-CN' ? '未找到项目。' : 'Project not found.'}</p>
-        <Button size="sm" variant="ghost" onClick={() => navigate('/goals')}>
-          {language === 'zh-CN' ? '返回目标与项目' : 'Back to Goals'}
+        <Button size="sm" variant="ghost" onClick={() => navigate('/projects')}>
+          {language === 'zh-CN' ? '返回项目列表' : 'Back to Projects'}
         </Button>
       </div>
     );
@@ -212,11 +212,11 @@ export const ProjectPage: React.FC = () => {
       {/* Back button & Navigation */}
       <button
         type="button"
-        onClick={() => navigate('/goals')}
+        onClick={() => navigate('/projects')}
         className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        <span>{language === 'zh-CN' ? '返回战略目标与项目总览' : 'Back to Goals & Overview'}</span>
+        <span>{language === 'zh-CN' ? '返回项目列表' : 'Back to Projects'}</span>
       </button>
 
       {/* Project Header */}

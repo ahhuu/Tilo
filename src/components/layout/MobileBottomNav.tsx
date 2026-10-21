@@ -1,11 +1,8 @@
 import React, { useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { useLiveQuery } from 'dexie-react-hooks';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
 import { useInboxItems } from '@/storage/hooks/useLiveQuery';
-import { db } from '@/storage/db';
-import type { Project } from '@/core/types/domain';
 import {
   CheckCircle2,
   Inbox,
@@ -33,23 +30,21 @@ export const MobileBottomNav: React.FC = () => {
   const unsortedItems = useInboxItems('unsorted');
   const unsortedCount = unsortedItems?.length ?? 0;
 
-  // 项目列表（用于「更多 → 项目」选择抽屉，解决手机端无法进入项目页）
-  const projects = useLiveQuery(() => db.projects.toArray(), []) ?? [];
-
   // 更多抽屉与快捷创建弹层状态
   const [showMoreDrawer, setShowMoreDrawer] = useState(false);
   const [showQuickSheet, setShowQuickSheet] = useState(false);
   const [showLanSyncModal, setShowLanSyncModal] = useState(false);
-  const [showProjectsSheet, setShowProjectsSheet] = useState(false);
 
   const moreItems = [
+    { to: '/tasks', label: t('nav.tasks'), icon: ListTodo, desc: language === 'zh-CN' ? '跨项目筛选、排序与分组' : 'Cross-project filter & sort' },
+    { to: '/projects', label: t('nav.projects'), icon: FolderKanban, desc: language === 'zh-CN' ? '浏览全部项目与进度' : 'All projects & progress' },
     { to: '/goals', label: t('nav.goals'), icon: Target, desc: language === 'zh-CN' ? '长期愿景与阶段成果' : 'Long-term Goals & Outcomes' },
     { to: '/analytics', label: t('nav.analytics'), icon: BarChart3, desc: language === 'zh-CN' ? '专注统计与完成度分析' : 'Productivity Analytics' },
     { to: '/review', label: t('nav.review'), icon: BookOpen, desc: language === 'zh-CN' ? '每日与每周深度复盘' : 'Daily & Weekly Reviews' },
     { to: '/settings', label: t('nav.settings'), icon: Settings, desc: language === 'zh-CN' ? '通用偏好、备份与数据' : 'Preferences & Backup' },
   ];
 
-  const isMoreActive = ['/goals', '/analytics', '/review', '/settings', '/projects'].some((path) =>
+  const isMoreActive = ['/goals', '/analytics', '/review', '/settings', '/projects', '/tasks'].some((path) =>
     location.pathname.startsWith(path)
   );
 
@@ -77,6 +72,34 @@ export const MobileBottomNav: React.FC = () => {
             <span className="text-[11px] leading-none">{t('nav.today')}</span>
           </NavLink>
 
+          {/* 日历 (Calendar) */}
+          <NavLink
+            to="/calendar"
+            className={({ isActive }) =>
+              cn(
+                'flex flex-col items-center justify-center flex-1 py-1 transition-colors relative',
+                isActive
+                  ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
+              )
+            }
+          >
+            <Calendar className="w-5 h-5 mb-0.5" />
+            <span className="text-[11px] leading-none">{t('nav.calendar')}</span>
+          </NavLink>
+
+          {/* 中央快捷记录悬浮按钮 (FAB) */}
+          <div className="flex-1 flex justify-center items-center">
+            <button
+              type="button"
+              onClick={() => setShowQuickSheet(true)}
+              aria-label={language === 'zh-CN' ? '快速新建' : 'Quick Create'}
+              className="w-11 h-11 -mt-4 rounded-full bg-indigo-600 active:bg-indigo-700 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 transition-transform active:scale-95 cursor-pointer border-2 border-white dark:border-slate-900"
+            >
+              <Plus className="w-6 h-6 stroke-[2.5]" />
+            </button>
+          </div>
+
           {/* 收集箱 (Inbox) */}
           <NavLink
             to="/inbox"
@@ -98,34 +121,6 @@ export const MobileBottomNav: React.FC = () => {
               )}
             </div>
             <span className="text-[11px] leading-none">{t('nav.inbox')}</span>
-          </NavLink>
-
-          {/* 中央快捷记录悬浮按钮 (FAB) */}
-          <div className="flex-1 flex justify-center items-center">
-            <button
-              type="button"
-              onClick={() => setShowQuickSheet(true)}
-              aria-label={language === 'zh-CN' ? '快速新建' : 'Quick Create'}
-              className="w-11 h-11 -mt-4 rounded-full bg-indigo-600 active:bg-indigo-700 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 transition-transform active:scale-95 cursor-pointer border-2 border-white dark:border-slate-900"
-            >
-              <Plus className="w-6 h-6 stroke-[2.5]" />
-            </button>
-          </div>
-
-          {/* 日历 (Calendar) */}
-          <NavLink
-            to="/calendar"
-            className={({ isActive }) =>
-              cn(
-                'flex flex-col items-center justify-center flex-1 py-1 transition-colors relative',
-                isActive
-                  ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100'
-              )
-            }
-          >
-            <Calendar className="w-5 h-5 mb-0.5" />
-            <span className="text-[11px] leading-none">{t('nav.calendar')}</span>
           </NavLink>
 
           {/* 更多 (More) */}
@@ -276,23 +271,6 @@ export const MobileBottomNav: React.FC = () => {
                 );
               })}
 
-              {/* 项目入口：打开项目选择抽屉 */}
-              <button
-                type="button"
-                onClick={() => setShowProjectsSheet(true)}
-                className="w-full flex items-center gap-3.5 p-3 rounded-xl transition-colors text-left cursor-pointer border border-slate-100 dark:border-slate-800/80 bg-slate-50/60 dark:bg-slate-800/30 text-slate-800 dark:text-slate-200 active:bg-slate-100 dark:active:bg-slate-800"
-              >
-                <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-                  <FolderKanban className="w-4 h-4" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-semibold">{language === 'zh-CN' ? '项目' : 'Projects'}</div>
-                  <div className="text-[11px] text-slate-400 dark:text-slate-500 truncate mt-0.5">
-                    {language === 'zh-CN' ? '进入项目详情页' : 'Open a project'}
-                  </div>
-                </div>
-              </button>
-
               {/* 局域网 WiFi 一键同步专属入口 */}
               <button
                 type="button"
@@ -314,56 +292,6 @@ export const MobileBottomNav: React.FC = () => {
                   </div>
                 </div>
               </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* 项目选择抽屉：手机端进入项目详情页的唯一入口 */}
-      {showProjectsSheet && (
-        <div className="md:hidden fixed inset-0 z-50 flex flex-col justify-end">
-          <div
-            className="absolute inset-0 bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in"
-            onClick={() => setShowProjectsSheet(false)}
-          />
-          <div className="relative bg-white dark:bg-slate-900 rounded-t-2xl p-5 shadow-2xl border-t border-slate-200 dark:border-slate-800 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] animate-in slide-in-from-bottom duration-200 max-h-[70vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4 px-1">
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                {language === 'zh-CN' ? '选择项目' : 'Choose a project'}
-              </h3>
-              <button
-                type="button"
-                onClick={() => setShowProjectsSheet(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {projects.length === 0 ? (
-                <div className="p-4 text-center text-xs text-slate-400">
-                  {language === 'zh-CN' ? '暂无项目' : 'No projects'}
-                </div>
-              ) : (
-                projects.map((p: Project) => (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => {
-                      setShowProjectsSheet(false);
-                      navigate(`/projects/${p.id}`);
-                    }}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl border border-slate-100 dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/30 text-slate-800 dark:text-slate-200 active:bg-slate-100 dark:active:bg-slate-800 transition-colors cursor-pointer"
-                  >
-                    <span
-                      className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: p.color || '#6366f1' }}
-                    />
-                    <span className="text-xs font-semibold truncate">{p.name}</span>
-                  </button>
-                ))
-              )}
             </div>
           </div>
         </div>

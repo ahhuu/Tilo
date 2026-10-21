@@ -16,6 +16,8 @@ import {
   PanelLeftClose,
   Pin,
   FolderDot,
+  ListTodo,
+  FolderKanban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -30,13 +32,15 @@ export const Sidebar: React.FC = () => {
 
   const mainNav = [
     { to: '/today', label: t('nav.today'), icon: CheckCircle2 },
+    { to: '/calendar', label: t('nav.calendar'), icon: Calendar },
     {
       to: '/inbox',
       label: t('nav.inbox'),
       icon: Inbox,
       badge: unsortedCount > 0 ? unsortedCount : null,
     },
-    { to: '/calendar', label: t('nav.calendar'), icon: Calendar },
+    { to: '/tasks', label: t('nav.tasks'), icon: ListTodo },
+    { to: '/projects', label: t('nav.projects'), icon: FolderKanban },
     { to: '/goals', label: t('nav.goals'), icon: Target },
   ];
 

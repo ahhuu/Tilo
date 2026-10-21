@@ -18,6 +18,8 @@ import { ReschedulingSection } from '@/components/analytics/ReschedulingSection'
 import { FocusHeatmapCard } from '@/components/analytics/FocusHeatmapCard';
 import { ChronotypeMatrixCard } from '@/components/analytics/ChronotypeMatrixCard';
 import { AnalyticsCustomizerModal } from '@/components/analytics/AnalyticsCustomizerModal';
+import { InsightSummary } from '@/components/analytics/InsightSummary';
+import { AnalyticsEmptyState } from '@/components/analytics/AnalyticsEmptyState';
 import {
   type AnalyticsLayoutConfig,
   DEFAULT_ANALYTICS_LAYOUT_CONFIG,
@@ -106,6 +108,29 @@ export const AnalyticsPage: React.FC = () => {
   });
 
   const visible = layoutConfig.visibleWidgets;
+  const isZh = language === 'zh-CN';
+
+  // 空状态判定：彻底无数据 / 数据不足（样本太少）
+  const hasAnyData = sessions.length > 0 || plannedBlocks.length > 0 || tasks.length > 0;
+  const hasEnoughFocus = analytics.activeFocusSeconds >= 3600;
+  const showEmptyNone = !hasAnyData;
+
+  const scopeLabel =
+    period === 'thisWeek'
+      ? isZh
+        ? '本周'
+        : 'This week'
+      : period === 'lastWeek'
+        ? isZh
+          ? '上周'
+          : 'Last week'
+        : period === 'thisMonth'
+          ? isZh
+            ? '本月'
+            : 'This month'
+          : isZh
+            ? '上月'
+            : 'Last month';
 
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-6">
@@ -164,94 +189,111 @@ export const AnalyticsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* 1. Headline Metric Cards */}
-      {visible.headline && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <MetricCard
-            title={t('analytics.activeFocus')}
-            value={timeService.formatDuration(analytics.activeFocusSeconds)}
-            subtext={language === 'zh-CN' ? '已记录的前台专注时长总和' : 'Total foreground focus recorded'}
-            icon={<Clock className="w-4 h-4" />}
-            accentColor="#10b981"
-          />
+      {/* 空状态：彻底无数据 / 数据偏少，分别处理 */}
+      {showEmptyNone ? (
+        <AnalyticsEmptyState variant="none" language={language} />
+      ) : (
+        <>
+          {/* 数据偏少时的温和提示，不阻断其余模块 */}
+          {!hasEnoughFocus && <AnalyticsEmptyState variant="insufficient" language={language} />}
 
-          <MetricCard
-            title={t('analytics.plannedTime')}
-            value={timeService.formatDuration(analytics.plannedSeconds)}
-            subtext={language === 'zh-CN' ? '日历计划排期时间块总和' : 'Total scheduled calendar blocks'}
-            icon={<Calendar className="w-4 h-4" />}
-            accentColor="#4f46e5"
-          />
+          {/* 1. Headline Metric Cards */}
+          {visible.headline && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <MetricCard
+                title={t('analytics.activeFocus')}
+                value={timeService.formatDuration(analytics.activeFocusSeconds)}
+                subtext={language === 'zh-CN' ? '已记录的前台专注时长总和' : 'Total foreground focus recorded'}
+                hint={language === 'zh-CN' ? '这是你在该周期内真正按下计时、前台专注的累计时长，不含暂停与切走。' : 'Total time you actually ran the focus timer this period, excluding pauses.'}
+                icon={<Clock className="w-4 h-4" />}
+                accentColor="#10b981"
+              />
 
-          <MetricCard
-            title={t('analytics.timeAccuracy')}
-            value={`${analytics.timeAccuracyPercentage}%`}
-            subtext={language === 'zh-CN' ? '加权计划工时方差吻合度' : 'Weighted plan vs actual accuracy'}
-            icon={<Percent className="w-4 h-4" />}
-            accentColor="#f59e0b"
-          />
+              <MetricCard
+                title={t('analytics.plannedTime')}
+                value={timeService.formatDuration(analytics.plannedSeconds)}
+                subtext={language === 'zh-CN' ? '日历计划排期时间块总和' : 'Total scheduled calendar blocks'}
+                hint={language === 'zh-CN' ? '日历里排期的时间块总和。它代表你「打算」投入多少，而非真正做了多少。' : 'Sum of scheduled calendar blocks — what you intended to spend, not what you did.'}
+                icon={<Calendar className="w-4 h-4" />}
+                accentColor="#4f46e5"
+              />
 
-          <MetricCard
-            title={t('analytics.taskCompletion')}
-            value={`${analytics.taskCompletionRate}%`}
-            subtext={language === 'zh-CN' ? `已完成 ${analytics.completedTasksCount}/${analytics.totalTasksCount} 个任务` : `${analytics.completedTasksCount}/${analytics.totalTasksCount} tasks completed`}
-            icon={<CheckSquare className="w-4 h-4" />}
-            accentColor="#0284c7"
-          />
-        </div>
+              <MetricCard
+                title={t('analytics.timeAccuracy')}
+                value={`${analytics.timeAccuracyPercentage}%`}
+                subtext={language === 'zh-CN' ? '加权计划工时方差吻合度' : 'Weighted plan vs actual accuracy'}
+                hint={language === 'zh-CN' ? '加权后的「计划时长 vs 实际时长」吻合度。100% 代表估得准，越低说明偏差越大。' : 'Weighted match between planned and actual duration. 100% means your estimates were spot-on.'}
+                icon={<Percent className="w-4 h-4" />}
+                accentColor="#f59e0b"
+              />
+
+              <MetricCard
+                title={t('analytics.taskCompletion')}
+                value={`${analytics.taskCompletionRate}%`}
+                subtext={language === 'zh-CN' ? `已完成 ${analytics.completedTasksCount}/${analytics.totalTasksCount} 个任务` : `${analytics.completedTasksCount}/${analytics.totalTasksCount} tasks completed`}
+                hint={language === 'zh-CN' ? '该周期内排期任务中已完成的比例。只看「排期日」当天的完成状态。' : 'Share of scheduled tasks completed within the period’s scheduled dates.'}
+                icon={<CheckSquare className="w-4 h-4" />}
+                accentColor="#0284c7"
+              />
+            </div>
+          )}
+
+          {/* 一句话结论：把数字翻成人话，并回链到今日 / 复盘 */}
+          {visible.headline && (
+            <InsightSummary analytics={analytics} language={language} scopeLabel={scopeLabel} />
+          )}
+
+          {/* 2. Planning Accuracy Breakdown Section */}
+          {visible.planningAccuracy && (
+            <PlanningAccuracySection
+              overallAccuracy={analytics.overallPlanningAccuracyPercentage}
+              timeAccuracy={analytics.timeAccuracyPercentage}
+              scheduleAccuracy={analytics.scheduleAccuracyPercentage}
+              completionAccuracy={analytics.completionAccuracyPercentage}
+              startDelay={analytics.startDelay}
+            />
+          )}
+
+          {/* 3. Unplanned Work & Daily Capacity Section */}
+          {visible.unplannedAndCapacity && (
+            <UnplannedAndCapacitySection
+              unplannedWork={analytics.unplannedWork}
+              capacity={analytics.capacity}
+            />
+          )}
+
+          {/* 4. Daily Plan vs Actual Comparison Chart */}
+          {visible.dailyChart && (
+            <DailyPlanActualChart dailyData={analytics.dailyBreakdown} />
+          )}
+
+          {/* 5. Multi-dimensional Time Allocation Section */}
+          {visible.timeAllocation && (
+            <TimeDistributionSection
+              projectBreakdown={analytics.projectBreakdown}
+              goalBreakdown={analytics.goalBreakdown}
+              priorityBreakdown={analytics.priorityBreakdown}
+              tagBreakdown={analytics.tagBreakdown}
+            />
+          )}
+
+          {/* 6. Estimate Accuracy Distribution Buckets */}
+          {visible.estimateAccuracy && (
+            <EstimateAccuracySection stats={analytics.estimateAccuracy} />
+          )}
+
+          {/* 7. Rescheduling Analysis */}
+          {visible.rescheduling && (
+            <ReschedulingSection rescheduling={analytics.rescheduling} />
+          )}
+
+          {/* 8. Annual Focus Heatmap Matrix */}
+          {visible.focusHeatmap && <FocusHeatmapCard />}
+
+          {/* 9. 24-Hour Chronotype & Energy Distribution */}
+          {visible.chronotypeMatrix && <ChronotypeMatrixCard />}
+        </>
       )}
-
-      {/* 2. Planning Accuracy Breakdown Section */}
-      {visible.planningAccuracy && (
-        <PlanningAccuracySection
-          overallAccuracy={analytics.overallPlanningAccuracyPercentage}
-          timeAccuracy={analytics.timeAccuracyPercentage}
-          scheduleAccuracy={analytics.scheduleAccuracyPercentage}
-          completionAccuracy={analytics.completionAccuracyPercentage}
-          startDelay={analytics.startDelay}
-        />
-      )}
-
-      {/* 3. Unplanned Work & Daily Capacity Section */}
-      {visible.unplannedAndCapacity && (
-        <UnplannedAndCapacitySection
-          unplannedWork={analytics.unplannedWork}
-          capacity={analytics.capacity}
-        />
-      )}
-
-      {/* 4. Daily Plan vs Actual Comparison Chart */}
-      {visible.dailyChart && (
-        <DailyPlanActualChart
-          dailyData={analytics.dailyBreakdown}
-        />
-      )}
-
-      {/* 5. Multi-dimensional Time Allocation Section */}
-      {visible.timeAllocation && (
-        <TimeDistributionSection
-          projectBreakdown={analytics.projectBreakdown}
-          goalBreakdown={analytics.goalBreakdown}
-          priorityBreakdown={analytics.priorityBreakdown}
-          tagBreakdown={analytics.tagBreakdown}
-        />
-      )}
-
-      {/* 6. Estimate Accuracy Distribution Buckets */}
-      {visible.estimateAccuracy && (
-        <EstimateAccuracySection stats={analytics.estimateAccuracy} />
-      )}
-
-      {/* 7. Rescheduling Analysis */}
-      {visible.rescheduling && (
-        <ReschedulingSection rescheduling={analytics.rescheduling} />
-      )}
-
-      {/* 8. Annual Focus Heatmap Matrix */}
-      {visible.focusHeatmap && <FocusHeatmapCard />}
-
-      {/* 9. 24-Hour Chronotype & Energy Distribution */}
-      {visible.chronotypeMatrix && <ChronotypeMatrixCard />}
 
       {/* Customizer Modal */}
       <AnalyticsCustomizerModal

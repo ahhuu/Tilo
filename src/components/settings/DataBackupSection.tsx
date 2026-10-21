@@ -7,6 +7,7 @@ import { exportWorkspaceBackupJson, importWorkspaceBackupJson } from '@/services
 import { seedDemoData } from '@/storage/seed';
 import { db, ensureDefaultWorkspace } from '@/storage/db';
 import { LanSyncModal } from '@/components/sync/LanSyncModal';
+import { DEMO_DATA_SEEDED_KEY } from '@/components/onboarding/FirstRunGuide';
 import {
   Download,
   Upload,
@@ -30,6 +31,10 @@ export const DataBackupSection: React.FC = () => {
   const [isSeeding, setIsSeeding] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showLanSyncModal, setShowLanSyncModal] = useState(false);
+  // 是否已载入示例数据：决定是否在维护区展示「清空示例数据」入口
+  const [demoSeeded, setDemoSeeded] = useState(
+    () => localStorage.getItem(DEMO_DATA_SEEDED_KEY) === 'true'
+  );
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -96,6 +101,8 @@ export const DataBackupSection: React.FC = () => {
     setIsSeeding(true);
     try {
       await seedDemoData(db);
+      localStorage.setItem(DEMO_DATA_SEEDED_KEY, 'true');
+      setDemoSeeded(true);
       addToast({
         message: language === 'zh-CN' ? '已成功注入演示工作区数据！' : 'Demo workspace data seeded!',
         type: 'success',
@@ -127,6 +134,8 @@ export const DataBackupSection: React.FC = () => {
         db.weeklyFocus.clear(),
       ]);
       await ensureDefaultWorkspace(db);
+      localStorage.setItem(DEMO_DATA_SEEDED_KEY, 'false');
+      setDemoSeeded(false);
       setShowResetConfirm(false);
       addToast({
         message: language === 'zh-CN' ? '工作区已重置为干净初始状态。' : 'Workspace reset to clean default state.',
@@ -394,6 +403,29 @@ export const DataBackupSection: React.FC = () => {
               : 'Seed deterministic demo data for evaluation, or wipe workspace clean.'}
           </p>
         </div>
+
+        {/* 示例数据提示条：载入示例数据后常驻显示，提供一键清空入口 */}
+        {demoSeeded && (
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-amber-200 dark:border-amber-900/70 bg-amber-50 dark:bg-amber-950/30 px-3.5 py-2.5">
+            <div className="flex items-center gap-2 min-w-0">
+              <Sparkles className="w-4 h-4 text-amber-500 dark:text-amber-400 shrink-0" />
+              <span className="text-[12px] text-amber-800 dark:text-amber-200 leading-snug">
+                {language === 'zh-CN'
+                  ? '当前为示例数据，体验完可一键清空，换成你自己的规划。'
+                  : 'This is sample data. Clear it anytime to start your own.'}
+              </span>
+            </div>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setShowResetConfirm(true)}
+              className="text-xs text-amber-700 dark:text-amber-200 border-amber-300 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 shrink-0 gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>{language === 'zh-CN' ? '清空示例数据' : 'Clear Sample'}</span>
+            </Button>
+          </div>
+        )}
 
         <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
           <Button

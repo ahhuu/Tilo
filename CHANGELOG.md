@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.4.0] — 2026-10-21
+
+### Summary
+"Let the difference be seen" — Tilo 1.4.0 closes the onboarding and orientation gap surfaced in the product/UX audit: a first-run guide that explains the plan→execute→review loop with transparent demo-data disclosure, an Analytics page that reads like plain language instead of a dashboard, and brand-new `/tasks` and `/projects` index routes so every task and project is reachable in one click.
+
+### Added
+- **First-run onboarding guide** (`components/onboarding/FirstRunGuide.tsx`): a 3-step Linear-style walkthrough shown on first launch (and to upgrading users), explaining the plan→execute→review loop, the desktop/phone division of labor, and the demo data. Reuses `BottomSheet` for full a11y (Esc, scroll lock, `role=dialog`, focus management); gated by `localStorage['tilo_has_seen_onboarding']`.
+- **Transparent demo data**: injecting sample data now sets a `tilo_demo_data_seeded` marker and shows a disclosure toast; Settings → Data gains an always-visible amber banner with a one-click "clear demo data" action.
+- **Analytics speaks human**: top-line metrics carry a "how to read" hint (hover/focus, `aria-label`); a deterministic, AI-free `InsightSummary` turns the week's numbers into one plain-language sentence with reverse links to Today/Review; a two-state `AnalyticsEmptyState` (truly empty vs. not enough data) replaces the blank dashboard.
+- **`/tasks` index route** (`pages/TasksPage.tsx`): a cross-project task view with filter (default **unfinished & committed**), sort (priority/due/scheduled/project/title) and grouping (none/project); quick-complete/reopen via domain commands, click to open Inspector.
+- **`/projects` index route** (`pages/ProjectsPage.tsx`): project overview with task counts, completion progress and pinned markers; click through to `/projects/:id`.
+- **Navigation entries**: both routes are reachable from the desktop sidebar and the mobile "More" drawer; the redundant mobile project-picker sheet was removed in favor of the new index route.
+
+### Fixed
+- (No bug fixes in this pass — see v1.3.0 for the sync/IME fixes that shipped alongside the audit.)
+
+---
+
 ## [1.3.0] — 2026-10-21
 
 ### Summary

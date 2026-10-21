@@ -9,9 +9,9 @@ English Documentation | [简体中文文档](README_CN.md)
 
 ## Release Status
 
-**Current Release**: `Tilo v1.3.0`  
+**Current Release**: `Tilo v1.4.0`  
 **Status**: `Production Ready` (Desktop Web, Tauri Desktop Native, PWA Standalone & Android APK Validated)  
-**Highlights**: Touch-first mobile interaction rebuild, native mobile capabilities (haptics, local notifications, system share, keyboard handling), and symmetric LAN sync with automatic peer discovery.
+**Highlights**: First-run onboarding guide with transparent demo-data disclosure, Analytics that "speaks human" (empty states, metric hints, a rule-based one-line summary), and new `/tasks` and `/projects` index routes.
 
 ---
 
