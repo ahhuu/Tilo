@@ -1,5 +1,6 @@
 import { lanSyncService } from '@/services/lanSyncService';
 import { nativeService } from '@/services/nativeService';
+import { purgeTombstones } from '@/services/tombstoneService';
 import { useUIStore } from '@/stores/uiStore';
 
 const KNOWN_PEERS_KEY = 'tilo_known_sync_peers';
@@ -164,27 +165,31 @@ class SyncManager {
     }
   }
 
+  /**
+   * 只有确实合并出变更时才提示，且 10 秒内最多一次。
+   * 自动同步每 15 秒一轮，若对端无新数据（0/0/0）则完全静默。
+   */
+  private announceSyncChanges(res: { updatedCount: number; addedCount: number; deletedCount: number }) {
+    const changed = (res?.updatedCount ?? 0) + (res?.addedCount ?? 0) + (res?.deletedCount ?? 0);
+    if (changed <= 0) return;
+    const now = Date.now();
+    if (now - this.lastChangeToastAt <= SyncManager.CHANGE_TOAST_INTERVAL_MS) return;
+    this.lastChangeToastAt = now;
+    const parts = [`更新 ${res.updatedCount} 项`, `新增 ${res.addedCount} 项`];
+    if ((res?.deletedCount ?? 0) > 0) parts.push(`删除 ${res.deletedCount} 项`);
+    useUIStore.getState().addToast({
+      message: `已与对端同步（${parts.join('，')}）`,
+      type: 'success',
+    });
+  }
+
   // ---- 接收对端推送的合并数据 ----
   async handleIncomingRemote(payload: unknown) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const res = await lanSyncService.mergeRemotePayload(payload as any);
-      const changed = (res?.updatedCount ?? 0) + (res?.addedCount ?? 0);
       this.lastSyncAt = Date.now();
-
-      // 仅当确实合并出变更时才提示，且 10 秒内最多一次。
-      // 自动同步每 15 秒一轮，若对端无新数据（0/0）则完全静默。
-      if (changed > 0) {
-        const now = Date.now();
-        if (now - this.lastChangeToastAt > SyncManager.CHANGE_TOAST_INTERVAL_MS) {
-          this.lastChangeToastAt = now;
-          useUIStore.getState().addToast({
-            message: `已与对端同步（更新 ${res.updatedCount} 项，新增 ${res.addedCount} 项）`,
-            type: 'success',
-          });
-        }
-      }
-
+      this.announceSyncChanges(res);
       this.refreshOwnPayload();
       this.notify();
     } catch (err) {
@@ -214,7 +219,11 @@ class SyncManager {
     if (this.inFlight.has(url)) return false;
     this.inFlight.add(url);
     try {
-      await lanSyncService.syncWithHost(url, nativeService.isNative() ? 'Android Mobile' : 'Desktop Tilo');
+      const summary = await lanSyncService.syncWithHost(
+        url,
+        nativeService.isNative() ? 'Android Mobile' : 'Desktop Tilo'
+      );
+      this.announceSyncChanges(summary);
       this.knownPeers.add(key);
       this.peerStatus.set(key, 'online');
       this.lastSyncAt = Date.now();
@@ -273,6 +282,10 @@ class SyncManager {
   async init() {
     if (this.initialized) return;
     this.initialized = true;
+
+    // 清理过期墓碑（超过保留期的删除记录不再承担「防复活」职责），
+    // 否则同步载荷会随时间无限增长。
+    purgeTombstones().catch(() => {});
 
     // 手机端：原生服务转发合并请求到此全局函数
     if (nativeService.isNative() && !isTauri()) {

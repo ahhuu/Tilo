@@ -15,6 +15,7 @@ import {
   Target,
 } from 'lucide-react';
 import { useWidgetStore } from '@/stores/widgetStore';
+import { useI18n } from '@/core/i18n';
 import { type WidgetGridId, type InAppGridTransform } from '@/components/widget/widgetTypes';
 import { InboxGrid } from '@/components/widget/grids/InboxGrid';
 import { TasksGrid } from '@/components/widget/grids/TasksGrid';
@@ -42,13 +43,13 @@ const GRID_ICONS: Record<WidgetGridId, React.ComponentType<{ className?: string 
   goals: Target,
 };
 
-const GRID_TITLES: Record<WidgetGridId, string> = {
-  inbox: '闪念收集 (Inbox)',
-  tasks: '今日待办 (Tasks)',
-  session: '专注计时 (Focus)',
-  timeline: '今日日程 (Timeline)',
-  notes: '随手便签 (Notes)',
-  goals: '目标看板 (Goals)',
+const GRID_TITLES: Record<WidgetGridId, { zh: string; en: string }> = {
+  inbox: { zh: '闪念收集', en: 'Inbox' },
+  tasks: { zh: '今日待办', en: 'Tasks' },
+  session: { zh: '专注计时', en: 'Focus' },
+  timeline: { zh: '今日日程', en: 'Timeline' },
+  notes: { zh: '随手便签', en: 'Notes' },
+  goals: { zh: '目标看板', en: 'Goals' },
 };
 
 interface Props {
@@ -72,6 +73,11 @@ export const InAppWidgetShell: React.FC<Props> = ({
     updateGridSettings,
     setOpacity,
   } = useWidgetStore();
+
+  const { language } = useI18n();
+  const isZh = language === 'zh-CN';
+  /** 取词助手：本面板文案密度高，逐条嵌套三元会淹没结构 */
+  const L = (zh: string, en: string) => (isZh ? zh : en);
 
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const [showSettings, setShowSettings] = useState(false);
@@ -98,7 +104,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
 
   const Component = GRID_COMPONENTS[gridId];
   const IconComponent = GRID_ICONS[gridId];
-  const title = GRID_TITLES[gridId];
+  const title = L(GRID_TITLES[gridId].zh, GRID_TITLES[gridId].en);
 
   // 拖动处理逻辑
   const handleMouseDownHeader = (e: React.MouseEvent) => {
@@ -156,13 +162,13 @@ export const InAppWidgetShell: React.FC<Props> = ({
       }
 
       let label: string | null = null;
-      if (hasTop && hasBottom) label = '水平并排对齐';
-      else if (hasLeft && hasRight) label = '垂直对齐';
-      else if (hasSnap) label = '垂直贴靠吸附';
-      else if (hasTop) label = '顶部对齐';
-      else if (hasBottom) label = '底部对齐';
-      else if (hasLeft) label = '左侧对齐';
-      else if (hasRight) label = '右侧对齐';
+      if (hasTop && hasBottom) label = L('水平并排对齐', 'Aligned horizontally');
+      else if (hasLeft && hasRight) label = L('垂直对齐', 'Aligned vertically');
+      else if (hasSnap) label = L('垂直贴靠吸附', 'Snapped vertically');
+      else if (hasTop) label = L('顶部对齐', 'Top aligned');
+      else if (hasBottom) label = L('底部对齐', 'Bottom aligned');
+      else if (hasLeft) label = L('左侧对齐', 'Left aligned');
+      else if (hasRight) label = L('右侧对齐', 'Right aligned');
 
       setAlignment({
         alignLeft: hasLeft,
@@ -302,7 +308,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
                   ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-semibold'
                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/60'
               }`}
-              title={isPinned ? '取消置顶' : '在画布中始终置顶'}
+              title={isPinned ? L('取消置顶', 'Unpin') : L('在画布中始终置顶', 'Always on top')}
             >
               <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
             </button>
@@ -315,7 +321,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
                   ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400'
                   : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/60'
               }`}
-              title="个性化设置"
+              title={L('个性化设置', 'Settings')}
             >
               <Settings2 className="w-3.5 h-3.5" />
             </button>
@@ -324,7 +330,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
               type="button"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-              title="切换亮/暗色"
+              title={L('切换亮/暗色', 'Toggle light / dark')}
             >
               {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
             </button>
@@ -333,7 +339,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
               type="button"
               onClick={() => deactivateGrid(gridId)}
               className="p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-              title="从画中画中关闭"
+              title={L('从画中画中关闭', 'Close this grid')}
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -350,12 +356,12 @@ export const InAppWidgetShell: React.FC<Props> = ({
               <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 mb-3">
                 <span className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                   <Settings2 className="w-3.5 h-3.5 text-indigo-500" />
-                  {title} 专属配置
+                  {isZh ? `${title} 专属配置` : `${title} settings`}
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowSettings(false)}
-                  aria-label="关闭设置"
+                  aria-label={L('关闭设置', 'Close settings')}
                   className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -365,7 +371,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
               {/* 通用毛玻璃透明度 */}
               <div className="mb-4">
                 <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mb-1">
-                  <span>画中画透明度</span>
+                  <span>{L('画中画透明度', 'Grid opacity')}</span>
                   <span className="font-medium">{settings.opacityPercent}%</span>
                 </div>
                 <input
@@ -382,7 +388,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
               {gridId === 'notes' && (
                 <div className="space-y-3 text-xs">
                   <div>
-                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">纸张底色主题</label>
+                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">{L('纸张底色主题', 'Paper theme')}</label>
                     <div className="grid grid-cols-4 gap-1.5">
                       {(['classic', 'yellow', 'mint', 'dark'] as const).map((t) => (
                         <button
@@ -395,13 +401,19 @@ export const InAppWidgetShell: React.FC<Props> = ({
                               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                           }`}
                         >
-                          {t === 'classic' ? '经典白' : t === 'yellow' ? '暖黄便签' : t === 'mint' ? '薄荷绿' : '极夜黑'}
+                          {t === 'classic'
+                            ? L('经典白', 'Classic')
+                            : t === 'yellow'
+                              ? L('暖黄便签', 'Warm yellow')
+                              : t === 'mint'
+                                ? L('薄荷绿', 'Mint')
+                                : L('极夜黑', 'Midnight')}
                         </button>
                       ))}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">默认启动模式</label>
+                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">{L('默认启动模式', 'Default mode')}</label>
                     <div className="grid grid-cols-2 gap-1.5">
                       {(['edit', 'preview'] as const).map((m) => (
                         <button
@@ -414,7 +426,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
                               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                           }`}
                         >
-                          {m === 'edit' ? '写作编辑' : '渲染预览'}
+                          {m === 'edit' ? L('写作编辑', 'Edit') : L('渲染预览', 'Preview')}
                         </button>
                       ))}
                     </div>
@@ -428,15 +440,15 @@ export const InAppWidgetShell: React.FC<Props> = ({
                   <div>
                     <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium flex items-center gap-1">
                       <Volume2 className="w-3.5 h-3.5 text-indigo-500" />
-                      白噪音自然音效
+                      {L('白噪音自然音效', 'Ambient sound')}
                     </label>
                     <div className="grid grid-cols-3 gap-1.5">
                       {[
-                        { id: 'none', label: '无声音' },
-                        { id: 'rain', label: '细雨淅沥' },
-                        { id: 'whitenoise', label: '白噪音' },
-                        { id: 'birds', label: '林间鸟鸣' },
-                        { id: 'fireplace', label: '壁炉火光' },
+                        { id: 'none', zh: '无声音', en: 'None' },
+                        { id: 'rain', zh: '细雨淅沥', en: 'Rain' },
+                        { id: 'whitenoise', zh: '白噪音', en: 'White noise' },
+                        { id: 'birds', zh: '林间鸟鸣', en: 'Birds' },
+                        { id: 'fireplace', zh: '壁炉火光', en: 'Fireplace' },
                       ].map((s) => (
                         <button
                           key={s.id}
@@ -448,7 +460,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
                               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                           }`}
                         >
-                          {s.label}
+                          {L(s.zh, s.en)}
                         </button>
                       ))}
                     </div>
@@ -460,12 +472,12 @@ export const InAppWidgetShell: React.FC<Props> = ({
               {gridId === 'tasks' && (
                 <div className="space-y-3 text-xs">
                   <div>
-                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">任务排序规则</label>
+                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">{L('任务排序规则', 'Sort order')}</label>
                     <div className="grid grid-cols-3 gap-1.5">
                       {[
-                        { id: 'priority', label: '按优先级' },
-                        { id: 'time', label: '按截止时间' },
-                        { id: 'manual', label: '手动排序' },
+                        { id: 'priority', zh: '按优先级', en: 'Priority' },
+                        { id: 'time', zh: '按截止时间', en: 'Due time' },
+                        { id: 'manual', zh: '手动排序', en: 'Manual' },
                       ].map((s) => (
                         <button
                           key={s.id}
@@ -477,7 +489,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
                               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                           }`}
                         >
-                          {s.label}
+                          {L(s.zh, s.en)}
                         </button>
                       ))}
                     </div>
@@ -489,11 +501,11 @@ export const InAppWidgetShell: React.FC<Props> = ({
               {gridId === 'inbox' && (
                 <div className="space-y-3 text-xs">
                   <div>
-                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">列表呈现密度</label>
+                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">{L('列表呈现密度', 'List density')}</label>
                     <div className="grid grid-cols-2 gap-1.5">
                       {[
-                        { id: 'comfortable', label: '宽敞模式' },
-                        { id: 'compact', label: '紧凑模式' },
+                        { id: 'comfortable', zh: '宽敞模式', en: 'Comfortable' },
+                        { id: 'compact', zh: '紧凑模式', en: 'Compact' },
                       ].map((d) => (
                         <button
                           key={d.id}
@@ -505,7 +517,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
                               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                           }`}
                         >
-                          {d.label}
+                          {L(d.zh, d.en)}
                         </button>
                       ))}
                     </div>
@@ -517,12 +529,12 @@ export const InAppWidgetShell: React.FC<Props> = ({
               {gridId === 'timeline' && (
                 <div className="space-y-3 text-xs">
                   <div>
-                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">日程展示范围</label>
+                    <label className="block text-slate-600 dark:text-slate-400 mb-1 font-medium">{L('日程展示范围', 'Time range')}</label>
                     <div className="grid grid-cols-3 gap-1.5">
                       {[
-                        { id: 'upcoming', label: '即将开始' },
-                        { id: 'allDay', label: '全天日程' },
-                        { id: 'afternoon', label: '午后时间' },
+                        { id: 'upcoming', zh: '即将开始', en: 'Upcoming' },
+                        { id: 'allDay', zh: '全天日程', en: 'All day' },
+                        { id: 'afternoon', zh: '午后时间', en: 'Afternoon' },
                       ].map((sc) => (
                         <button
                           key={sc.id}
@@ -534,7 +546,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
                               : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400'
                           }`}
                         >
-                          {sc.label}
+                          {L(sc.zh, sc.en)}
                         </button>
                       ))}
                     </div>
@@ -549,7 +561,7 @@ export const InAppWidgetShell: React.FC<Props> = ({
         <div
           onMouseDown={handleMouseDownResize}
           className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize flex items-center justify-center text-slate-400 hover:text-indigo-600 z-30 group"
-          title="按住拖拽调整尺寸"
+          title={L('按住拖拽调整尺寸', 'Drag to resize')}
         >
           <div className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 group-hover:bg-indigo-500 transition-colors" />
         </div>

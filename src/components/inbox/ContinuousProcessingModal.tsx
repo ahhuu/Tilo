@@ -11,6 +11,7 @@ import {
   markInboxAsIdea,
 } from '@/services/inboxCommands';
 import { db } from '@/storage/db';
+import { softDeleteRow } from '@/services/tombstoneService';
 import {
   X,
   Calendar,
@@ -166,7 +167,7 @@ export const ContinuousProcessingModal: React.FC<ContinuousProcessingModalProps>
             });
             break;
           case 'delete':
-            await db.inboxItems.update(currentItem.id, { deletedAt: Date.now() });
+            await softDeleteRow(db.inboxItems, currentItem.id);
             addToast({
               message:
                 language === 'zh-CN'

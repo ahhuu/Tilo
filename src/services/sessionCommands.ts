@@ -1,5 +1,6 @@
 import { db, DEFAULT_WORKSPACE_ID, type TiloDB } from '@/storage/db';
 import type { Session, SessionSegment, SessionKind, SessionSource, ActivityEvent } from '@/core/types/domain';
+import { hardDeleteWithTombstone } from '@/services/tombstoneService';
 
 export interface StartSessionInput {
   taskId?: string;
@@ -314,11 +315,24 @@ export async function deleteSession(
   const session = await database.sessions.get(sessionId);
   if (!session) return;
 
-  await database.transaction('rw', [database.sessions, database.sessionSegments], async () => {
-    await database.sessionSegments
-      .where('[workspaceId+sessionId]')
-      .equals([session.workspaceId, sessionId])
-      .delete();
-    await database.sessions.delete(sessionId);
-  });
+  const segments = await database.sessionSegments
+    .where('[workspaceId+sessionId]')
+    .equals([session.workspaceId, sessionId])
+    .toArray();
+
+  // 硬删除 + 墓碑：会话和它旗下的分段都要留墓碑，
+  // 否则对端会把它们当成「本地缺失」重新写回来（同步时删除被复活）。
+  await database.transaction(
+    'rw',
+    [database.sessions, database.sessionSegments, database.syncTombstones],
+    async () => {
+      await hardDeleteWithTombstone(
+        database.sessionSegments,
+        'sessionSegments',
+        segments.map((segment) => segment.id),
+        database
+      );
+      await hardDeleteWithTombstone(database.sessions, 'sessions', [sessionId], database);
+    }
+  );
 }

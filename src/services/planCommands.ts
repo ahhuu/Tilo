@@ -1,6 +1,7 @@
 import { db, DEFAULT_WORKSPACE_ID, type TiloDB } from '@/storage/db';
 import type { PlannedBlock, PlannedBlockType, DailyFocus, ActivityEvent, Task } from '@/core/types/domain';
 import { timeService } from '@/core/time/timeService';
+import { hardDeleteWithTombstone } from '@/services/tombstoneService';
 
 export interface CreatePlannedBlockInput {
   taskId?: string;
@@ -148,10 +149,16 @@ export async function deletePlannedBlock(
     payloadJson: { blockId },
   };
 
-  await database.transaction('rw', [database.plannedBlocks, database.activityEvents], async () => {
-    await database.plannedBlocks.delete(blockId);
-    await database.activityEvents.put(event);
-  });
+  // 时间块不进废纸篓（几十处读取点都假设「查不到就是没有」），
+  // 所以保持硬删除，但必须留墓碑——否则对端会把它当成「本地缺失」重新写回来。
+  await database.transaction(
+    'rw',
+    [database.plannedBlocks, database.activityEvents, database.syncTombstones],
+    async () => {
+      await hardDeleteWithTombstone(database.plannedBlocks, 'plannedBlocks', [blockId], database, now);
+      await database.activityEvents.put(event);
+    }
+  );
 }
 
 /**
@@ -307,11 +314,19 @@ export async function deleteRecurrenceSeries(
   seriesId: string,
   database: TiloDB = db
 ): Promise<void> {
+  const blocks = await database.plannedBlocks.where('recurrenceSeriesId').equals(seriesId).toArray();
+
   await database.transaction(
     'rw',
-    [database.recurrenceSeries, database.plannedBlocks, database.activityEvents],
+    [database.recurrenceSeries, database.plannedBlocks, database.syncTombstones],
     async () => {
-      await database.plannedBlocks.where('recurrenceSeriesId').equals(seriesId).delete();
+      await hardDeleteWithTombstone(
+        database.plannedBlocks,
+        'plannedBlocks',
+        blocks.map((block) => block.id),
+        database
+      );
+      // recurrenceSeries 本身不进同步载荷，无需墓碑
       await database.recurrenceSeries.delete(seriesId);
     }
   );

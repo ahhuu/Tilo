@@ -174,9 +174,12 @@ export async function importWorkspaceJSON(
       database.reviews,
       database.reviewRevisions,
       database.templates,
+      database.syncTombstones,
     ],
     async () => {
       await Promise.all([
+        // 恢复备份 = 以备份内容为准：清掉本地墓碑，否则旧删除记录会把刚恢复的数据再删一遍
+        database.syncTombstones.clear(),
         database.workspaces.put(workspace),
         database.goals.bulkPut(validated.goals as never),
         database.projects.bulkPut(validated.projects as never),

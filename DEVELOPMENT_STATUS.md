@@ -8,6 +8,8 @@
 **Phase 28 — Mobile UX Phase 3 (Interaction Reconstruction), Phase 4 (Native Capabilities) & Symmetric LAN Sync (v1.3.0) — COMPLETE & VERIFIED (2026-10-21)**
 **Phase 29 — v1.4「让差异被看见」P0（首启引导 + 分析页说人话 + 任务/项目索引路由）— VERSION BUMPED 1.4.0, PACKAGING (2026-10-21)**
 **Phase 30 — v1.5 一致性收口（统一 Modal 外壳 + 拖拽键盘替代 + 无障碍基线 + 反馈收敛）— VERSION BUMPED 1.5.0, 文档就绪，待验收后单条 release 提交 (2026-10-21)**
+**Phase 31 — v1.5.1 护栏（静态检查固化 + Modal 焦点/返回键修复）— RELEASED (2026-10-22)**
+**Phase 32 — v1.6 体积、结构与同步删除（路由级 code splitting + 依赖瘦身 + 查询范围化 + 巨型组件拆分 + 删除墓碑）— VERSION BUMPED 1.6.0, 待验收后单条 release 提交 (2026-10-22)**
 
 ## Overall status
 
@@ -305,6 +307,89 @@
 ### 5. Next task (Phase 31)
 
 - 进入 **v1.6「轻快」**：路由级 code splitting（首包 1860 kB）、查询日期范围化（`AnalyticsPage`/`CalendarPage` 全表 `toArray`）、widget i18n、巨型组件拆分。
+
+---
+
+## Phase 32 — v1.6 体积、结构与同步删除（路由级 code splitting + 依赖瘦身 + 查询范围化 + 巨型组件拆分 + 删除墓碑）
+
+> 定位：不加功能。处理三类从 V1 起持续累积的成本——首屏把整个路由树和 11 个用不到的 UI 库一起打包；五个组件长到 700~1300 行；局域网同步的「删除」从未参与合并，一端删了另一端会把它推回来。
+
+### 1. Files changed (Phase 32)
+
+**体积**
+
+- `src/App.tsx` — **[UPDATED]** 11 个页面改 `React.lazy`；`/widget/:gridId` 单独 `<Suspense fallback={null}>`。
+- `src/components/layout/AppLayout.tsx` — **[UPDATED]** `<Suspense fallback={<RouteFallback/>}>` 包住 `<Outlet/>`（放在外层，切页不闪）。
+- `src/components/layout/MobileBottomNav.tsx`、`src/components/settings/DataBackupSection.tsx` — **[UPDATED]** `LanSyncModal` 改 lazy + 仅在打开时挂载。
+- `package.json` / `package-lock.json` — **[UPDATED]** 移除 11 个零引用依赖（`recharts`、`motion`、`react-hook-form` + 8 个 `@radix-ui/*`；仅 `react-tooltip` 保留）。
+
+**查询与记忆化**
+
+- `src/pages/AnalyticsPage.tsx` / `src/pages/GoalsPage.tsx` — **[UPDATED]** `plannedBlocks`/`activityEvents` 改 `.where(...).between(...)`；聚合进 `useMemo`；`|| []` 改模块级 `EMPTY_ARRAY`（否则每次渲染新数组，memo 失效）。
+- `src/test/db.test.ts` — **[UPDATED]** 追加范围查询用例（已用错误索引名验证会失败）。
+
+**i18n**
+
+- `WidgetSettingsModal.tsx`、`DesktopWidgetContainer.tsx`、`InAppWidgetWorkspace.tsx`、`InAppWidgetShell.tsx` — **[UPDATED]** 移除硬编码中文，统一 `isZh` / `L(zh,en)`；选项数组 `{id,label}` → `{id,zh,en}`。
+
+**组件拆分（新增文件，导出签名不变）**
+
+- `src/components/widget/StandaloneWidgetShell.tsx` 1325 → **94**：`standalone/useWidgetWindowChrome.ts`（折叠/置顶/锁定/对齐导引线/尺寸复位）、`standalone/WidgetHeader.tsx`、`standalone/WidgetSettingsPanel.tsx`、`standalone/widgetAppearanceStyles.ts`、`standalone/panels/*`（6 个挂件专属面板 + `PanelBits`）。
+- `src/components/timeline/TimelineView.tsx` 1057 → **406**：`TimelineGridHeader.tsx`、`TimelineBlock.tsx`（含徽标/快捷动作/幽灵延伸子组件）、`TimelineBackgroundTrack.tsx`、`useTimelineGestures.ts`、`timelineConstants.ts`。
+- `src/pages/InboxPage.tsx` 857 → **196**：`inbox/useInboxData.ts`、`inbox/useInboxItemActions.ts`、`inbox/useNoteActions.ts`、`InboxHeader.tsx`、`InboxTabs.tsx`、`InboxItemRow.tsx`、`InboxItemsList.tsx`、`NotesList.tsx`。
+- `src/components/sync/LanSyncModal.tsx` 755 → **173**：`sync/useLanSyncSession.ts`、`sync/lansync/DesktopPairingPanel.tsx`、`MobileScanPanel.tsx`、`SyncPeersSection.tsx`。
+- `src/components/settings/WidgetSettingsSection.tsx` 727 → **36**：`widgetSettings/StartupSection.tsx`、`AlignmentSection.tsx`、`AppearanceSection.tsx`、`WidgetBehaviorControls.tsx`、`WidgetStatusSection.tsx`、`WidgetSettingsControls.tsx`、`WidgetStatusProvider.tsx` + `widgetStatusContext.ts`（context/hook 与组件分文件，避开 `react-refresh/only-export-components`）。
+- `src/test/timelineView.test.tsx` — **[NEW]** 7 条契约测试。
+
+**同步删除（墓碑）**
+
+- `src/core/types/sync.ts` — **[NEW]** `SyncedTableName` / `SyncTombstone` / `tombstoneKey` / `mergeVersionTime`（缺 `updatedAt` 的实体退化到 `endAt`/`startAt`）/ `isSoftDeleted`。
+- `src/storage/db.ts` — **[UPDATED]** schema 升到 version 2，新增 `syncTombstones`（主键 `key = table:entityId`，索引 `table`、`deletedAt`）。
+- `src/services/tombstoneService.ts` — **[NEW]** `recordTombstones` / `softDeleteRow` / `restoreSoftDeletedRow` / `hardDeleteWithTombstone` / `loadTombstoneTimes` / `purgeTombstones`（保留 180 天）。
+- `src/services/lanSyncService.ts` — **[UPDATED]** 载荷新增 `tombstones`；合并流程改为「先并墓碑 → 按墓碑删本地 → 再合并数据」，并加三道判定（墓碑后不再写回 / 打平即删除 / 比墓碑新的记录保留）；`SyncResultSummary` 增加 `deletedCount`。
+- `src/services/planCommands.ts` — **[UPDATED]** `deletePlannedBlock`、`deleteRecurrenceSeries` 改 `hardDeleteWithTombstone`。
+- `src/services/sessionCommands.ts` — **[UPDATED]** `deleteSession` 连分段一起写墓碑。
+- `src/services/templateCommands.ts` — **[UPDATED]** `deleteTemplate` 写墓碑；`resetTemplatesToDefault` 清掉模板墓碑（否则重建会被墓碑挡回）。
+- `src/services/autoPackService.ts` — **[UPDATED]** 撤回自动排程的软删除补 `updatedAt`。
+- `src/services/syncManager.ts` — **[UPDATED]** 启动时清理过期墓碑；同步提示改为「更新/新增/删除」，出站方向也提示。
+- `src/pages/inbox/useInboxItemActions.ts`、`useNoteActions.ts`、`src/components/widget/grids/InboxGrid.tsx`、`src/components/projects/MilestoneList.tsx`、`src/components/inbox/ContinuousProcessingModal.tsx` — **[UPDATED]** 6 处直接写 `{ deletedAt }` 改走 `softDeleteRow` / `restoreSoftDeletedRow`。
+- `src/services/exportImportService.ts`、`src/components/settings/DataBackupSection.tsx` — **[UPDATED]** 恢复备份 / 重置工作区时清空墓碑。
+- `src/test/syncDeletion.test.ts` — **[NEW]** 13 条回归测试（两台设备互推载荷）。
+
+### 2. Features completed (Phase 32)
+
+1. **首屏 1860.73 → 736.29 kB**（gzip 509.82 → 221.10，−57%）。`LanSyncModal` 成独立 381 kB chunk，证实扫码库是此前被 `MobileBottomNav` 静态带入首屏的主凶。
+2. **11 个零引用依赖下线**（`motion` 的 9 处「引用」实为 Tailwind `motion-reduce:` 变体）。
+3. **分析/目标页查询范围化**；有意只做安全的一半——`sessions` 保留全表，因为 `analyticsService` 的准确率估算需跨周期全量时长。
+4. **挂件界面双语收口**；顺带补上窗口质感说明的 `descEn`（此前英文界面仍显示 `descZh`）。
+5. **设置页 IPC 去重**：桌面挂件状态改由 context 提供，挂载时只取一次（原为三个区块各取一次）。
+6. **五个巨型组件拆分，行为零变化**：拆完跑 `vite build`，首包字节数与拆分前完全一致（736.29 kB），证明只搬代码没搬进新逻辑。
+7. **删除终于能同步**：合并算法只能比较同一条记录的新旧，无法从「对端没有这条记录」推断删除，于是对端会把旧副本当缺失数据写回来。现在删除本身成为一条可同步的事实——硬删除写墓碑、软删除推进 `updatedAt`、合并先并墓碑再删本地并拒绝写回墓碑记录。同时修掉 `SessionSegment` 无版本字段导致「会话结束时间永远同步不过去」的同源缺陷。
+
+### 3. TypeScript / ESLint / tests / build (Phase 32)
+
+- `npm run verify` — Passed：typecheck 0 error、lint 0 error（6 条既有 warning）、check:jsx **238 文件**无问题、vitest **46 文件 / 162 用例**。
+- `npm run build`（Vite web）— Passed（首包 736.29 kB / gzip 221.10 kB；`index` 736.29、`LanSyncModal` 381.87、`SettingsPage` 159.98、`SingleWidgetPage` 98.64、`TodayPage` 89.95 kB）。
+- 桌面 `npm run tauri build` — **BUILD SUCCESSFUL**：`Tilo_1.6.0_x64_en-US.msi`（3.32 MB）、`Tilo_1.6.0_x64-setup.exe`（2.37 MB）。
+- Android `npx cap copy android` + `gradlew assembleDebug --offline` — **BUILD SUCCESSFUL**：`app-debug.apk`（4.74 MB，versionName `1.6.0` / versionCode `10`）。体积与 1.5.1（4.71 MB）基本持平——Web 产物只占 APK 一小部分，首屏优化体现在解析/执行时间而非包体。
+- 版本号：`package.json` / `package-lock.json` / `src-tauri/tauri.conf.json` = 1.6.0；`android/app/build.gradle` = 1.6.0 / 10；`src-tauri/Cargo.toml` 保持 0.1.0。
+
+### 4. Known issues (Phase 32)
+
+- `SettingsPage`(159.98 kB)、`TodayPage`(89.95 kB) 仍是较大路由 chunk，可按 Tab/区块细拆。
+- `LanSyncModal` 的 381 kB 绝大部分是 `html5-qrcode`，扫码只在移动端用，可按平台条件加载。
+- `standalone/panels/*` 内部文案仍为中文（与 widget 主体双语化不同轮）。
+- 下一梯队组件：`TodayPage` 679 行、`TaskInspector` 663 行、`WeeklyReviewModal` 660 行、`WorkflowSection` 637 行。
+- Android 返回键仍依赖 class + computed z-index + 合成事件探测；周视图键盘改期仅整点粒度（均沿用 v1.5.1 状态）。
+- 同步载荷只覆盖 11 张表：`dailyFocus` / `weeklyFocus` / `tags` / `customFieldValues` / `recurrenceSeries` / `reviews` 仍未参与同步（例如「今天的三件要事」不会跨设备），属于下一轮同步范围。
+- 墓碑保留 180 天：离线超过该时长的设备回连时，其旧副本可能复活（标准取舍，已在 `tombstoneService` 注释中写明）。
+
+### 5. Next task (Phase 32)
+
+- 验收 v1.6.0 后发单条 `release: Tilo v1.6.0` 提交。
+- 下一版候选：`SettingsPage`/`TodayPage` 二次拆分、`html5-qrcode` 平台条件加载、`CALENDAR` 页查询范围化、下一梯队组件拆分。
+
+---
 
 ## 5. Next task
 

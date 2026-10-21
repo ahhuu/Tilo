@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { lazy, Suspense, useState } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useUIStore } from '@/stores/uiStore';
 import { useI18n } from '@/core/i18n';
@@ -20,7 +20,15 @@ import {
   FolderKanban,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { LanSyncModal } from '@/components/sync/LanSyncModal';
+
+/**
+ * 局域网同步弹窗按需加载：它静态引入 `html5-qrcode` + `qrcode` 两个大库，
+ * 而本组件挂在 `AppLayout` 里（每页都在），静态引入等于把扫码库塞进首屏。
+ * 配合下方「仅在打开时挂载」的写法，未点同步前完全不下载。
+ */
+const LanSyncModal = lazy(() =>
+  import('@/components/sync/LanSyncModal').then((m) => ({ default: m.LanSyncModal }))
+);
 
 export const MobileBottomNav: React.FC = () => {
   const location = useLocation();
@@ -298,11 +306,12 @@ export const MobileBottomNav: React.FC = () => {
         </div>
       )}
 
-      {/* 局域网同步弹窗 */}
-      <LanSyncModal
-        isOpen={showLanSyncModal}
-        onClose={() => setShowLanSyncModal(false)}
-      />
+      {/* 局域网同步弹窗：仅在打开时挂载，配合 lazy 让扫码库不进首包 */}
+      {showLanSyncModal && (
+        <Suspense fallback={null}>
+          <LanSyncModal isOpen onClose={() => setShowLanSyncModal(false)} />
+        </Suspense>
+      )}
     </>
   );
 };

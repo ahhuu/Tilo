@@ -1,17 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import React, { lazy, Suspense, useEffect, useState } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { TodayPage } from '@/pages/TodayPage';
-import { InboxPage } from '@/pages/InboxPage';
-import { CalendarPage } from '@/pages/CalendarPage';
-import { GoalsPage } from '@/pages/GoalsPage';
-import { AnalyticsPage } from '@/pages/AnalyticsPage';
-import { ReviewPage } from '@/pages/ReviewPage';
-import { SettingsPage } from '@/pages/SettingsPage';
-import { ProjectPage } from '@/pages/ProjectPage';
-import { ProjectsPage } from '@/pages/ProjectsPage';
-import { TasksPage } from '@/pages/TasksPage';
-import { SingleWidgetPage } from '@/pages/SingleWidgetPage';
 import { WindowCloseConfirmModal } from '@/components/global/WindowCloseConfirmModal';
 import { ConfirmDialogHost } from '@/components/ui/ConfirmDialogHost';
 import { ErrorBoundary } from '@/components/global/ErrorBoundary';
@@ -22,6 +11,37 @@ import { tauriWidgetService } from '@/services/tauriWidgetService';
 import { nativeService } from '@/services/nativeService';
 import { useUIStore } from '@/stores/uiStore';
 import { getCurrentWebviewWindow } from '@tauri-apps/api/webviewWindow';
+
+/**
+ * 页面按路由懒加载。
+ *
+ * v1.5 时首包已涨到 1860 kB（v1.3 是 960 kB），因为所有页面都在入口静态引入，
+ * 打开「今日」也要下载统计页、收集箱、设置页的全部代码。改为按路由分割后，
+ * 每个页面独立成 chunk，首屏只加载今日页 + 布局壳。
+ */
+const TodayPage = lazy(() => import('@/pages/TodayPage').then((m) => ({ default: m.TodayPage })));
+const InboxPage = lazy(() => import('@/pages/InboxPage').then((m) => ({ default: m.InboxPage })));
+const CalendarPage = lazy(() =>
+  import('@/pages/CalendarPage').then((m) => ({ default: m.CalendarPage }))
+);
+const GoalsPage = lazy(() => import('@/pages/GoalsPage').then((m) => ({ default: m.GoalsPage })));
+const AnalyticsPage = lazy(() =>
+  import('@/pages/AnalyticsPage').then((m) => ({ default: m.AnalyticsPage }))
+);
+const ReviewPage = lazy(() => import('@/pages/ReviewPage').then((m) => ({ default: m.ReviewPage })));
+const SettingsPage = lazy(() =>
+  import('@/pages/SettingsPage').then((m) => ({ default: m.SettingsPage }))
+);
+const ProjectPage = lazy(() =>
+  import('@/pages/ProjectPage').then((m) => ({ default: m.ProjectPage }))
+);
+const ProjectsPage = lazy(() =>
+  import('@/pages/ProjectsPage').then((m) => ({ default: m.ProjectsPage }))
+);
+const TasksPage = lazy(() => import('@/pages/TasksPage').then((m) => ({ default: m.TasksPage })));
+const SingleWidgetPage = lazy(() =>
+  import('@/pages/SingleWidgetPage').then((m) => ({ default: m.SingleWidgetPage }))
+);
 
 /**
  * 判断当前是否处于"桌面挂件窗口"上下文。
@@ -148,7 +168,15 @@ export const App: React.FC = () => {
     <ErrorBoundary>
       <HashRouter>
         <Routes>
-          <Route path="/widget/:gridId" element={<SingleWidgetPage />} />
+          {/* 挂件窗口是独立的小窗，加载期留空即可（骨架在小窗里反而更显突兀） */}
+          <Route
+            path="/widget/:gridId"
+            element={
+              <Suspense fallback={null}>
+                <SingleWidgetPage />
+              </Suspense>
+            }
+          />
           <Route path="/widget" element={<Navigate to="/widget/tasks" replace />} />
           <Route element={<AppLayout />}>
             <Route path="/" element={<Navigate to="/today" replace />} />

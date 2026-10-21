@@ -1,4 +1,5 @@
 import Dexie, { type Table } from 'dexie';
+import type { SyncTombstone } from '@/core/types/sync';
 import type {
   Workspace,
   Goal,
@@ -53,6 +54,8 @@ export class TiloDB extends Dexie {
   reviews!: Table<Review, string>;
   reviewRevisions!: Table<ReviewRevision, string>;
   templates!: Table<Template, string>;
+  /** 删除墓碑：让「删除」这一事实也能参与同步（见 core/types/sync.ts） */
+  syncTombstones!: Table<SyncTombstone, string>;
 
   constructor(dbName: string = 'tilo_db') {
     super(dbName);
@@ -83,6 +86,12 @@ export class TiloDB extends Dexie {
       reviews: 'id, workspaceId, type, periodKey, status, [workspaceId+periodKey]',
       reviewRevisions: 'id, workspaceId, reviewId, revision, createdAt, [workspaceId+reviewId]',
       templates: 'id, workspaceId, kind, [workspaceId+kind]',
+    });
+
+    // Schema Version 2 — 新增删除墓碑表（硬删除的记录靠它在设备间传播「已删除」）
+    // 只声明新增的表，其余表结构由 version(1) 继承。
+    this.version(2).stores({
+      syncTombstones: 'key, table, deletedAt',
     });
   }
 }

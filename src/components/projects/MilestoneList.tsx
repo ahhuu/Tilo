@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/storage/db';
 import { createMilestone } from '@/services/projectCommands';
+import { softDeleteRow } from '@/services/tombstoneService';
 import { useI18n } from '@/core/i18n';
 import { useUIStore } from '@/stores/uiStore';
 import { Button } from '@/components/ui/Button';
@@ -87,7 +88,7 @@ export const MilestoneList: React.FC<MilestoneListProps> = ({ projectId }) => {
   };
 
   const handleDelete = async (milestoneId: string) => {
-    await db.milestones.update(milestoneId, { deletedAt: Date.now() });
+    await softDeleteRow(db.milestones, milestoneId);
     addToast({
       message: language === 'zh-CN' ? '里程碑已删除' : 'Milestone deleted',
       type: 'info',

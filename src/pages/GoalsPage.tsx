@@ -19,6 +19,9 @@ import {
 } from 'lucide-react';
 import type { Goal, GoalProgressMode, GoalStatus } from '@/core/types/domain';
 
+/** 加载期稳定空数组：`|| []` 每次渲染新建数组会让 useMemo 依赖恒变 */
+const EMPTY_ARRAY: never[] = [];
+
 export const GoalsPage: React.FC = () => {
   const { t, language } = useI18n();
   const [tab, setTab] = useState<GoalStatus>('active');
@@ -31,19 +34,25 @@ export const GoalsPage: React.FC = () => {
   const allGoalsRaw = useLiveQuery<Goal[]>(() => db.goals.filter((g) => !g.deletedAt).toArray(), []);
   const allGoals: Goal[] = useMemo(() => allGoalsRaw || [], [allGoalsRaw]);
   const allProjects = useLiveQuery(() => db.projects.filter((p) => !p.deletedAt).toArray(), []) || [];
-  const weeklyFocusEntries = useLiveQuery(
-    () => db.weeklyFocus.where('weekKey').equals(weekKey).sortBy('rank'),
-    [weekKey]
-  ) || [];
+  const weeklyFocusEntries =
+    useLiveQuery(
+      () => db.weeklyFocus.where('weekKey').equals(weekKey).sortBy('rank'),
+      [weekKey]
+    ) ?? EMPTY_ARRAY;
 
-  const weeklyGoalIds = new Set(
-    weeklyFocusEntries
-      .filter((w) => {
-        const g = allGoals.find((goal) => goal.id === w.goalId);
-        return g && g.status !== 'completed' && g.status !== 'archived' && !g.deletedAt;
-      })
-      .map((w) => w.goalId)
-  );
+  // 每周聚焦的 id 集合。原实现在 filter 里做 allGoals.find（O(n²)），
+  // 且每次渲染都重建；改为先建 id→goal 映射再判断，并按依赖 memo。
+  const weeklyGoalIds = useMemo(() => {
+    const goalMap = new Map(allGoals.map((g) => [g.id, g]));
+    const ids = new Set<string>();
+    for (const entry of weeklyFocusEntries) {
+      const goal = goalMap.get(entry.goalId);
+      if (goal && goal.status !== 'completed' && goal.status !== 'archived' && !goal.deletedAt) {
+        ids.add(entry.goalId);
+      }
+    }
+    return ids;
+  }, [weeklyFocusEntries, allGoals]);
 
   // Self-healing sweep: ensure completed or archived goals never stay in weekly focus
   useEffect(() => {
@@ -61,16 +70,31 @@ export const GoalsPage: React.FC = () => {
     sweepWeeklyFocus();
   }, [allGoals]);
 
-  // 4 canonical statuses counts for Goals
-  const activeGoalsCount = allGoals.filter((g) => g.status === 'active' || !g.status).length;
-  const completedGoalsCount = allGoals.filter((g) => g.status === 'completed').length;
-  const pausedGoalsCount = allGoals.filter((g) => g.status === 'paused').length;
-  const archivedGoalsCount = allGoals.filter((g) => g.status === 'archived').length;
+  // 4 个状态计数原本是 4 次独立 filter（每次渲染各扫一遍），合并为单趟统计并按依赖 memo
+  const goalsByStatus = useMemo(() => {
+    const counts = { active: 0, completed: 0, paused: 0, archived: 0 };
+    for (const goal of allGoals) {
+      if (goal.status === 'completed') counts.completed++;
+      else if (goal.status === 'paused') counts.paused++;
+      else if (goal.status === 'archived') counts.archived++;
+      else counts.active++; // 'active' 或未设置状态
+    }
+    return counts;
+  }, [allGoals]);
 
-  const filteredGoals = allGoals.filter((g) => {
-    if (tab === 'active') return g.status === 'active' || !g.status;
-    return g.status === tab;
-  });
+  const activeGoalsCount = goalsByStatus.active;
+  const completedGoalsCount = goalsByStatus.completed;
+  const pausedGoalsCount = goalsByStatus.paused;
+  const archivedGoalsCount = goalsByStatus.archived;
+
+  const filteredGoals = useMemo(
+    () =>
+      allGoals.filter((g) => {
+        if (tab === 'active') return g.status === 'active' || !g.status;
+        return g.status === tab;
+      }),
+    [allGoals, tab]
+  );
 
   const handleCreateGoal = async (params: {
     title: string;

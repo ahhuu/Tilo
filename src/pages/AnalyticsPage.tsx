@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/storage/db';
 import { timeService } from '@/core/time/timeService';
@@ -64,6 +64,15 @@ function getInitialLayout(): AnalyticsLayoutConfig {
   return DEFAULT_ANALYTICS_LAYOUT_CONFIG;
 }
 
+/**
+ * 加载期的稳定空数组。
+ *
+ * `useLiveQuery` 在首次解析前返回 `undefined`，习惯写法 `|| []` 每次渲染都会
+ * 新建一个数组字面量，任何以它为依赖的 useMemo 都会失效（且触发 lint 警告）。
+ * 共享同一个只读空数组可以让引用保持稳定。
+ */
+const EMPTY_ARRAY: never[] = [];
+
 export const AnalyticsPage: React.FC = () => {
   const { t, language } = useI18n();
   const [period, setPeriod] = useState<AnalyticsPeriod>(getInitialPeriod);
@@ -88,30 +97,67 @@ export const AnalyticsPage: React.FC = () => {
     setLayoutConfig(nextConfig);
   };
 
-  // Live queries
-  const sessions = useLiveQuery(() => db.sessions.toArray(), []) || [];
-  const plannedBlocks = useLiveQuery(() => db.plannedBlocks.toArray(), []) || [];
-  const tasks = useLiveQuery(() => db.tasks.toArray(), []) || [];
-  const projects = useLiveQuery(() => db.projects.toArray(), []) || [];
-  const goals = useLiveQuery(() => db.goals.toArray(), []) || [];
-  const activityEvents = useLiveQuery(() => db.activityEvents.toArray(), []) || [];
+  // 参照时刻刻意只在切换周期时取样（下方 useMemo 以 period 为 key）。若每帧都用
+  // Date.now()，live query 的依赖会不停变化 → 反复重新查询，周期边界也会抖动。
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const referenceMs = useMemo(() => Date.now(), [period]);
+  const bounds = getPeriodBounds(period, referenceMs, language);
 
-  const bounds = getPeriodBounds(period, Date.now(), language);
-  const analytics = computeAnalytics({
-    period,
-    sessions,
-    plannedBlocks,
-    tasks,
-    projects,
-    goals,
-    activityEvents,
-  });
+  // Live queries
+  // sessions / tasks / projects / goals 仍需全量：
+  //   - 估算准确率要算「某个任务的**全部**专注时长」（含周期外），见
+  //     analyticsService 里 taskSessions 的用法，按周期截断会算错；
+  //   - tasks/projects/goals 是 taskMap / projectMap 的查表来源，跨周期引用。
+  // plannedBlocks 与 activityEvents 则不同：它们在 computeAnalytics 里只被
+  // 「落在周期内」这一个条件消费，因此改成索引范围查询后指标口径完全不变，
+  // 只是不再把全部历史读进内存。
+  const sessions = useLiveQuery(() => db.sessions.toArray(), []) ?? EMPTY_ARRAY;
+  const tasks = useLiveQuery(() => db.tasks.toArray(), []) ?? EMPTY_ARRAY;
+  const projects = useLiveQuery(() => db.projects.toArray(), []) ?? EMPTY_ARRAY;
+  const goals = useLiveQuery(() => db.goals.toArray(), []) ?? EMPTY_ARRAY;
+  const plannedBlocks =
+    useLiveQuery(
+      () =>
+        db.plannedBlocks
+          .where('startAt')
+          .between(bounds.startMs, bounds.endMs, true, false)
+          .toArray(),
+      [bounds.startMs, bounds.endMs]
+    ) ?? EMPTY_ARRAY;
+  const activityEvents =
+    useLiveQuery(
+      () =>
+        db.activityEvents
+          .where('occurredAt')
+          .between(bounds.startMs, bounds.endMs, true, false)
+          .toArray(),
+      [bounds.startMs, bounds.endMs]
+    ) ?? EMPTY_ARRAY;
+
+  // computeAnalytics 是重计算，且曾直接在渲染体内调用 —— 任何无关状态变化
+  // （如打开自定义面板）都会把它整条流水线重跑一遍。
+  const analytics = useMemo(
+    () =>
+      computeAnalytics({
+        period,
+        sessions,
+        plannedBlocks,
+        tasks,
+        projects,
+        goals,
+        activityEvents,
+        referenceDateMs: referenceMs,
+      }),
+    [period, sessions, plannedBlocks, tasks, projects, goals, activityEvents, referenceMs]
+  );
 
   const visible = layoutConfig.visibleWidgets;
   const isZh = language === 'zh-CN';
 
   // 空状态判定：彻底无数据 / 数据不足（样本太少）
-  const hasAnyData = sessions.length > 0 || plannedBlocks.length > 0 || tasks.length > 0;
+  // 注：plannedBlocks 现在是周期内的数量，所以这里的判据以 sessions / tasks 为主
+  // （两者仍是全量），避免「只有远期排期块」的用户被判成无数据。
+  const hasAnyData = sessions.length > 0 || tasks.length > 0 || plannedBlocks.length > 0;
   const hasEnoughFocus = analytics.activeFocusSeconds >= 3600;
   const showEmptyNone = !hasAnyData;
 

@@ -1,5 +1,6 @@
 import { db, DEFAULT_WORKSPACE_ID, type TiloDB } from '@/storage/db';
 import { timeService } from '@/core/time/timeService';
+import { softDeleteRow } from '@/services/tombstoneService';
 import type { PlannedBlock, ActivityEvent } from '@/core/types/domain';
 
 export interface AutoPackSlot {
@@ -281,7 +282,8 @@ export async function undoAutoPack(
 
   await database.transaction('rw', [database.plannedBlocks, database.activityEvents], async () => {
     for (const id of blockIds) {
-      await database.plannedBlocks.update(id, { deletedAt: now });
+      // 软删除必须同时推进 updatedAt，否则同步合并时输给对端的旧副本（删除被复活）
+      await softDeleteRow(database.plannedBlocks, id, now);
       await database.activityEvents.put({
         id: `ev-${now}-${Math.random().toString(36).substr(2, 9)}`,
         workspaceId: DEFAULT_WORKSPACE_ID,

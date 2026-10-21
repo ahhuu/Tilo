@@ -9,9 +9,9 @@ English Documentation | [简体中文文档](README_CN.md)
 
 ## Release Status
 
-**Current Release**: `Tilo v1.5.1`  
+**Current Release**: `Tilo v1.6.0`  
 **Status**: `Production Ready` (Desktop Web, Tauri Desktop Native, PWA Standalone & Android APK Validated)  
-**Highlights**: v1.5 unified 20 card dialogs onto one `Modal` shell (fixing the Android Chinese IME composition break) with keyboard alternatives for every drag and an accessibility baseline. v1.5.1 adds guard rails: a permanent `check:jsx` static check (catches the tag-imbalance / missing-import class of bugs `tsc` silently tolerates), plus focus-trap and Android-back-button fixes locked down by an 11-case Modal regression suite.
+**Highlights**: v1.6 makes the first paint 60 % smaller (1860 kB → 736 kB, gzip 510 → 221 kB) with route-level code splitting, drops 11 zero-reference dependencies, moves Analytics/Goals onto ranged IndexedDB queries, and decomposes the five 700–1300-line megacomponents down to 36–406 lines each — with zero behaviour change, verified by a new timeline contract suite. It also fixes LAN sync deletions: hard deletes now carry a tombstone (`payload.tombstones`), soft deletes advance `updatedAt`, and a deleted record can no longer be pushed back by the other device.
 
 ---
 

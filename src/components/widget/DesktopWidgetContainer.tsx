@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useWidgetStore } from '@/stores/widgetStore';
 import { useUIStore } from '@/stores/uiStore';
+import { useI18n } from '@/core/i18n';
 import { tauriWidgetService } from '@/services/tauriWidgetService';
 import { InboxGrid } from './grids/InboxGrid';
 import { TasksGrid } from './grids/TasksGrid';
@@ -18,8 +19,10 @@ import { WidgetSettingsModal } from './WidgetSettingsModal';
 import type { WidgetGridId } from './widgetTypes';
 
 export const DesktopWidgetContainer: React.FC = () => {
+  const { language } = useI18n();
   const { settings, openSettingsModal, setAlwaysOnTop } = useWidgetStore();
   const { theme, setTheme, runningSession } = useUIStore();
+  const isZh = language === 'zh-CN';
 
   const enabledGrids = settings.enabledGrids;
   const isPinned = settings.alwaysOnTop;
@@ -80,13 +83,15 @@ export const DesktopWidgetContainer: React.FC = () => {
             <span className="font-bold text-[11px] leading-none">T</span>
           </div>
           <span className="text-xs font-semibold tracking-wide text-slate-800 dark:text-slate-200">
-            Tilo 快捷格子
+            {isZh ? 'Tilo 快捷格子' : 'Tilo grids'}
           </span>
 
           {runningSession && (
             <div className="hidden sm:flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-800 dark:text-amber-300 text-[10px] font-medium animate-pulse ml-2">
               <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
-              <span>专注中: {runningSession.title}</span>
+              <span>
+                {isZh ? '专注中' : 'Focusing'}: {runningSession.title}
+              </span>
             </div>
           )}
         </div>
@@ -102,7 +107,24 @@ export const DesktopWidgetContainer: React.FC = () => {
                 ? 'bg-indigo-100 dark:bg-indigo-950 text-indigo-600 dark:text-indigo-400 font-semibold'
                 : 'text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/60'
             }`}
-            title={isPinned ? '取消置顶' : '挂件始终置顶'}
+            title={
+              isPinned
+                ? isZh
+                  ? '取消置顶'
+                  : 'Unpin'
+                : isZh
+                  ? '挂件始终置顶'
+                  : 'Always on top'
+            }
+            aria-label={
+              isPinned
+                ? isZh
+                  ? '取消置顶'
+                  : 'Unpin'
+                : isZh
+                  ? '挂件始终置顶'
+                  : 'Always on top'
+            }
           >
             <Pin className={`w-3.5 h-3.5 ${isPinned ? 'fill-current' : ''}`} />
           </button>
@@ -112,7 +134,8 @@ export const DesktopWidgetContainer: React.FC = () => {
             type="button"
             onClick={toggleTheme}
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-            title="切换深色/浅色模式"
+            title={isZh ? '切换深色/浅色模式' : 'Toggle dark / light mode'}
+            aria-label={isZh ? '切换深色/浅色模式' : 'Toggle dark / light mode'}
           >
             {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
           </button>
@@ -122,10 +145,10 @@ export const DesktopWidgetContainer: React.FC = () => {
             type="button"
             onClick={openSettingsModal}
             className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-200/50 dark:hover:bg-slate-800/60 border border-slate-200/60 dark:border-slate-800 transition-colors cursor-pointer"
-            title="自定义开启的格子与排序"
+            title={isZh ? '自定义开启的格子与排序' : 'Choose grids and their order'}
           >
             <Sliders className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
-            <span className="hidden sm:inline">自定义</span>
+            <span className="hidden sm:inline">{isZh ? '自定义' : 'Customize'}</span>
           </button>
 
           {/* 隐藏到桌面/最小化 */}
@@ -133,7 +156,8 @@ export const DesktopWidgetContainer: React.FC = () => {
             type="button"
             onClick={handleHide}
             className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-200/40 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-            title="隐藏挂件"
+            title={isZh ? '隐藏挂件' : 'Hide widget'}
+            aria-label={isZh ? '隐藏挂件' : 'Hide widget'}
           >
             <Minus className="w-3.5 h-3.5" />
           </button>

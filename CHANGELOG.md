@@ -7,6 +7,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.6.0] — 2026-10-22
+
+### Summary
+"Load less, own less." Tilo 1.6.0 attacks the costs that had been quietly accumulating since V1: the app shipped its entire route tree and 11 unused UI libraries in the first paint, five components had grown past 700–1300 lines, and **deletions never participated in LAN sync** — deleting on one device meant the other device pushed the record straight back. The first paint is now **60 % smaller**, no component in the repo exceeds ~680 lines, and deletions stay deleted on both ends.
+
+### Added
+- **`src/test/timelineView.test.tsx`** (7 cases) — locks the timeline's contract across the component split: both card-height branches (≤35 min single-row / taller two-row), filter switching, `↑/↓`/`Shift+↑/↓` rescheduling with duration preserved, `Delete`, empty-canvas guidance, and the background-activity track. Verified to fail when the 15-minute step is deliberately changed.
+- **`src/test/syncDeletion.test.ts`** (13 cases) — two independent Dexie databases stand in for two devices pushing payloads at each other: soft-delete propagation, legacy tombstones that never bumped `updatedAt`, hard deletes (blocks / sessions + segments / templates), the "peer doesn't know yet" direction not resurrecting anything, rebuild-after-delete being preserved, tombstones present in the exported payload, segment duration syncing, tombstone retention pruning, and unchanged normal merging. Each of the three core rules was verified by reverting it and watching a specific case fail.
+- **Range-query coverage in `db.test.ts`** — asserts `[workspaceId+state]` / time-index range reads return the same rows as the previous full-table scans.
+
+### Changed
+- **Route-level code splitting** — 11 pages now load through `React.lazy` with a single persistent `Suspense` boundary in `AppLayout`, so navigating between pages no longer re-triggers the fallback. The `/widget/:gridId` route gets its own silent boundary.
+- **Initial bundle 1860.73 kB → 736.29 kB** (gzip 509.82 → 221.10 kB, −57 %). `LanSyncModal` is now lazy + conditionally mounted and appears as its own 380.82 kB chunk — it was the single biggest thing dragging `html5-qrcode` into first paint through `MobileBottomNav`.
+- **Removed 11 zero-reference dependencies**: `recharts`, `motion`, `react-hook-form` and 8 unused Radix packages (checkbox / dialog / dropdown-menu / popover / select / slot / switch / tabs). `@radix-ui/react-tooltip` is the only one still in use. (`motion`'s apparent usages were Tailwind's `motion-reduce:` variants, not the library.)
+- **Analytics & Goals queries are now ranged** — `plannedBlocks` / `activityEvents` read via `.where(...).between(...)` instead of materialising the whole table, and `computeAnalytics` / goal aggregations moved into `useMemo` with module-level `EMPTY_ARRAY` constants so the memos actually hold.
+- **Widget UI is fully bilingual** — `WidgetSettingsModal`, `DesktopWidgetContainer`, `InAppWidgetWorkspace` and `InAppWidgetShell` no longer hardcode Chinese; window-style cards also gained English descriptions in Settings.
+- **Five megacomponents decomposed** (public exports unchanged, zero behaviour change):
+
+  | Component | Before | After |
+  |---|---|---|
+  | `StandaloneWidgetShell` | 1325 | 94 (+ header / settings drawer / 6 panels / chrome hook) |
+  | `TimelineView` | 1057 | 406 (+ header / block / background track / gestures hook) |
+  | `InboxPage` | 857 | 196 (+ data + actions + notes hooks / 4 views) |
+  | `LanSyncModal` | 755 | 173 (+ session hook / 3 panels) |
+  | `WidgetSettingsSection` | 727 | 36 (+ 4 sections / status context) |
+
+### Fixed
+- **Deletions could not survive a sync** — the merge was a pure last-write-wins over `updatedAt`, so a record missing on one side looked like "data the peer hasn't seen yet" and was written back. Added a `syncTombstones` table (Dexie schema v2) that carries the *fact* of a hard delete (`table:entityId → deletedAt`) in the sync payload (`payload.tombstones`, ignored by older peers). Merge now absorbs tombstones first, deletes locally, and refuses to re-add a tombstoned record unless the peer's copy is newer than the tombstone (i.e. explicitly rebuilt after the delete). Ties go to the deleted side, which also fixes tombstones written by the old buggy code.
+- **Soft deletes never bumped `updatedAt`** — six call sites (inbox items ×3, notes ×2, milestones) wrote `{ deletedAt }` only, so the tombstone row kept its pre-delete timestamp and always lost the merge. All of them now go through `softDeleteRow` / `restoreSoftDeletedRow`.
+- **Hard deletes left no trace** — planned blocks (single, recurrence series, auto-pack undo), focus sessions (plus their segments) and task templates were removed with no tombstone. They now write one via `hardDeleteWithTombstone`.
+- **`SessionSegment` had no version field** — both sides compared as `0`, so the local copy always won and a session's end time never reached the peer. Merge now falls back to `endAt` / `startAt` when `updatedAt` is absent.
+- **Settings no longer re-invokes Tauri IPC per section** — desktop widget status (autostart, auto-launch, visible widgets) is fetched once and shared through a context instead of three independent calls.
+
+---
+
 ## [1.5.1] — 2026-10-22
 
 ### Summary

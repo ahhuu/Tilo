@@ -28,6 +28,7 @@ import {
 import { useWidgetStore } from '@/stores/widgetStore';
 import { useUIStore } from '@/stores/uiStore';
 import { timeService } from '@/core/time/timeService';
+import { softDeleteRow } from '@/services/tombstoneService';
 import type { InboxItem, Note } from '@/core/types/domain';
 
 const STORAGE_KEY_INBOX_TAB_STYLE = 'tilo_widget_inbox_tab_style';
@@ -262,7 +263,7 @@ export const InboxGrid: React.FC = () => {
 
   const handleDeleteInbox = async (id: string) => {
     try {
-      await db.inboxItems.update(id, { deletedAt: Date.now() });
+      await softDeleteRow(db.inboxItems, id);
       addToast({ message: isZh ? '条目已删除' : 'Item deleted', type: 'info' });
     } catch {
       addToast({ message: isZh ? '删除失败' : 'Failed to delete', type: 'error' });
@@ -271,7 +272,7 @@ export const InboxGrid: React.FC = () => {
 
   const handleDeleteNote = async (id: string) => {
     try {
-      await db.notes.update(id, { deletedAt: Date.now() });
+      await softDeleteRow(db.notes, id);
       addToast({ message: isZh ? '笔记已删除' : 'Note deleted', type: 'info' });
     } catch {
       addToast({ message: isZh ? '删除失败' : 'Failed to delete', type: 'error' });

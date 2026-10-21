@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { lazy, Suspense, useState, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import Modal from '@/components/ui/Modal';
@@ -7,7 +7,11 @@ import { useI18n } from '@/core/i18n';
 import { exportWorkspaceBackupJson, importWorkspaceBackupJson } from '@/services/exportImportService';
 import { seedDemoData } from '@/storage/seed';
 import { db, ensureDefaultWorkspace } from '@/storage/db';
-import { LanSyncModal } from '@/components/sync/LanSyncModal';
+
+// 按需加载：该弹窗携带 html5-qrcode / qrcode，只有用户真的点「局域网同步」才需要
+const LanSyncModal = lazy(() =>
+  import('@/components/sync/LanSyncModal').then((m) => ({ default: m.LanSyncModal }))
+);
 import { DEMO_DATA_SEEDED_KEY } from '@/components/onboarding/FirstRunGuide';
 import {
   Download,
@@ -133,6 +137,8 @@ export const DataBackupSection: React.FC = () => {
         db.reviewRevisions.clear(),
         db.activityEvents.clear(),
         db.weeklyFocus.clear(),
+        // 重置 = 清空一切，包括删除墓碑，否则墓碑会挡住对端重新同步回来的数据
+        db.syncTombstones.clear(),
       ]);
       await ensureDefaultWorkspace(db);
       localStorage.setItem(DEMO_DATA_SEEDED_KEY, 'false');
@@ -184,10 +190,11 @@ export const DataBackupSection: React.FC = () => {
         </div>
       </Card>
 
-      <LanSyncModal
-        isOpen={showLanSyncModal}
-        onClose={() => setShowLanSyncModal(false)}
-      />
+      {showLanSyncModal && (
+        <Suspense fallback={null}>
+          <LanSyncModal isOpen onClose={() => setShowLanSyncModal(false)} />
+        </Suspense>
+      )}
 
       {/* Export & Import Backup */}
       <Card className="p-5 space-y-4 border border-slate-200/80 dark:border-slate-800 shadow-2xs">

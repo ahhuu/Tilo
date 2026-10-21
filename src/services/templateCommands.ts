@@ -1,5 +1,6 @@
 import { db, DEFAULT_WORKSPACE_ID, type TiloDB } from '@/storage/db';
 import type { Template, Task, PriorityLevel, TaskProgressMode } from '@/core/types/domain';
+import { hardDeleteWithTombstone } from '@/services/tombstoneService';
 
 export interface TaskTemplatePayload {
   title: string;
@@ -210,17 +211,25 @@ export async function updateTemplate(
 
 /**
  * Deletes a template.
+ *
+ * 模板不进废纸篓，走硬删除 + 墓碑，避免对端把旧模板同步回来。
  */
 export async function deleteTemplate(templateId: string, database: TiloDB = db): Promise<void> {
-  await database.templates.delete(templateId);
+  await database.transaction('rw', [database.templates, database.syncTombstones], async () => {
+    await hardDeleteWithTombstone(database.templates, 'templates', [templateId], database);
+  });
 }
 
 /**
  * Resets templates to standard system defaults.
  */
 export async function resetTemplatesToDefault(database: TiloDB = db): Promise<void> {
-  await database.templates.clear();
-  await ensureTemplatesInitialized(database);
+  await database.transaction('rw', [database.templates, database.syncTombstones], async () => {
+    await database.templates.clear();
+    // 重置后要按默认 id 重建模板：清掉模板墓碑，否则「重建」会被当成已删除记录挡回去
+    await database.syncTombstones.where('table').equals('templates').delete();
+    await ensureTemplatesInitialized(database);
+  });
 }
 
 /**
